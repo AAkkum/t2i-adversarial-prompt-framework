@@ -22,3 +22,5 @@ Core extension points:
 - `t2i_framework/evaluation/`: result writing and metrics
 
 The mock model is intentionally offline and CPU-only. It renders the selected prompt into a placeholder PNG so the framework can be tested without GPU or model downloads.
+
+The Diffusers adapter loads Hugging Face model pipelines lazily at generation time. The first run of a real model, such as SDXL, may download model weights into the Hugging Face cache before producing an image.

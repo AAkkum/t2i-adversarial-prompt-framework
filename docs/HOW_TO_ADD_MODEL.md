@@ -8,8 +8,16 @@ This project is scoped to local/open Hugging Face `diffusers` or `transformers` 
 
 Current Diffusers config files:
 
-- `configs/sdxl.yaml`: `stabilityai/stable-diffusion-xl-base-1.0`
-- `configs/sd35_medium.yaml`: `stabilityai/stable-diffusion-3.5-medium`
-- `configs/flux.yaml`: `black-forest-labs/FLUX.1-schnell`
+- `configs/sdxl.yaml`: `stabilityai/stable-diffusion-xl-base-1.0` - smoke-tested locally
+- `configs/sd35_medium.yaml`: `stabilityai/stable-diffusion-3.5-medium` - configured, not yet runtime-validated
+- `configs/flux.yaml`: `black-forest-labs/FLUX.1-schnell` - configured, not yet runtime-validated
+
+Install model dependencies before using the Diffusers adapter:
+
+```bash
+pip install -e ".[models]"
+```
+
+The first real model run may download large model files into the Hugging Face cache. The configs only choose which model is loaded; they do not download all configured models automatically.
 
 After creating a model class, register it in `t2i_framework/core/registry.py` under `MODEL_REGISTRY`.

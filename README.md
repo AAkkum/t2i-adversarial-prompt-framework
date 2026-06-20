@@ -8,6 +8,8 @@ This repository is an academic evaluation framework. The default data uses harml
 
 ## Installation
 
+Base setup for the CPU-only mock pipeline:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -54,7 +56,7 @@ python main.py --model diffusers --config configs/sd35_medium.yaml --attack iden
 python main.py --model diffusers --config configs/flux.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/flux_debug
 ```
 
-These commands require model dependencies, accepted Hugging Face model licenses where applicable, and enough local GPU/VRAM for the selected model.
+The SDXL command has been validated with `configs/sdxl.yaml`. On the first run, Diffusers downloads the model files from Hugging Face and caches them locally; later runs reuse the cache. These commands require model dependencies, accepted Hugging Face model licenses where applicable, internet access for uncached models, and enough local GPU/VRAM for the selected model.
 
 List available components:
 
@@ -83,4 +85,4 @@ Each run writes:
 
 ## Current Limitations
 
-The default `success` metric only checks that the prompt and image were not blocked and that an image file exists. Real target-concept detection, CLIP scoring, and research-grade attacks are left as extension tasks. The model adapter currently supports local/open Hugging Face Diffusers pipelines only.
+The default `success` metric only checks that the prompt and image were not blocked and that an image file exists. Real target-concept detection, CLIP scoring, and research-grade attacks are left as extension tasks. The model adapter currently supports local/open Hugging Face Diffusers pipelines only. SDXL has been smoke-tested; SD 3.5 Medium and FLUX.1-schnell are configured but still need local runtime validation on the target machine.

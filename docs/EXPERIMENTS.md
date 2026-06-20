@@ -6,11 +6,11 @@ The intended evaluation grid is:
 models x attacks x defenses x prompts x seeds
 ```
 
-Possible future models:
+Configured models:
 
-- SDXL: `stabilityai/stable-diffusion-xl-base-1.0`
-- SD 3.5 Medium: `stabilityai/stable-diffusion-3.5-medium`
-- FLUX.1-schnell: `black-forest-labs/FLUX.1-schnell`
+- SDXL: `stabilityai/stable-diffusion-xl-base-1.0` - smoke-tested locally
+- SD 3.5 Medium: `stabilityai/stable-diffusion-3.5-medium` - configured, pending runtime validation
+- FLUX.1-schnell: `black-forest-labs/FLUX.1-schnell` - configured, pending runtime validation
 
 Possible future attacks:
 
