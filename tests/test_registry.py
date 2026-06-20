@@ -3,7 +3,7 @@ from t2i_framework.core.registry import available_components
 
 def test_known_components_exist() -> None:
     components = available_components()
-    assert {"mock", "diffusers", "gemini"} <= set(components["models"])
+    assert {"mock", "diffusers"} <= set(components["models"])
     assert {"identity", "char_perturb", "textfooler_style", "groot_lite", "search_attack"} <= set(
         components["attacks"]
     )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
 from t2i_framework.attacks.base import Attack
 from t2i_framework.attacks.char_perturb import CharPerturbAttack
@@ -16,15 +16,13 @@ from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 from t2i_framework.models.base import ImageModel
 from t2i_framework.models.diffusers_model import DiffusersImageModel
-from t2i_framework.models.gemini_model import GeminiImageModel
 from t2i_framework.models.mock_model import MockImageModel
 
 T = TypeVar("T")
 
-MODEL_REGISTRY: dict[str, Callable[[], ImageModel]] = {
+MODEL_REGISTRY: dict[str, Callable[..., ImageModel]] = {
     "mock": MockImageModel,
     "diffusers": DiffusersImageModel,
-    "gemini": GeminiImageModel,
 }
 
 ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
@@ -52,16 +50,16 @@ def available_components() -> dict[str, list[str]]:
     }
 
 
-def _build(name: str, registry: dict[str, Callable[[], T]], kind: str) -> T:
+def _build(name: str, registry: dict[str, Callable[..., T]], kind: str, **kwargs: Any) -> T:
     try:
-        return registry[name]()
+        return registry[name](**kwargs)
     except KeyError as exc:
         available = ", ".join(sorted(registry))
         raise ValueError(f"Unknown {kind} '{name}'. Available {kind}s: {available}") from exc
 
 
-def build_model(name: str) -> ImageModel:
-    return _build(name, MODEL_REGISTRY, "model")
+def build_model(name: str, **kwargs: Any) -> ImageModel:
+    return _build(name, MODEL_REGISTRY, "model", **kwargs)
 
 
 def build_attack(name: str) -> Attack:

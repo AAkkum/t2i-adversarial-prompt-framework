@@ -16,7 +16,7 @@ The CLI selects one registered model, attack, and defense by name. `ExperimentRu
 
 Core extension points:
 
-- `t2i_framework/models/`: local Diffusers adapters, mock models, and API-backed models
+- `t2i_framework/models/`: the CPU-only mock model and local Hugging Face Diffusers adapters
 - `t2i_framework/attacks/`: prompt rewriting or search strategies
 - `t2i_framework/defenses/`: prompt filters, image filters, or composite defenses
 - `t2i_framework/evaluation/`: result writing and metrics

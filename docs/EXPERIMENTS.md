@@ -8,10 +8,9 @@ models x attacks x defenses x prompts x seeds
 
 Possible future models:
 
-- SDXL
-- SD3.5 Medium
-- FLUX.1-schnell
-- Gemini/Imagen as a black-box adapter
+- SDXL: `stabilityai/stable-diffusion-xl-base-1.0`
+- SD 3.5 Medium: `stabilityai/stable-diffusion-3.5-medium`
+- FLUX.1-schnell: `black-forest-labs/FLUX.1-schnell`
 
 Possible future attacks:
 

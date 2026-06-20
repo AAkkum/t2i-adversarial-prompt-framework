@@ -40,15 +40,25 @@ def main(
     if (prompt is None and prompt_file is None) or (prompt is not None and prompt_file is not None):
         raise typer.BadParameter("Provide exactly one of --prompt or --prompt-file.")
 
+    config_data = load_yaml_config(config)
+    model_config = dict(config_data.get("model", {}))
+    configured_model_name = model_config.pop("name", None)
+    if configured_model_name is not None and configured_model_name != model:
+        raise typer.BadParameter(
+            f"Config selects model '{configured_model_name}', but CLI selected '{model}'. "
+            "Pass the same --model value or use a matching config."
+        )
+
     try:
-        image_model = build_model(model)
+        image_model = build_model(model, **model_config)
         attack_module = build_attack(attack)
         defense_module = build_defense(defense)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    except TypeError as exc:
+        raise typer.BadParameter(f"Invalid configuration for model '{model}': {exc}") from exc
 
     prompts = [(prompt, target)] if prompt is not None else read_prompt_file(prompt_file)  # type: ignore[arg-type]
-    config_data = load_yaml_config(config)
     runner = ExperimentRunner(
         model=image_model,
         attack=attack_module,
