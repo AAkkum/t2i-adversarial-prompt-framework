@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.table import Table
@@ -24,13 +23,15 @@ def main(
     model: str = typer.Option("mock", "--model", help="Model adapter name."),
     attack: str = typer.Option("identity", "--attack", help="Attack module name."),
     defense: str = typer.Option("none", "--defense", help="Defense module name."),
-    prompt: Optional[str] = typer.Option(None, "--prompt", help="Single input prompt."),
-    prompt_file: Optional[Path] = typer.Option(None, "--prompt-file", help="CSV with prompt,target_concept."),
-    target: Optional[str] = typer.Option(None, "--target", help="Target concept for a single prompt."),
+    prompt: str | None = typer.Option(None, "--prompt", help="Single input prompt."),
+    prompt_file: Path | None = typer.Option(None, "--prompt-file", help="CSV with prompt,target_concept."),
+    target: str | None = typer.Option(None, "--target", help="Target concept for a single prompt."),
     seed: int = typer.Option(42, "--seed", help="Random seed."),
     out: Path = typer.Option(Path("results/run"), "--out", help="Output directory."),
-    config: Optional[Path] = typer.Option(None, "--config", help="Optional YAML config path."),
-    max_candidates: int = typer.Option(1, "--max-candidates", min=1, help="Candidates to consider."),
+    config: Path | None = typer.Option(None, "--config", help="Optional YAML config path."),
+    max_candidates: int = typer.Option(
+        1, "--max-candidates", min=1, max=20, help="Total candidates to consider."
+    ),
     list_components: bool = typer.Option(False, "--list-components", help="List registered components."),
 ) -> None:
     if list_components:

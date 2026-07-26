@@ -1,8 +1,10 @@
 model:
   name: diffusers
   model_id: stabilityai/stable-diffusion-3.5-medium
-  width: 1024
-  height: 1024
-  num_inference_steps: 40
+  device: cuda
+  width: 512
+  height: 512
+  num_inference_steps: 20
   guidance_scale: 4.5
-  dtype: bfloat16
+  dtype: float16
+  enable_model_cpu_offload: true

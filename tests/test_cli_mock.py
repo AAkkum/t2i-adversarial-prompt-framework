@@ -29,5 +29,6 @@ def test_cli_mock_creates_result_and_image(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert (out / "results.jsonl").exists()
-    images = list((out / "images").glob("*.png"))
+    images = list(out.glob("*.png"))
     assert len(images) == 1
+    assert images[0].name == "baseline_original_seed42.png"

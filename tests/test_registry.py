@@ -7,6 +7,12 @@ def test_known_components_exist() -> None:
     assert {"identity", "char_perturb", "textfooler_style", "groot_lite", "search_attack"} <= set(
         components["attacks"]
     )
-    assert {"none", "normalize_keywords", "embedding_filter", "image_clip_filter", "composite"} <= set(
-        components["defenses"]
-    )
+    assert {
+        "none",
+        "normalize_keywords",
+        "embedding_filter",
+        "image_clip_filter",
+        "filter_placeholder",
+        "composite",
+        "character_filter",
+    } <= set(components["defenses"])

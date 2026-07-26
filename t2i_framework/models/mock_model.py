@@ -25,9 +25,15 @@ class MockImageModel(ImageModel):
     ) -> GenerationResult:
         context = context or {}
         run_id = context.get("run_id") or f"seed_{seed}_{uuid.uuid4().hex[:8]}"
-        image_dir = output_dir / "images"
+        image_dir = output_dir if context.get("output_filename") else output_dir / "images"
         image_dir.mkdir(parents=True, exist_ok=True)
-        image_path = image_dir / f"{run_id}.png"
+        filename = context.get("output_filename", f"{run_id}.png")
+        image_path = image_dir / filename
+        if image_path.exists():
+            counter = 1
+            while image_path.exists():
+                image_path = image_dir / f"{Path(filename).stem}_{counter:02d}.png"
+                counter += 1
 
         image = Image.new("RGB", (768, 512), "white")
         draw = ImageDraw.Draw(image)
