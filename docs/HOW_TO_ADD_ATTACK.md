@@ -39,3 +39,15 @@ python main.py --model mock --attack my_attack --defense none --prompt "a red cu
 ```
 
 Keep default examples safe and synthetic. Do not include real harmful prompt examples in code, docs, or tests.
+
+`groot_lite` is the built-in semantic decomposition example. It rewrites known synthetic target concepts into visual attribute descriptions, for example `blue rabbit mascot` becomes a phrase such as `blue long-eared costume character`. It is deterministic and does not call an external model. Its concept decompositions live in `data/groot_decompositions.yaml`, so new safe synthetic concepts can be added without changing Python source code.
+
+The decomposition file can be switched per run:
+
+```yaml
+attack:
+  name: groot_lite
+  decompositions_path: data/groot_decompositions_external_template.yaml
+```
+
+Use `--max-candidates` to evaluate more than the first decomposition.

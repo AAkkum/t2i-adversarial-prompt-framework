@@ -58,6 +58,41 @@ python main.py --model diffusers --config configs/flux.yaml --attack identity --
 
 The SDXL command has been validated with `configs/sdxl.yaml`. On the first run, Diffusers downloads the model files from Hugging Face and caches them locally; later runs reuse the cache. These commands require model dependencies, accepted Hugging Face model licenses where applicable, internet access for uncached models, and enough local GPU/VRAM for the selected model.
 
+Semantic decomposition attack with the mock model:
+
+```bash
+python main.py --model mock --attack groot_lite --defense normalize_keywords --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock
+```
+
+`groot_lite` uses safe concept decompositions from `data/groot_decompositions.yaml`.
+To test a different decomposition set, point the attack config at another YAML file:
+
+```yaml
+attack:
+  name: groot_lite
+  decompositions_path: data/groot_decompositions_external_template.yaml
+```
+
+Then run with more than one candidate if you want to evaluate multiple decompositions:
+
+```bash
+python main.py --model mock --config configs/mock_groot_external.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_candidates
+```
+
+SDXL with CLIP image-text evaluation:
+
+```bash
+python main.py --model diffusers --config configs/sdxl_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
+```
+
+Fast CLIP evaluation smoke test with the mock model:
+
+```bash
+python main.py --model mock --config configs/mock_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock_clip
+```
+
+When CLIP evaluation is enabled, `scores.image_clip_similarity` is written for generated images with a target concept. The `success` field then means the prompt/image were not blocked, an image exists, and the CLIP score is at least the configured threshold.
+
 List available components:
 
 ```bash
@@ -85,4 +120,4 @@ Each run writes:
 
 ## Current Limitations
 
-The default `success` metric only checks that the prompt and image were not blocked and that an image file exists. Real target-concept detection, CLIP scoring, and research-grade attacks are left as extension tasks. The model adapter currently supports local/open Hugging Face Diffusers pipelines only. SDXL has been smoke-tested; SD 3.5 Medium and FLUX.1-schnell are configured but still need local runtime validation on the target machine.
+Without CLIP evaluation, the default `success` metric only checks that the prompt and image were not blocked and that an image file exists. CLIP scores are approximate and threshold-dependent, so they should be calibrated with manual inspection before drawing research conclusions. SDXL has been smoke-tested; SD 3.5 Medium and FLUX.1-schnell are configured but still need local runtime validation on the target machine.

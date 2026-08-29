@@ -30,7 +30,9 @@ def main(
     seed: int = typer.Option(42, "--seed", help="Random seed."),
     out: Path = typer.Option(Path("results/run"), "--out", help="Output directory."),
     config: Optional[Path] = typer.Option(None, "--config", help="Optional YAML config path."),
-    max_candidates: int = typer.Option(1, "--max-candidates", min=1, help="Candidates to consider."),
+    max_candidates: int = typer.Option(
+        1, "--max-candidates", min=1, max=20, help="Candidates to consider."
+    ),
     list_components: bool = typer.Option(False, "--list-components", help="List registered components."),
 ) -> None:
     if list_components:

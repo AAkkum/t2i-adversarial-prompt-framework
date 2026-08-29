@@ -9,6 +9,7 @@ This project is scoped to local/open Hugging Face `diffusers` or `transformers` 
 Current Diffusers config files:
 
 - `configs/sdxl.yaml`: `stabilityai/stable-diffusion-xl-base-1.0` - smoke-tested locally
+- `configs/sdxl_clip_eval.yaml`: SDXL plus CLIP image-text evaluation
 - `configs/sd35_medium.yaml`: `stabilityai/stable-diffusion-3.5-medium` - configured, not yet runtime-validated
 - `configs/flux.yaml`: `black-forest-labs/FLUX.1-schnell` - configured, not yet runtime-validated
 

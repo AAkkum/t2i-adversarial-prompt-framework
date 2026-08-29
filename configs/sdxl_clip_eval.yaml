@@ -1,0 +1,17 @@
+model:
+  name: diffusers
+  model_id: stabilityai/stable-diffusion-xl-base-1.0
+  width: 1024
+  height: 1024
+  num_inference_steps: 25
+  guidance_scale: 7.5
+
+attack:
+  name: groot_lite
+  decompositions_path: data/groot_decompositions.yaml
+
+evaluation:
+  image_clip:
+    enabled: true
+    model_id: openai/clip-vit-base-patch32
+    threshold: 0.25

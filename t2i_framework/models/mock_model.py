@@ -27,7 +27,8 @@ class MockImageModel(ImageModel):
         run_id = context.get("run_id") or f"seed_{seed}_{uuid.uuid4().hex[:8]}"
         image_dir = output_dir / "images"
         image_dir.mkdir(parents=True, exist_ok=True)
-        image_path = image_dir / f"{run_id}.png"
+        filename = context.get("output_filename", f"{run_id}.png")
+        image_path = _available_path(image_dir / filename)
 
         image = Image.new("RGB", (768, 512), "white")
         draw = ImageDraw.Draw(image)
@@ -52,3 +53,13 @@ class MockImageModel(ImageModel):
             model_name=self.name,
             metadata={"run_id": run_id, "kind": "placeholder"},
         )
+
+
+def _available_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+    for index in range(1, 10_000):
+        candidate = path.with_name(f"{path.stem}_{index:02d}{path.suffix}")
+        if not candidate.exists():
+            return candidate
+    raise RuntimeError(f"Could not find an unused filename for {path}")

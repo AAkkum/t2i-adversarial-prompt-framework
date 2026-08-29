@@ -33,3 +33,14 @@ class MyDefense(Defense):
 Register it in `t2i_framework/core/registry.py` under `DEFENSE_REGISTRY`.
 
 Pre-generation blocking prevents the model adapter from being called. Post-generation blocking records the image as generated but marks the result as unsuccessful.
+
+`image_clip_filter` is the built-in post-generation image defense. It compares the generated image with the `target_concept` using CLIP image-text similarity. If the score is above the threshold, the defense blocks the image because the restricted synthetic target concept still appears to be present.
+
+Defense-specific CLIP settings can be passed through the run config:
+
+```yaml
+defense:
+  image_clip:
+    model_id: openai/clip-vit-base-patch32
+    threshold: 0.25
+```

@@ -24,3 +24,5 @@ Core extension points:
 The mock model is intentionally offline and CPU-only. It renders the selected prompt into a placeholder PNG so the framework can be tested without GPU or model downloads.
 
 The Diffusers adapter loads Hugging Face model pipelines lazily at generation time. The first run of a real model, such as SDXL, may download model weights into the Hugging Face cache before producing an image.
+
+Optional CLIP image-text evaluation runs after image generation. It compares the generated image to the `target_concept` text and stores the cosine similarity in `scores.image_clip_similarity`. When enabled, the `success` field uses the configured CLIP threshold instead of only checking that an image file exists.

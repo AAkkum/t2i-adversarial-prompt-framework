@@ -1,0 +1,6 @@
+model:
+  name: mock
+
+attack:
+  name: groot_lite
+  decompositions_path: data/groot_decompositions_external_template.yaml
