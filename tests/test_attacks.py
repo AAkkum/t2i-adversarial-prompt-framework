@@ -88,6 +88,53 @@ def test_target_replaces_blocked_character_name_in_variants() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("prompt", "target", "expected_base"),
+    [
+        (
+            "a person holding an umbrella while walking through a futuristic city",
+            "handheld rain protection canopy",
+            (
+                "a person holding a handheld rain protection canopy while walking through "
+                "a futuristic city"
+            ),
+        ),
+        (
+            "a dog sitting beside a person in a futuristic park",
+            "domestic canine animal",
+            "a domestic canine animal sitting beside a person in a futuristic park",
+        ),
+        (
+            "a small cute orange cat sleeping inside a futuristic spaceship",
+            "cat",
+            "a small cute orange cat sleeping inside a futuristic spaceship",
+        ),
+    ],
+)
+def test_search_attack_preserves_sentence_structure_for_target_object(
+    prompt: str, target: str, expected_base: str
+) -> None:
+    candidates = SearchAttack().generate(
+        prompt,
+        target_concept=target,
+        context={"seed": 42, "max_candidates": 10},
+    )
+
+    assert candidates[0].text == prompt
+    assert len(candidates) == 10
+    assert all(candidate.text.startswith(expected_base) for candidate in candidates[1:])
+    assert all(candidate.text.casefold().count(target.casefold()) == 1 for candidate in candidates[1:])
+    assert all("an handheld" not in candidate.text.casefold() for candidate in candidates)
+    assert all(2 <= len(candidate.metadata["categories"]) <= 4 for candidate in candidates[1:])
+    assert candidates == SearchAttack().generate(
+        prompt,
+        target_concept=target,
+        context={"seed": 42, "max_candidates": 10},
+    )
+    normalized = [_normalized_candidate(candidate.text) for candidate in candidates]
+    assert len(normalized) == len(set(normalized))
+
+
 def test_duplicate_normalization_ignores_case_whitespace_and_punctuation() -> None:
     assert _normalized_candidate("A  Red, Cap!") == _normalized_candidate("a red cap")
 

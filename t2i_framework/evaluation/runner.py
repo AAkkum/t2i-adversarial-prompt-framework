@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import csv
+import os
 import re
-import shutil
+import tempfile
 import time
 import unicodedata
 import uuid
@@ -13,7 +14,7 @@ from typing import Any
 from t2i_framework.attacks.base import Attack
 from t2i_framework.core.config import save_yaml_config
 from t2i_framework.core.logging_utils import console
-from t2i_framework.core.types import EvaluationResult
+from t2i_framework.core.types import DefenseDecision, EvaluationResult
 from t2i_framework.defenses.base import Defense
 from t2i_framework.evaluation.metrics import placeholder_success, text_similarity
 from t2i_framework.evaluation.result_writer import ResultWriter
@@ -71,7 +72,6 @@ class ExperimentRunner:
         for index, (prompt, target_concept) in enumerate(prompts):
             prompt_results = self._evaluate_candidates(index, prompt, target_concept, seed)
             for result in prompt_results:
-                self.writer.append(result)
                 results.append(result)
                 status = "success" if result.success else "blocked/failed"
                 console.print(f"[bold]{result.run_id}[/bold] {status}: {result.attacked_prompt}")
@@ -120,27 +120,70 @@ class ExperimentRunner:
                 "candidate_index": candidate_index,
                 "output_filename": filename,
             }
-            prompt_decision = self.defense.check_prompt(
-                candidate.text, target_concept=target_concept, context=context
+            pending = EvaluationResult(
+                run_id=run_id, model_name=self.model.name, attack_name=self.attack.name,
+                defense_name=self.defense.name, original_prompt=prompt,
+                attacked_prompt=candidate.text, target_concept=target_concept, seed=seed,
+                prompt_blocked=False, image_blocked=False, generated_image_path=None,
+                success=False, query_count=candidate_index + 1, runtime_seconds=0.0,
+                scores={"candidate_score": float("-inf")},
+                metadata={"candidate_index": candidate_index, "status": "STARTED"},
             )
-            generation = None
+            self.writer.append(pending)
+            prompt_decision = DefenseDecision(allowed=False, reason="Prompt check not completed")
+            image_decision = None
             image_decision_allowed = True
             image_decision_reason = "generation skipped because prompt was blocked"
-
-            if prompt_decision.allowed:
-                generation = self.model.generate(
-                    candidate.text, self.output_dir, seed, context=context
+            retained_image_path: Path | None = None
+            discarded_image_path: str | None = None
+            error = None
+            stage = "prompt_defense"
+            try:
+                prompt_decision = self.defense.check_prompt(
+                    candidate.text, target_concept=target_concept, context=context
                 )
-                if generation.image_path is not None:
-                    image_decision = self.defense.check_image(
-                        generation.image_path,
-                        target_concept=target_concept,
-                        context=context,
-                    )
-                    image_decision_allowed = image_decision.allowed
-                    image_decision_reason = image_decision.reason
+                if prompt_decision.allowed:
+                    quarantine = self.output_dir.resolve().parent / ".image_quarantine"
+                    quarantine.mkdir(parents=True, exist_ok=True)
+                    stage = "generation"
+                    with tempfile.TemporaryDirectory(prefix=run_id + "_", dir=quarantine) as folder:
+                        temporary_dir = Path(folder)
+                        generation = self.model.generate(
+                            candidate.text, temporary_dir, seed, context=context
+                        )
+                        if generation.image_path is None or not Path(generation.image_path).is_file():
+                            raise RuntimeError("Image generation returned no existing image file.")
+                        generated_path = Path(generation.image_path).resolve()
+                        if not generated_path.is_relative_to(temporary_dir.resolve()):
+                            raise RuntimeError("Model returned an image outside its temporary directory.")
+                        print("Image generated: YES")
+                        stage = "image_defense"
+                        image_decision = self.defense.check_image(
+                            generated_path,
+                            target_concept=target_concept,
+                            context=context,
+                        )
+                        image_decision_allowed = image_decision.allowed
+                        image_decision_reason = image_decision.reason
+                        if image_decision_allowed:
+                            stage = "image_release"
+                            retained_image_path = _publish_image(
+                                generated_path, self.output_dir / filename
+                            )
+                        else:
+                            discarded_image_path = str(generated_path)
+                        stage = "temporary_cleanup"
+            except Exception as exc:  # noqa: BLE001 -- persist model/defense failures fail-closed
+                if stage == "image_defense":
+                    stage = context.get("image_error_stage", stage)
+                error = " ".join(str(exc).split())[:300] or type(exc).__name__
+                image_decision_allowed = False
+                image_decision_reason = f"{stage}: {error}"
+                print(f"Candidate error ({stage}): {error}")
+                print("Final Defense: ERROR")
+            print(f"Image kept: {'YES' if retained_image_path else 'NO'}")
 
-            image_path = str(generation.image_path) if generation and generation.image_path else None
+            image_path = str(retained_image_path) if retained_image_path else None
             prompt_blocked = not prompt_decision.allowed
             image_blocked = not image_decision_allowed
             similarity_reference = target_concept or prompt
@@ -169,24 +212,50 @@ class ExperimentRunner:
                         "candidate_score": candidate_score,
                     },
                     metadata={
+                        "candidate_index": candidate_index,
+                        "status": "ERROR" if error else "BLOCKED" if prompt_blocked or image_blocked else "ALLOWED",
+                        "final_defense": "ERROR" if error else "BLOCKED" if prompt_blocked or image_blocked else "ALLOWED",
+                        "error_stage": stage if error else None,
+                        "error": error,
+                        "blip_caption": context.get("blip_caption"),
                         "attack_candidate": candidate.metadata,
                         "prompt_defense": asdict(prompt_decision),
+                        "image_defense": asdict(image_decision) if image_decision else None,
                         "image_defense_reason": image_decision_reason,
+                        "blocked_by": (
+                            "ERROR" if error else
+                            image_decision.metadata.get("blocked_by", "NONE")
+                            if image_decision
+                            else prompt_decision.metadata.get("blocked_by", "NONE")
+                        ),
+                        "image_disposition": (
+                            "saved"
+                            if image_path
+                            else "not_released_after_error"
+                            if error
+                            else "deleted_after_image_block"
+                            if image_blocked
+                            else "not_generated"
+                        ),
+                        "discarded_image_path": discarded_image_path,
                         "score_note": "Lightweight placeholder score; no scientific quality claim.",
                         "similarity_reference": similarity_reference,
                         "selection_eligible": bool(filter_pass_score and image_path),
                     },
                 )
             )
+            self.writer.update(evaluated[-1])
 
         eligible = [result for result in evaluated if result.success]
         if eligible and self.attack.name == "search_attack":
             best = max(eligible, key=lambda item: item.scores["candidate_score"])
             source = Path(best.generated_image_path or "")
-            final_path = _available_path(self.output_dir / f"final_best_candidate_seed{seed}.png")
-            shutil.copy2(source, final_path)
+            final_path = _publish_image(
+                source, self.output_dir / f"final_best_candidate_seed{seed}.png"
+            )
             best.metadata["selected_best"] = True
             best.metadata["final_image_path"] = str(final_path)
+            self.writer.update(best)
         return evaluated
 
     def _candidate_filename(self, candidate_index: int, seed: int) -> str:
@@ -212,3 +281,18 @@ def _available_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
     raise RuntimeError(f"Could not find an unused filename for {path}")
+
+
+def _publish_image(source: Path, destination: Path) -> Path:
+    """Atomically expose the complete allowed file without overwriting another run.
+
+    A hard link uses the same filesystem; temporary cleanup removes the old name.
+    """
+    for _ in range(10_000):
+        available = _available_path(destination)
+        try:
+            os.link(source, available)
+            return available
+        except FileExistsError:
+            continue
+    raise RuntimeError(f"Could not publish image without overwriting: {destination}")

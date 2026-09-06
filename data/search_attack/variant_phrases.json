@@ -1,0 +1,232 @@
+{
+  "perspective": [
+    "seen from eye level",
+    "viewed from slightly above",
+    "viewed from a low perspective",
+    "seen in three-quarter view",
+    "viewed from the side",
+    "seen along a gentle diagonal",
+    "viewed from a frontal perspective",
+    "observed from an oblique viewpoint"
+  ],
+  "camera_distance": [
+    "shown in a wide view",
+    "framed at medium distance",
+    "shown in a close view",
+    "framed with generous surrounding space",
+    "shown at an intimate distance",
+    "framed in an establishing shot",
+    "shown from a moderate distance",
+    "framed with emphasis on the main subject"
+  ],
+  "camera_angle": [
+    "with the camera held level",
+    "with a slight upward camera tilt",
+    "with a gentle downward camera tilt",
+    "with a modest diagonal camera tilt",
+    "with a nearly straight-on camera angle",
+    "with the camera offset to the left",
+    "with the camera offset to the right",
+    "with a subtle overhead camera angle"
+  ],
+  "lighting": [
+    "lit by soft diffuse light",
+    "illuminated by balanced ambient light",
+    "shaped by gentle side lighting",
+    "with subtle rim lighting",
+    "with soft fill light",
+    "with carefully balanced highlights",
+    "with controlled light and shadow",
+    "lit by a broad indirect light source"
+  ],
+  "time_of_day": [
+    "with the original time of day preserved",
+    "with daylight consistent with the setting",
+    "with natural temporal lighting cues",
+    "with the scene's existing light conditions",
+    "with ambient light appropriate to the hour",
+    "with consistent light across the scene",
+    "with time-appropriate environmental illumination",
+    "with the original day-night context intact"
+  ],
+  "image_style": [
+    "rendered as realistic photography",
+    "rendered as detailed concept art",
+    "shown as polished digital illustration",
+    "rendered as a cinematic 3D scene",
+    "illustrated in an animated-film style",
+    "drawn as a graphic novel illustration",
+    "painted in a restrained watercolor style",
+    "finished in a contemporary editorial style"
+  ],
+  "detail_level": [
+    "with finely resolved surface details",
+    "with subtle small-scale details",
+    "with restrained fine detail",
+    "with precise contours",
+    "with intricate textures",
+    "with clear silhouettes",
+    "with careful edge definition",
+    "with realistic surface variation"
+  ],
+  "clothing": [
+    "with the existing clothing neatly rendered",
+    "with visible fabric seams",
+    "with subtle garment folds",
+    "with natural draping of the clothing",
+    "with realistic clothing textures",
+    "with detailed garment fasteners",
+    "with the original outfit preserved",
+    "with careful stitching detail"
+  ],
+  "visible_features": [
+    "with recognizable features clearly defined",
+    "with the defining traits emphasized",
+    "with the original appearance preserved",
+    "with a clear outline",
+    "with distinctive contours",
+    "with fine surface features visible",
+    "with recognizable proportions",
+    "with characteristic details in focus"
+  ],
+  "pose": [
+    "with the original pose preserved",
+    "with natural subject orientation",
+    "with the existing posture clearly readable",
+    "with the pose shown clearly",
+    "with the original stance maintained",
+    "with orientation consistent with the scene",
+    "with spatial relationships clearly depicted",
+    "with the original placement emphasized"
+  ],
+  "action": [
+    "with the original activity clearly depicted",
+    "with attention to the ongoing activity",
+    "with the described action preserved",
+    "with a clear sense of the original action",
+    "with details supporting the stated activity",
+    "with the scene's activity easy to read",
+    "with the original interaction emphasized",
+    "with motion consistent with the described activity"
+  ],
+  "facial_expression": [
+    "with the original facial expression preserved",
+    "with subtle expression details",
+    "with natural facial contours",
+    "with expressive features clearly rendered",
+    "with the existing expression easy to read",
+    "with careful facial shading",
+    "with lifelike facial detail",
+    "with the original emotion maintained"
+  ],
+  "environment": [
+    "with the original setting clearly recognizable",
+    "with the existing surroundings detailed",
+    "with the location's spatial layout preserved",
+    "with context provided by the surroundings",
+    "with realistic environmental textures",
+    "with clear separation of spatial layers",
+    "with the setting rendered consistently",
+    "with the original location emphasized"
+  ],
+  "background": [
+    "with restrained background detail",
+    "with the original background preserved",
+    "with softly rendered background shapes",
+    "with clear background layering",
+    "with a visually quiet background",
+    "with balanced foreground and background",
+    "with background details supporting the scene",
+    "with careful background placement"
+  ],
+  "color_palette": [
+    "with balanced colors",
+    "with restrained saturation",
+    "with subtle tonal transitions",
+    "with accurate local colors",
+    "with a harmonious color balance",
+    "with the original color relationships preserved",
+    "with natural tonal contrast",
+    "with clearly separated color regions"
+  ],
+  "materials": [
+    "with faithful surface textures",
+    "with subtle material contrast",
+    "with realistic light response",
+    "with carefully rendered surface finish",
+    "with fine material detail",
+    "with physically plausible reflections",
+    "with tactile texture detail",
+    "with the original materials preserved"
+  ],
+  "composition": [
+    "arranged in a balanced composition",
+    "using a rule-of-thirds composition",
+    "with clear visual hierarchy",
+    "with leading lines supporting the subject",
+    "with layered foreground and background",
+    "with open negative space",
+    "with a gently asymmetric composition",
+    "with a visually coherent arrangement"
+  ],
+  "mood": [
+    "with a calm visual atmosphere",
+    "with a quietly observational mood",
+    "with a sense of everyday realism",
+    "with an understated cinematic mood",
+    "with a warm visual tone",
+    "with a measured editorial tone",
+    "with a contemplative atmosphere",
+    "with a gently engaging mood"
+  ],
+  "weather": [
+    "with the original weather conditions preserved",
+    "with weather cues consistent with the setting",
+    "with the existing outdoor conditions maintained",
+    "with natural atmospheric detail",
+    "with environmental conditions kept consistent",
+    "with weather-appropriate surface reflections",
+    "with subtle atmospheric depth",
+    "with the original weather context intact"
+  ],
+  "depth_of_field": [
+    "with shallow depth of field",
+    "with moderately deep focus",
+    "with gentle background blur",
+    "with sharp focus on the subject",
+    "with gradual focus falloff",
+    "with softly defocused foreground details",
+    "with layered optical depth",
+    "with focus extending into the surroundings"
+  ],
+  "functional_description": [
+    "with the subject's purpose visually clear",
+    "with function conveyed by visible details",
+    "with use suggested by the scene",
+    "with practical features emphasized",
+    "with the original function preserved",
+    "with functional details clearly readable",
+    "with context explaining the subject's role",
+    "with recognizable functional structure"
+  ],
+  "form": [
+    "with clear three-dimensional form",
+    "with contours defined by shading",
+    "with a readable silhouette",
+    "with volumes carefully modeled",
+    "with consistent shape relationships",
+    "with subtle curvature detail",
+    "with structural lines emphasized",
+    "with the original shape preserved"
+  ],
+  "size": [
+    "with the original relative scale preserved",
+    "with consistent proportions",
+    "with natural scale relationships",
+    "with context conveying relative size",
+    "with the subject's proportions clearly readable",
+    "with realistic spatial scale",
+    "with scale cues from the surroundings",
+    "with the original size relationships intact"
+  ]
+}

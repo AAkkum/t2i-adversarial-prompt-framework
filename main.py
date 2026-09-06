@@ -24,11 +24,11 @@ def main(
     attack: str = typer.Option("identity", "--attack", help="Attack module name."),
     defense: str = typer.Option("none", "--defense", help="Defense module name."),
     prompt: str | None = typer.Option(None, "--prompt", help="Single input prompt."),
-    prompt_file: Path | None = typer.Option(None, "--prompt-file", help="CSV with prompt,target_concept."),
+    prompt_file: Path | None = typer.Option(None, "--prompt-file", help="CSV with prompt,target_concept."),  # noqa: B008 -- Typer CLI declaration
     target: str | None = typer.Option(None, "--target", help="Target concept for a single prompt."),
     seed: int = typer.Option(42, "--seed", help="Random seed."),
-    out: Path = typer.Option(Path("results/run"), "--out", help="Output directory."),
-    config: Path | None = typer.Option(None, "--config", help="Optional YAML config path."),
+    out: Path = typer.Option(Path("results/run"), "--out", help="Output directory."),  # noqa: B008 -- Typer CLI declaration
+    config: Path | None = typer.Option(None, "--config", help="Optional YAML config path."),  # noqa: B008 -- Typer CLI declaration
     max_candidates: int = typer.Option(
         1, "--max-candidates", min=1, max=20, help="Total candidates to consider."
     ),

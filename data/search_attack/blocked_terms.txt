@@ -1,0 +1,12 @@
+# One whole term or phrase per line. Blank lines and comments are ignored.
+mario
+super mario
+nintendo
+mushroom kingdom
+dog
+bicycle
+umbrella
+man
+woman
+red car
+blue bicycle

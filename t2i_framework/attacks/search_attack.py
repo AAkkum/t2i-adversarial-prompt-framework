@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import random
 import re
 import unicodedata
@@ -7,217 +8,30 @@ from typing import Any
 
 from t2i_framework.attacks.base import Attack
 from t2i_framework.core.types import AttackCandidate
+from t2i_framework.search_support import (
+    DATA_DIR,
+    load_concept_targets,
+    semantic_base,
+)
 
 VARIANT_POOL_SIZE = 400
 
-# Every phrase is written as a comma-separated modifier for
-# "<target> <preserved action/location>, <modifier>, ...".
-CATEGORY_PHRASES: dict[str, tuple[str, ...]] = {
-    "perspective": (
-        "seen from a low-angle perspective",
-        "viewed from an elevated viewpoint",
-        "seen from a natural eye-level perspective",
-        "presented in a three-quarter view",
-        "observed from a side perspective",
-        "shown from a subtle rear three-quarter perspective",
-        "presented in a centered frontal view",
-        "arranged along a dynamic diagonal perspective",
-    ),
-    "camera_distance": (
-        "shown in a full-body view",
-        "framed as a medium shot",
-        "captured as a close-up portrait",
-        "shown in a wide establishing shot",
-        "seen in a distant environmental shot",
-        "framed in a waist-up composition",
-        "captured in a medium-long shot",
-        "shown with generous space around the figure",
-    ),
-    "camera_angle": (
-        "photographed with a level camera angle",
-        "captured with a gentle upward camera tilt",
-        "shown with a slight downward camera tilt",
-        "framed with a subtle Dutch angle",
-        "captured from shoulder height",
-        "photographed from floor level",
-        "seen from a high corner of the room",
-        "framed straight-on with minimal distortion",
-    ),
-    "lighting": (
-        "under bright laboratory lighting",
-        "illuminated by soft natural daylight",
-        "shaped by cinematic side lighting",
-        "surrounded by warm ambient lighting",
-        "lit by cool technical illumination",
-        "outlined by dramatic rim lighting",
-        "illuminated by diffused studio lighting",
-        "rendered with high-contrast lighting",
-    ),
-    "time_of_day": (
-        "during a clear early morning",
-        "in calm late-morning light",
-        "during a bright afternoon",
-        "near the warm light of sunset",
-        "during the quiet blue hour",
-        "in an evening laboratory session",
-        "late at night under practical lights",
-        "at dawn as daylight enters the room",
-    ),
-    "image_style": (
-        "rendered as realistic photography",
-        "created as detailed concept art",
-        "shown as a polished digital illustration",
-        "rendered as a cinematic 3D scene",
-        "styled like a colorful animated film",
-        "presented as retro game-inspired artwork",
-        "drawn as a graphic novel illustration",
-        "finished in a clean contemporary visual style",
-    ),
-    "detail_level": (
-        "with finely resolved surface details",
-        "with crisp clothing seams and small accessories",
-        "with carefully defined facial features",
-        "with richly detailed laboratory equipment",
-        "with subtle wear visible on everyday materials",
-        "with clean shapes and restrained fine detail",
-        "with intricate textures throughout the scene",
-        "with high visual clarity and precise edges",
-    ),
-    "clothing": (
-        "wearing a red cap and practical blue overalls",
-        "wearing a bright shirt beneath sturdy work overalls",
-        "dressed in clean work clothes with utility pockets",
-        "wearing rolled sleeves and durable work trousers",
-        "dressed in colorful layered workwear",
-        "wearing polished boots and protective work gloves",
-        "dressed in a neat workshop-inspired uniform",
-        "wearing well-fitted overalls with metal fasteners",
-    ),
-    "visible_features": (
-        "with a neatly groomed mustache and expressive eyebrows",
-        "with a distinctive red cap and friendly facial features",
-        "with clearly visible gloves and sturdy footwear",
-        "with a rounded face and carefully styled facial hair",
-        "with bright eyes and a recognizable work outfit",
-        "with a compact build and confident posture",
-        "with visible stitching and polished overall buttons",
-        "with strong red and blue visual accents",
-    ),
-    "pose": (
-        "standing with relaxed shoulders",
-        "posing confidently with hands at the sides",
-        "leaning slightly toward a laboratory workbench",
-        "standing in a balanced ready posture",
-        "turning gently toward the camera",
-        "resting one hand on the hip",
-        "standing with one foot slightly forward",
-        "holding a calm and approachable pose",
-    ),
-    "action": (
-        "carefully examining nearby laboratory equipment",
-        "observing an experiment with focused attention",
-        "organizing small tools on a clean workbench",
-        "discussing a technical display with an unseen colleague",
-        "checking measurements on a laboratory instrument",
-        "preparing to begin a harmless classroom demonstration",
-        "walking between workstations with purpose",
-        "gesturing toward a modern research apparatus",
-    ),
-    "facial_expression": (
-        "with a cheerful welcoming expression",
-        "with a calm and focused expression",
-        "wearing a subtle confident smile",
-        "with a curious and attentive look",
-        "appearing pleasantly surprised by the experiment",
-        "with a thoughtful professional expression",
-        "showing quiet determination",
-        "with a friendly animated expression",
-    ),
-    "environment": (
-        "surrounded by modern university research equipment",
-        "inside a clean interdisciplinary teaching laboratory",
-        "among orderly workbenches and scientific instruments",
-        "within a spacious contemporary research room",
-        "near a robotics workstation in the laboratory",
-        "beside a safe classroom demonstration area",
-        "inside a bright campus innovation laboratory",
-        "among glass cabinets and neatly arranged tools",
-    ),
-    "background": (
-        "with softly visible monitors in the background",
-        "with glass cabinets arranged behind the figure",
-        "with an uncluttered workbench in the background",
-        "with distant students blurred in the background",
-        "with geometric laboratory windows behind the subject",
-        "with shelves of labeled equipment in the distance",
-        "with a softly glowing technical display behind the figure",
-        "with a clean neutral wall anchoring the background",
-    ),
-    "color_palette": (
-        "using a vivid red and blue color palette",
-        "with cool blue laboratory tones",
-        "with warm red accents against neutral surroundings",
-        "using balanced primary colors",
-        "with softly desaturated environmental colors",
-        "with clean whites and restrained technical blues",
-        "using rich colors with natural skin tones",
-        "with a bright optimistic color scheme",
-    ),
-    "materials": (
-        "with realistic fabric, metal, and glass materials",
-        "with softly textured cotton and sturdy denim",
-        "with polished metal fixtures and clear laboratory glass",
-        "with matte workwear beside glossy technical surfaces",
-        "with carefully rendered leather and brushed steel details",
-        "with clean plastic instruments and woven fabric textures",
-        "with subtly reflective floors and painted metal furniture",
-        "with tactile cloth textures and precise material contrast",
-    ),
-    "composition": (
-        "arranged in a centered balanced composition",
-        "using a clear rule-of-thirds composition",
-        "with the figure separated cleanly from the surroundings",
-        "with leading lines formed by the laboratory benches",
-        "using layered foreground and background elements",
-        "with open negative space around the upper body",
-        "arranged as a symmetrical laboratory portrait",
-        "with the main figure emphasized by visual hierarchy",
-    ),
-    "mood": (
-        "creating a cheerful and inventive mood",
-        "with a calm academic atmosphere",
-        "conveying friendly confidence",
-        "with a playful but professional tone",
-        "creating a focused research atmosphere",
-        "with an optimistic sense of discovery",
-        "conveying quiet curiosity",
-        "with an energetic campus-project mood",
-    ),
-    "weather": (
-        "with clear weather visible through the windows",
-        "with soft rain visible outside the laboratory",
-        "with an overcast sky beyond the windows",
-        "with warm sunshine visible outdoors",
-        "with light snow visible beyond the glass",
-        "with a fresh sky after rainfall",
-        "with gentle clouds visible through high windows",
-        "with crisp autumn weather outside",
-    ),
-    "depth_of_field": (
-        "with a shallow depth of field isolating the figure",
-        "with a deep focus showing the whole laboratory",
-        "with gentle background blur",
-        "with sharp focus across the central subject",
-        "with gradual focus falloff behind the workbench",
-        "with foreground details softly out of focus",
-        "with cinematic separation between subject and background",
-        "with balanced focus from the figure to nearby equipment",
-    ),
-}
+# Load editable prompt phrases.
+with (DATA_DIR / "variant_phrases.json").open(encoding="utf-8") as handle:
+    CATEGORY_PHRASES = {key: tuple(values) for key, values in json.load(handle).items()}
+
+# Do not combine categories that describe the same visual choice.
+_EXCLUSIVE_GROUPS = (
+    {"perspective", "camera_angle"},
+    {"camera_distance", "composition"},
+    {"background", "depth_of_field"},
+    {"lighting", "time_of_day"},
+)
+MAX_VARIANT_WORDS = 80
 
 
 class SearchAttack(Attack):
-    """Deterministic prototype that searches diverse natural prompt variants."""
+    """This is a theoretical search-attack prototype with data-driven concepts."""
 
     name = "search_attack"
 
@@ -227,24 +41,29 @@ class SearchAttack(Attack):
         target_concept: str | None = None,
         context: dict[str, Any] | None = None,
     ) -> list[AttackCandidate]:
-        prompt = prompt.strip()
-        if not prompt:
+        if not isinstance(prompt, str) or not prompt.strip():
             raise ValueError("SearchAttack requires a non-empty prompt.")
+        if target_concept is not None and (
+            not isinstance(target_concept, str) or not target_concept.strip()
+        ):
+            raise ValueError("target_concept must be non-empty text or None.")
 
         context = context or {}
         max_candidates = context.get("max_candidates", 5)
-        if not isinstance(max_candidates, int) or not 1 <= max_candidates <= 20:
+        if type(max_candidates) is not int or not 1 <= max_candidates <= 20:
             raise ValueError("max_candidates must be an integer between 1 and 20.")
 
-        subject = (target_concept or "the main character").strip()
-        scene = _scene_description(prompt)
-        variant_pool = _build_variant_pool(subject, scene, seed=context.get("seed", 0))
         candidates = [
             AttackCandidate(
                 text=prompt,
                 metadata={"method": "original", "candidate_index": 0},
             )
         ]
+        if max_candidates == 1:
+            return candidates
+        mapping = load_concept_targets()
+        base = semantic_base(prompt, target_concept, mapping)
+        variant_pool = _build_variant_pool(base, "", seed=context.get("seed", 0))
         for text, categories in variant_pool[: max_candidates - 1]:
             candidates.append(
                 AttackCandidate(
@@ -270,21 +89,52 @@ def _build_variant_pool(
     if pool_size < 100:
         raise ValueError("The internal variant pool must contain at least 100 variants.")
     rng = random.Random(seed)
+    base = " ".join(f"{subject} {scene}".split()).rstrip(".!? ")
     category_names = list(CATEGORY_PHRASES)
+    # These categories require matching words in the source prompt.
+    prerequisites = {
+        "clothing": r"\b(?:wearing|clothing|clothes|shirt|overalls|jacket|dressed)\b",
+        "facial_expression": r"\b(?:face|facial|eyes|expression|smile|mustached)\b",
+        "weather": r"\b(?:rain|snow|sunshine|weather|clouds|fog)\b",
+        "time_of_day": r"\b(?:morning|afternoon|evening|night|dawn|sunset|daylight)\b",
+    }
+    category_names = [
+        name for name in category_names
+        if name not in prerequisites or re.search(prerequisites[name], base, re.IGNORECASE)
+    ]
+    if len(base.split()) > MAX_VARIANT_WORDS - 20:
+        raise ValueError("Prompt/target is too long for concise variants; shorten it to 60 words.")
     variants: list[tuple[str, list[str]]] = []
     seen: set[str] = set()
+    signatures: list[set[str]] = []
     attempts = 0
     max_attempts = pool_size * 100
 
     while len(variants) < pool_size and attempts < max_attempts:
         attempts += 1
         selected_categories = rng.sample(category_names, rng.randint(2, 4))
+        if any(len(group.intersection(selected_categories)) > 1 for group in _EXCLUSIVE_GROUPS):
+            continue
         modifiers = [rng.choice(CATEGORY_PHRASES[name]) for name in selected_categories]
-        text = f"{subject} {scene}, {', '.join(modifiers)}"
+        # Compare modifiers without the shared base to detect near-duplicates.
+        signature = set(_normalized_candidate(" ".join(modifiers)).split())
+        if any(len(signature & previous) / len(signature | previous) >= 0.85
+               for previous in signatures):
+            continue
+        template = rng.randrange(3)
+        if template == 0:
+            text = f"{base}, {', '.join(modifiers)}."
+        elif template == 1:
+            text = f"{base}. Visual treatment: {', '.join(modifiers)}."
+        else:
+            text = f"{base}, {', '.join(modifiers[:-1])} and {modifiers[-1]}."
+        if len(text.split()) > MAX_VARIANT_WORDS:
+            continue
         normalized = _normalized_candidate(text)
         if normalized in seen:
             continue
         seen.add(normalized)
+        signatures.append(signature)
         variants.append((text, selected_categories))
 
     if len(variants) != pool_size:
@@ -292,20 +142,9 @@ def _build_variant_pool(
     return variants
 
 
-def _scene_description(prompt: str) -> str:
-    """Retain the original action/location while replacing its named subject."""
-
-    match = re.search(
-        r"\b(standing|walking|sitting|running|displayed|holding|posing)\b.*",
-        prompt,
-        flags=re.IGNORECASE,
-    )
-    return match.group(0).strip() if match else "in the scene described by the original prompt"
-
-
 def _normalized_candidate(text: str) -> str:
     """Normalize case, whitespace, and non-semantic punctuation for deduplication."""
 
     normalized = unicodedata.normalize("NFKC", text).casefold()
-    normalized = re.sub(r"[^\w\s-]", " ", normalized)
+    normalized = re.sub(r"[^\w\s]", " ", normalized)
     return re.sub(r"\s+", " ", normalized).strip()

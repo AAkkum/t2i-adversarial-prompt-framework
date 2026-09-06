@@ -76,10 +76,14 @@ Create a class in `t2i_framework/attacks/`, subclass `Attack`, return one or mor
 
 Each run writes:
 
-- `results.jsonl`: append-only machine-readable results
+- `results.jsonl`: candidate records updated as processing progresses
 - `results.csv`: tabular copy of results
 - `config.yaml`: run configuration snapshot
-- `images/*.png`: generated images when generation was allowed
+- `*.png`: images released after the image defense, plus the search winner
+
+Before release, images are kept in a separate `.image_quarantine` directory
+beside the output directory. Blocked images are removed. See
+`README_SEARCH_ATTACK.md` for the Search Attack setup and examples.
 
 ## Current Limitations
 

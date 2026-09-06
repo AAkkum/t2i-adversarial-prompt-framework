@@ -50,7 +50,10 @@ def test_character_filter_blocks_terms(prompt: str, matched: str) -> None:
 
 
 def test_character_filter_allows_neutral_prompt() -> None:
-    decision = CharacterFilterDefense().check_prompt(
+    decision = CharacterFilterDefense(
+        enable_semantic_prompt=False,
+        enable_image_semantic=False,
+    ).check_prompt(
         "a cheerful mustached plumber wearing a red cap and blue overalls"
     )
     assert decision.allowed

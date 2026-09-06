@@ -32,4 +32,7 @@ class MyDefense(Defense):
 
 Register it in `t2i_framework/core/registry.py` under `DEFENSE_REGISTRY`.
 
-Pre-generation blocking prevents the model adapter from being called. Post-generation blocking records the image as generated but marks the result as unsuccessful.
+Pre-generation blocking prevents the model adapter from being called.
+The image check receives a temporary image path. If it blocks the image, the
+runner removes the temporary file and records an unsuccessful result with no
+released image path.
