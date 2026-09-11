@@ -75,6 +75,14 @@ Example:
 python main.py --model mock --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_mock
 ```
 
+Important batch note: `groot_lite` needs a decomposition entry for each `target_concept` you want it to rewrite. If a batch contains targets that are not in the decomposition YAML, those rows are returned unchanged with `status: unsupported_target_concept`.
+
+To create a template showing which batch targets need decompositions:
+
+```bash
+python scripts/build_groot_decomposition_template.py data/datasets/synthetic/synthetic_prompt_batch_300.csv --out data/groot_decompositions_synthetic_template.yaml
+```
+
 ### `search_attack`
 
 Search-style prompt variant attack. It returns the original prompt plus generated variants built from phrase fragments.

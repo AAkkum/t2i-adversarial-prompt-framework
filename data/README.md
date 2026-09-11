@@ -49,6 +49,8 @@ This is separate from attack support data. Prompt-case CSVs define experiment in
 - `groot_decompositions_external_template.yaml`
   Alternate/template decomposition file for `groot_lite`.
 
+For a new prompt batch, use `scripts/build_groot_decomposition_template.py` to identify which `target_concept` values still need Groot-lite decompositions.
+
 - `attack_terms.yaml`
   Shared word lists used by TextFooler-style attacks and paraphrasers.
 
