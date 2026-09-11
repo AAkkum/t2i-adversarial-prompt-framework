@@ -12,7 +12,7 @@ Current Diffusers config files:
 - `configs/models/sd35_medium.yaml`: `stabilityai/stable-diffusion-3.5-medium`
 - `configs/models/sd35_large.yaml`: `stabilityai/stable-diffusion-3.5-large`
 - `configs/models/flux.yaml`: `black-forest-labs/FLUX.1-schnell`
-- `configs/sdxl_clip_eval.yaml`: SDXL-style run config with Groot-lite, image CLIP, and prompt-prompt similarity evaluation
+- `configs/evaluation/clip_and_prompt_similarity.yaml`: model-independent image CLIP plus prompt-prompt similarity evaluation
 
 Install model dependencies before using the Diffusers adapter:
 

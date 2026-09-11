@@ -103,7 +103,7 @@ python main.py --model mock --attack textfooler_style --defense clip_similarity 
 Run a batch with Groot-lite, image CLIP, and prompt-prompt similarity:
 
 ```powershell
-python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/sdxl_clip_eval.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_sdxl_synthetic_batch
+python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_sdxl_synthetic_batch
 ```
 
 For large diffusion models, this keeps the same model adapter alive during the run. It does not start a new Python process per prompt.

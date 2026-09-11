@@ -1,5 +1,0 @@
-defense:
-  name: clip_similarity
-  threshold: 0.7
-  include_aliases: true
-  log_similarity: true

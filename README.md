@@ -86,19 +86,19 @@ attack:
 Then run with more than one candidate if you want to evaluate multiple decompositions:
 
 ```bash
-python main.py --model mock --config configs/mock_groot_external.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_candidates
+python main.py --model mock --attack groot_lite --attack-config configs/attacks/groot_lite_external.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_candidates
 ```
 
 SDXL with CLIP image-text evaluation:
 
 ```bash
-python main.py --model diffusers --model-config configs/models/sdxl.yaml --config configs/sdxl_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
+python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
 ```
 
 Fast CLIP evaluation smoke test with the mock model:
 
 ```bash
-python main.py --model mock --config configs/mock_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock_clip
+python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock_clip
 ```
 
 When CLIP evaluation is enabled, `scores.image_clip_similarity` is written for generated images with a target concept. The `success` field then means the prompt/image were not blocked, an image exists, and the CLIP score is at least the configured threshold.
@@ -108,7 +108,7 @@ When prompt-prompt similarity is enabled, `scores.prompt_prompt_similarity` is a
 Larger batch example using Hans' combined prompt file:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/mock_clip_eval.yaml --defense none --prompt-file data/all_prompt_cases.csv --max-candidates 1 --out results/groot_all_prompt_cases_mock
+python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/all_prompt_cases.csv --max-candidates 1 --out results/groot_all_prompt_cases_mock
 ```
 
 For diffusion models, the runner keeps the same model adapter alive for the batch instead of starting a new Python process per prompt. Use a small CSV first before running hundreds of prompts on a large model.

@@ -1,6 +1,0 @@
-model:
-  name: mock
-attack:
-  name: identity
-defense:
-  name: none

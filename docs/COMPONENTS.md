@@ -121,7 +121,13 @@ Optional external dependency:
 Example config:
 
 - `configs/attacks/textfooler_style.yaml`
-- `configs/textfooler_vs_clip_similarity.yaml`
+
+For TextFooler against the CLIP text defense, combine:
+
+- `--attack textfooler_style`
+- `--defense clip_similarity`
+- `--attack-config configs/attacks/textfooler_style.yaml`
+- `--defense-config configs/defenses/clip_similarity.yaml`
 
 ### `pgj`
 
@@ -129,7 +135,8 @@ PGJ-style LLM rewrite attack. It uses a local Hugging Face causal language model
 
 Example config:
 
-- `configs/sd35_large_pgj.yaml`
+- `configs/models/sd35_large.yaml`
+- `configs/attacks/pgj.yaml`
 
 This attack is heavier than `groot_lite` and requires the configured LLM backend to be available locally or through Hugging Face cache/access.
 
@@ -271,7 +278,7 @@ Dataset-specific batches:
 Example:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/mock_clip_eval.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_synthetic_mock
+python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_synthetic_mock
 ```
 
 ## `--max-candidates`
@@ -299,7 +306,7 @@ python main.py --model mock --attack identity --defense none --prompt-file data/
 Groot-lite with prompt and image metrics:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/mock_clip_eval.yaml --defense none --prompt-file data/example_prompts.csv --max-candidates 1 --out results/smoke_groot_metrics
+python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/example_prompts.csv --max-candidates 1 --out results/smoke_groot_metrics
 ```
 
 Search attack with character filter:

@@ -51,7 +51,7 @@ This was an integration commit, not a normal Git merge commit. The contributor b
 
 - Added `pgj` attack registration.
 - Added `t2i_framework/attacks/pgj.py`.
-- Added `configs/sd35_large_pgj.yaml`.
+- Added `configs/models/sd35_large.yaml and configs/attacks/pgj.yaml`.
 
 ## Reshaped During Integration
 
@@ -128,7 +128,7 @@ GitHub may still show `Burak`, `hans`, and `abdel` as active branches. That is e
 
 ## Follow-up Updates
 
-- `configs/sdxl_clip_eval.yaml` and `configs/mock_clip_eval.yaml` now enable prompt-prompt similarity in addition to image CLIP evaluation.
+- `configs/evaluation/clip_and_prompt_similarity.yaml` enables prompt-prompt similarity in addition to image CLIP evaluation.
 - `results.csv` now includes flattened `score_*` columns so metrics are visible in table form.
 - `--prompt-file` now accepts CSV, JSON, and JSONL.
 - `data/README.md` explains the prompt-case datasets and support-data files.
