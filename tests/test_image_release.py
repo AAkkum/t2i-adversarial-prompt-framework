@@ -82,6 +82,8 @@ def test_quarantine_progress_errors_and_standard_exports(tmp_path):
     with (output / "results.csv").open(encoding="utf-8", newline="") as handle:
         csv_rows = list(csv.DictReader(handle))
     assert json.loads(csv_rows[4]["scores"])["candidate_score"] is None
+    assert csv_rows[0]["score_text_similarity"]
+    assert csv_rows[0]["score_candidate_score"]
 
 
 @pytest.mark.parametrize("stage", ["blip", "minilm_image"])
@@ -168,3 +170,4 @@ def test_export_sanitizes_all_nonfinite_values_without_mutating_scores(tmp_path)
     with (output / "results.csv").open(encoding="utf-8", newline="") as handle:
         csv_row = next(csv.DictReader(handle))
     assert json.loads(csv_row["scores"]) == row["scores"]
+    assert csv_row["score_positive"] == ""

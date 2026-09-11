@@ -51,6 +51,12 @@ difficulty,template_id,prompt_set,seed,source_filename,caption_variant,image_fil
 
 The runner uses `prompt`, `target_concept`, `id`, and `category`. Other columns are stored as prompt-case metadata in the result files.
 
+`--prompt-file` supports CSV, JSON, and JSONL:
+
+- CSV: rows with a required `prompt` column.
+- JSON: either a list of prompt objects or an object with `prompts`/`cases`.
+- JSONL: one prompt object or prompt string per line.
+
 ## Example Commands
 
 Run every available prompt case:
@@ -64,3 +70,11 @@ Run only one dataset:
 ```powershell
 python main.py --model mock --attack textfooler_style --defense clip_similarity --prompt-file data/datasets/unbranding/unbranding_sample_10_per_brand.csv --out results/unbranding_textfooler_clip
 ```
+
+Run a batch with Groot-lite, image CLIP, and prompt-prompt similarity:
+
+```powershell
+python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/sdxl_clip_eval.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_sdxl_synthetic_batch
+```
+
+For large diffusion models, this keeps the same model adapter alive during the run. It does not start a new Python process per prompt.

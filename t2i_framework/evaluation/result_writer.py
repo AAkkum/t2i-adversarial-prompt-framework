@@ -49,19 +49,23 @@ class ResultWriter:
     def _write_csv(self) -> None:
         if not self._rows:
             return
-        fieldnames = list(self._rows[0].keys())
+        base_fieldnames = list(self._rows[0].keys())
+        score_fieldnames = sorted(
+            {
+                f"score_{score_name}"
+                for row in self._rows
+                for score_name in (row.get("scores") or {})
+            }
+        )
+        fieldnames = [*base_fieldnames, *score_fieldnames]
         with _atomic_text(self.csv_path) as handle:
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
             for row in self._rows:
-                writer.writerow(
-                    {
-                        key: json.dumps(value, ensure_ascii=False, allow_nan=False)
-                        if isinstance(value, (dict, list))
-                        else value
-                        for key, value in row.items()
-                    }
-                )
+                csv_row = _csv_row(row)
+                for score_name, score_value in (row.get("scores") or {}).items():
+                    csv_row[f"score_{score_name}"] = score_value
+                writer.writerow(csv_row)
 
 
 def _json_safe(value: Any) -> Any:
@@ -72,6 +76,15 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     return value
+
+
+def _csv_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: json.dumps(value, ensure_ascii=False, allow_nan=False)
+        if isinstance(value, (dict, list))
+        else value
+        for key, value in row.items()
+    }
 
 
 @contextmanager
