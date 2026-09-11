@@ -13,7 +13,7 @@ Configured models:
 - SD 3.5 Large: `stabilityai/stable-diffusion-3.5-large` - configured, requires Hugging Face access and local runtime validation
 - FLUX.1-schnell: `black-forest-labs/FLUX.1-schnell` - configured, pending runtime validation
 
-Implemented and planned attacks:
+Implemented attacks:
 
 - identity baseline
 - character-level perturbation
@@ -22,7 +22,7 @@ Implemented and planned attacks:
 - query-based SneakyPrompt-lite search
 - PGJ-style LLM rewrite attack
 
-Implemented and planned defenses:
+Implemented defenses:
 
 - no-defense baseline
 - normalization + keyword/alias filter

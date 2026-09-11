@@ -127,6 +127,8 @@ Defenses implement `check_prompt(...)` and/or `check_image(...)`, returning `Def
 
 Create a class in `t2i_framework/attacks/`, subclass `Attack`, return one or more `AttackCandidate` objects, then register it in `t2i_framework/core/registry.py`. See `docs/HOW_TO_ADD_ATTACK.md`.
 
+For a plain-English overview of every current model, attack, defense, metric, and batch prompt file, see `docs/COMPONENTS.md`.
+
 ## Results
 
 Each run writes:
