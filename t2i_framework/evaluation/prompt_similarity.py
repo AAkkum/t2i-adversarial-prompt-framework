@@ -28,7 +28,7 @@ class PromptSimilarityEvaluator:
         config: dict[str, Any],
     ) -> tuple[dict[str, float], dict[str, Any]]:
         prompt_config = dict(config.get("prompt_similarity", {}))
-        enabled = bool(prompt_config.get("enabled", True))
+        enabled = bool(prompt_config.get("enabled", False))
         if not enabled:
             return {}, {"prompt_similarity": {"enabled": False}}
 

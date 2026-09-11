@@ -51,6 +51,15 @@ def test_prompt_similarity_evaluator_can_disable_prompt_prompt_similarity() -> N
     assert metadata == {"prompt_similarity": {"enabled": False}}
 
 
+def test_prompt_similarity_evaluator_is_disabled_by_default() -> None:
+    evaluator = PromptSimilarityEvaluator()
+
+    scores, metadata = evaluator.evaluate("a woman studying", "a person reading notes", {})
+
+    assert scores == {}
+    assert metadata == {"prompt_similarity": {"enabled": False}}
+
+
 def test_prompt_similarity_bands() -> None:
     bands = {"strong": 0.8, "moderate": 0.65, "weak": 0.5}
 
