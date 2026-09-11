@@ -32,7 +32,7 @@ class MyDefense(Defense):
 
 Register it in `t2i_framework/core/registry.py` under `DEFENSE_REGISTRY`.
 
-Pre-generation blocking prevents the model adapter from being called. Post-generation blocking records the image as generated but marks the result as unsuccessful.
+Pre-generation blocking prevents the model adapter from being called. Post-generation blocking marks the result as unsuccessful and prevents the blocked image from being published as a final output image.
 
 `image_clip_filter` is the built-in post-generation image defense. It compares the generated image with the `target_concept` using CLIP image-text similarity. If the score is above the threshold, the defense blocks the image because the restricted synthetic target concept still appears to be present.
 

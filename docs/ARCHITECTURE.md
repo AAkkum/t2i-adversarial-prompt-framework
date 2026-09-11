@@ -26,3 +26,9 @@ The mock model is intentionally offline and CPU-only. It renders the selected pr
 The Diffusers adapter loads Hugging Face model pipelines lazily at generation time. The first run of a real model, such as SDXL, may download model weights into the Hugging Face cache before producing an image.
 
 Optional CLIP image-text evaluation runs after image generation. It compares the generated image to the `target_concept` text and stores the cosine similarity in `scores.image_clip_similarity`. When enabled, the `success` field uses the configured CLIP threshold instead of only checking that an image file exists.
+
+Optional prompt-prompt similarity compares the original prompt text with the attacked prompt text and stores the result in `scores.prompt_prompt_similarity`. This is an auxiliary drift metric for prompt rewriting attacks; it does not decide whether the generated image preserved the target concept.
+
+For prompt-file runs, `read_prompt_file` accepts CSV, JSON, and JSONL. The runner keeps one model adapter instance for the whole prompt list, so Diffusers pipelines can stay loaded across a batch instead of being reloaded per prompt.
+
+Generated images are first written into a temporary quarantine directory. If the image-stage defense allows the image, it is published into the output directory. If the image-stage defense blocks or errors, the generated image is not retained as a final result.

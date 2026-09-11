@@ -78,6 +78,7 @@ The shared files were not copied wholesale from any single branch. They were rew
   - Adds Hans' prompt-prompt similarity as optional auxiliary evaluation metadata.
   - Adds Burak's quarantine/release behavior for generated images.
   - Fails closed if generation or image defense raises an error.
+  - Keeps one model adapter instance alive across `--prompt-file` batches.
 
 - `t2i_framework/evaluation/metrics.py`
   - Keeps `placeholder_success`.
@@ -124,3 +125,10 @@ Result:
 ## Important Git Note
 
 GitHub may still show `Burak`, `hans`, and `abdel` as active branches. That is expected because this was not a formal merge commit and the branch refs were not deleted. Their relevant code was integrated into `main` through commit `2a7fb85`.
+
+## Follow-up Updates
+
+- `configs/sdxl_clip_eval.yaml` and `configs/mock_clip_eval.yaml` now enable prompt-prompt similarity in addition to image CLIP evaluation.
+- `results.csv` now includes flattened `score_*` columns so metrics are visible in table form.
+- `--prompt-file` now accepts CSV, JSON, and JSONL.
+- `data/README.md` explains the prompt-case datasets and support-data files.

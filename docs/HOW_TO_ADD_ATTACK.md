@@ -50,4 +50,12 @@ attack:
   decompositions_path: data/groot_decompositions_external_template.yaml
 ```
 
-Use `--max-candidates` to evaluate more than the first decomposition.
+Use `--max-candidates` to evaluate more than the first candidate returned by an attack.
+
+Examples:
+
+- `groot_lite` can return one candidate per decomposition for the target concept.
+- `search_attack` returns the original prompt plus generated variants.
+- attacks that only return one candidate ignore larger `--max-candidates` values in practice.
+
+`--max-candidates 3` means "evaluate at most three candidates from this attack and write one result row per candidate." It does not mean three different input prompts. Batch input prompts are controlled with `--prompt-file`.

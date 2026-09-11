@@ -2,37 +2,64 @@
 
 This folder contains prompt datasets and framework support data.
 
+## What Hans Added
+
+Hans added the larger prompt-case files used for batch evaluation. These files let you run many prompts in one command instead of launching the framework once per prompt.
+
+The important idea is:
+
+- each row is one prompt case;
+- `prompt` is the original prompt sent into the attack;
+- `target_concept` is the concept that should still appear after rewriting;
+- `id`/`case_id` and `category` make results easier to group later;
+- extra columns are kept as metadata in `results.jsonl`.
+
+This is separate from attack support data. Prompt-case CSVs define experiment inputs. Files such as `groot_decompositions.yaml`, `attack_terms.yaml`, and `data/search_attack/*.json` configure attacks or defenses.
+
 ## Main Batch Files
 
-- `all_prompt_cases.csv`  
+- `all_prompt_cases.csv`
   Combined framework-ready prompt CSV. Use this when you want one large batch across the available datasets.
 
 ## Dataset Folders
 
-- `datasets/synthetic/synthetic_prompt_batch_300.csv`  
+- `datasets/synthetic/synthetic_prompt_batch_300.csv`
   Controlled synthetic prompts for debugging attacks, defenses, and evaluation metrics.
 
-- `datasets/unbranding/unbranding_sample_10_per_brand.csv`  
+- `datasets/unbranding/unbranding_sample_10_per_brand.csv`
   Balanced 120-row sample from the public UNBRANDING dataset: 12 brands, 10 prompts per brand.
 
-- `datasets/celebcaption/celebcaption_sample_5_per_person.csv`  
+- `datasets/celebcaption/celebcaption_sample_5_per_person.csv`
   750-row sample from CelebCaption captions: 150 public figures, 5 prompts per person.
 
-- `datasets/copyrighted_characters/copyrighted_characters_sample_5_per_character.csv`  
+- `datasets/copyrighted_characters/copyrighted_characters_sample_5_per_character.csv`
   Manual 150-row prompt set for fictional character-name defense testing.
 
-- `datasets/political_figures/political_figures_sample_5_per_person.csv`  
+- `datasets/political_figures/political_figures_sample_5_per_person.csv`
   Manual 200-row prompt set for public-figure defense testing: 40 people, 5 prompts per person, balanced across 4 subcategories.
 
 ## Support Files
 
-- `restricted_concepts.yaml`  
+- `restricted_concepts.yaml`
   Restricted concepts and aliases used by defenses.
 
-- `attack_terms.yaml`  
-  Shared word lists used by attacks/paraphrasers.
+- `groot_decompositions.yaml`
+  Safe synthetic decompositions used by the `groot_lite` attack.
 
-- `example_prompts.csv`  
+- `groot_decompositions_external_template.yaml`
+  Alternate/template decomposition file for `groot_lite`.
+
+- `attack_terms.yaml`
+  Shared word lists used by TextFooler-style attacks and paraphrasers.
+
+- `search_attack/`
+  Burak's search-attack support data:
+  - `blocked_terms.txt`: direct terms for character filtering
+  - `concept_targets.json`: protected concept descriptions
+  - `variant_phrases.json`: phrase fragments used to generate search variants
+  - `test_cases.json`: small search-attack examples
+
+- `example_prompts.csv`
   Tiny smoke-test CSV.
 
 ## Combined CSV Schema

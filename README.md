@@ -22,6 +22,12 @@ Optional local Hugging Face model dependencies:
 pip install -e ".[models]"
 ```
 
+Optional evaluation dependencies for prompt-prompt similarity:
+
+```bash
+pip install -e ".[eval]"
+```
+
 Development dependencies:
 
 ```bash
@@ -48,15 +54,17 @@ Batch mode:
 python main.py --model mock --attack identity --defense none --prompt-file data/example_prompts.csv --out results/batch_debug
 ```
 
+`--prompt-file` supports CSV, JSON, and JSONL. CSV files need a `prompt` column and can optionally include `target_concept`, `id`/`case_id`, `category`, and extra metadata columns. See `data/README.md` for the larger prompt batches.
+
 Local Diffusers model examples:
 
 ```bash
-python main.py --model diffusers --config configs/sdxl.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/sdxl_debug
-python main.py --model diffusers --config configs/sd35_medium.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/sd35_debug
-python main.py --model diffusers --config configs/flux.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/flux_debug
+python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/sdxl_debug
+python main.py --model diffusers --model-config configs/models/sd35_medium.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/sd35_debug
+python main.py --model diffusers --model-config configs/models/flux.yaml --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/flux_debug
 ```
 
-The SDXL command has been validated with `configs/sdxl.yaml`. On the first run, Diffusers downloads the model files from Hugging Face and caches them locally; later runs reuse the cache. These commands require model dependencies, accepted Hugging Face model licenses where applicable, internet access for uncached models, and enough local GPU/VRAM for the selected model.
+The SDXL command has been validated with `configs/models/sdxl.yaml`. On the first run, Diffusers downloads the model files from Hugging Face and caches them locally; later runs reuse the cache. These commands require model dependencies, accepted Hugging Face model licenses where applicable, internet access for uncached models, and enough local GPU/VRAM for the selected model.
 
 Semantic decomposition attack with the mock model:
 
@@ -82,7 +90,7 @@ python main.py --model mock --config configs/mock_groot_external.yaml --attack g
 SDXL with CLIP image-text evaluation:
 
 ```bash
-python main.py --model diffusers --config configs/sdxl_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
+python main.py --model diffusers --model-config configs/models/sdxl.yaml --config configs/sdxl_clip_eval.yaml --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
 ```
 
 Fast CLIP evaluation smoke test with the mock model:
@@ -92,6 +100,16 @@ python main.py --model mock --config configs/mock_clip_eval.yaml --attack groot_
 ```
 
 When CLIP evaluation is enabled, `scores.image_clip_similarity` is written for generated images with a target concept. The `success` field then means the prompt/image were not blocked, an image exists, and the CLIP score is at least the configured threshold.
+
+When prompt-prompt similarity is enabled, `scores.prompt_prompt_similarity` is also written. This compares the original prompt text to the attacked prompt text. It is useful for measuring semantic drift from rewriting attacks, but it does not replace image-text CLIP evaluation.
+
+Larger batch example using Hans' combined prompt file:
+
+```bash
+python main.py --model mock --attack groot_lite --config configs/mock_clip_eval.yaml --defense none --prompt-file data/all_prompt_cases.csv --max-candidates 1 --out results/groot_all_prompt_cases_mock
+```
+
+For diffusion models, the runner keeps the same model adapter alive for the batch instead of starting a new Python process per prompt. Use a small CSV first before running hundreds of prompts on a large model.
 
 List available components:
 
@@ -114,10 +132,11 @@ Create a class in `t2i_framework/attacks/`, subclass `Attack`, return one or mor
 Each run writes:
 
 - `results.jsonl`: append-only machine-readable results
-- `results.csv`: tabular copy of results
+- `results.csv`: tabular copy of results, including flattened `score_*` columns for metrics
 - `config.yaml`: run configuration snapshot
-- `images/*.png`: generated images when generation was allowed
+- `images/*.png`: compatibility mirror for allowed generated images
+- root-level `*.png`: allowed generated images and selected best images for search-style runs
 
 ## Current Limitations
 
-Without CLIP evaluation, the default `success` metric only checks that the prompt and image were not blocked and that an image file exists. CLIP scores are approximate and threshold-dependent, so they should be calibrated with manual inspection before drawing research conclusions. SDXL has been smoke-tested; SD 3.5 Medium and FLUX.1-schnell are configured but still need local runtime validation on the target machine.
+Without CLIP image-text evaluation, the default `success` metric only checks that the prompt and image were not blocked and that an image file exists. CLIP scores and prompt-prompt similarity scores are approximate and threshold-dependent, so they should be calibrated with manual inspection before drawing research conclusions. SDXL has been smoke-tested; SD 3.5 Medium, SD 3.5 Large, and FLUX.1-schnell are configured but still need local runtime validation on the target machine.
