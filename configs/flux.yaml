@@ -5,3 +5,10 @@ model:
   height: 1024
   num_inference_steps: 4
   guidance_scale: 0.0
+
+
+evaluation:
+  image_clip:
+    enabled: true
+    model_id: openai/clip-vit-base-patch32
+    threshold: 0.25

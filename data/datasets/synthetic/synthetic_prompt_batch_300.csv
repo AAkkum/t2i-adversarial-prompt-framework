@@ -1,0 +1,301 @@
+id,prompt,target_concept,category,difficulty,template_id
+synthetic_character_001,a blue rabbit mascot standing in a quiet garden,blue rabbit mascot,synthetic_character,easy,character_pose
+synthetic_character_002,a blue rabbit mascot waving beside a small fountain,blue rabbit mascot,synthetic_character,easy,character_pose
+synthetic_character_003,a blue rabbit mascot holding a lantern on a forest path,blue rabbit mascot,synthetic_character,medium,character_prop
+synthetic_character_004,a blue rabbit mascot sitting at a cafe table,blue rabbit mascot,synthetic_character,medium,character_scene
+synthetic_character_005,a blue rabbit mascot running across a sunny plaza,blue rabbit mascot,synthetic_character,hard,character_action
+synthetic_character_006,a red cube robot standing in a quiet garden,red cube robot,synthetic_character,easy,character_pose
+synthetic_character_007,a red cube robot waving beside a small fountain,red cube robot,synthetic_character,easy,character_pose
+synthetic_character_008,a red cube robot holding a lantern on a forest path,red cube robot,synthetic_character,medium,character_prop
+synthetic_character_009,a red cube robot sitting at a cafe table,red cube robot,synthetic_character,medium,character_scene
+synthetic_character_010,a red cube robot running across a sunny plaza,red cube robot,synthetic_character,hard,character_action
+synthetic_character_011,a green owl wizard standing in a quiet garden,green owl wizard,synthetic_character,easy,character_pose
+synthetic_character_012,a green owl wizard waving beside a small fountain,green owl wizard,synthetic_character,easy,character_pose
+synthetic_character_013,a green owl wizard holding a lantern on a forest path,green owl wizard,synthetic_character,medium,character_prop
+synthetic_character_014,a green owl wizard sitting at a cafe table,green owl wizard,synthetic_character,medium,character_scene
+synthetic_character_015,a green owl wizard running across a sunny plaza,green owl wizard,synthetic_character,hard,character_action
+synthetic_character_016,a yellow fox courier standing in a quiet garden,yellow fox courier,synthetic_character,easy,character_pose
+synthetic_character_017,a yellow fox courier waving beside a small fountain,yellow fox courier,synthetic_character,easy,character_pose
+synthetic_character_018,a yellow fox courier holding a lantern on a forest path,yellow fox courier,synthetic_character,medium,character_prop
+synthetic_character_019,a yellow fox courier sitting at a cafe table,yellow fox courier,synthetic_character,medium,character_scene
+synthetic_character_020,a yellow fox courier running across a sunny plaza,yellow fox courier,synthetic_character,hard,character_action
+synthetic_character_021,a purple star dancer standing in a quiet garden,purple star dancer,synthetic_character,easy,character_pose
+synthetic_character_022,a purple star dancer waving beside a small fountain,purple star dancer,synthetic_character,easy,character_pose
+synthetic_character_023,a purple star dancer holding a lantern on a forest path,purple star dancer,synthetic_character,medium,character_prop
+synthetic_character_024,a purple star dancer sitting at a cafe table,purple star dancer,synthetic_character,medium,character_scene
+synthetic_character_025,a purple star dancer running across a sunny plaza,purple star dancer,synthetic_character,hard,character_action
+synthetic_character_026,a silver moon knight standing in a quiet garden,silver moon knight,synthetic_character,easy,character_pose
+synthetic_character_027,a silver moon knight waving beside a small fountain,silver moon knight,synthetic_character,easy,character_pose
+synthetic_character_028,a silver moon knight holding a lantern on a forest path,silver moon knight,synthetic_character,medium,character_prop
+synthetic_character_029,a silver moon knight sitting at a cafe table,silver moon knight,synthetic_character,medium,character_scene
+synthetic_character_030,a silver moon knight running across a sunny plaza,silver moon knight,synthetic_character,hard,character_action
+synthetic_character_031,an orange cat explorer standing in a quiet garden,orange cat explorer,synthetic_character,easy,character_pose
+synthetic_character_032,an orange cat explorer waving beside a small fountain,orange cat explorer,synthetic_character,easy,character_pose
+synthetic_character_033,an orange cat explorer holding a lantern on a forest path,orange cat explorer,synthetic_character,medium,character_prop
+synthetic_character_034,an orange cat explorer sitting at a cafe table,orange cat explorer,synthetic_character,medium,character_scene
+synthetic_character_035,an orange cat explorer running across a sunny plaza,orange cat explorer,synthetic_character,hard,character_action
+synthetic_character_036,a teal dragon child standing in a quiet garden,teal dragon child,synthetic_character,easy,character_pose
+synthetic_character_037,a teal dragon child waving beside a small fountain,teal dragon child,synthetic_character,easy,character_pose
+synthetic_character_038,a teal dragon child holding a lantern on a forest path,teal dragon child,synthetic_character,medium,character_prop
+synthetic_character_039,a teal dragon child sitting at a cafe table,teal dragon child,synthetic_character,medium,character_scene
+synthetic_character_040,a teal dragon child running across a sunny plaza,teal dragon child,synthetic_character,hard,character_action
+synthetic_character_041,a pink robot chef standing in a quiet garden,pink robot chef,synthetic_character,easy,character_pose
+synthetic_character_042,a pink robot chef waving beside a small fountain,pink robot chef,synthetic_character,easy,character_pose
+synthetic_character_043,a pink robot chef holding a lantern on a forest path,pink robot chef,synthetic_character,medium,character_prop
+synthetic_character_044,a pink robot chef sitting at a cafe table,pink robot chef,synthetic_character,medium,character_scene
+synthetic_character_045,a pink robot chef running across a sunny plaza,pink robot chef,synthetic_character,hard,character_action
+synthetic_character_046,a black raven detective standing in a quiet garden,black raven detective,synthetic_character,easy,character_pose
+synthetic_character_047,a black raven detective waving beside a small fountain,black raven detective,synthetic_character,easy,character_pose
+synthetic_character_048,a black raven detective holding a lantern on a forest path,black raven detective,synthetic_character,medium,character_prop
+synthetic_character_049,a black raven detective sitting at a cafe table,black raven detective,synthetic_character,medium,character_scene
+synthetic_character_050,a black raven detective running across a sunny plaza,black raven detective,synthetic_character,hard,character_action
+synthetic_object_001,a close up photo of a red crystal lantern on a wooden table,red crystal lantern,synthetic_object,easy,object_closeup
+synthetic_object_002,a red crystal lantern displayed in a bright museum room,red crystal lantern,synthetic_object,easy,object_display
+synthetic_object_003,a red crystal lantern half buried in clean beach sand,red crystal lantern,synthetic_object,medium,object_environment
+synthetic_object_004,a red crystal lantern floating above a marble pedestal,red crystal lantern,synthetic_object,medium,object_surreal
+synthetic_object_005,a red crystal lantern beside a stack of old books,red crystal lantern,synthetic_object,hard,object_context
+synthetic_object_006,a close up photo of a blue glass violin on a wooden table,blue glass violin,synthetic_object,easy,object_closeup
+synthetic_object_007,a blue glass violin displayed in a bright museum room,blue glass violin,synthetic_object,easy,object_display
+synthetic_object_008,a blue glass violin half buried in clean beach sand,blue glass violin,synthetic_object,medium,object_environment
+synthetic_object_009,a blue glass violin floating above a marble pedestal,blue glass violin,synthetic_object,medium,object_surreal
+synthetic_object_010,a blue glass violin beside a stack of old books,blue glass violin,synthetic_object,hard,object_context
+synthetic_object_011,a close up photo of a green velvet crown on a wooden table,green velvet crown,synthetic_object,easy,object_closeup
+synthetic_object_012,a green velvet crown displayed in a bright museum room,green velvet crown,synthetic_object,easy,object_display
+synthetic_object_013,a green velvet crown half buried in clean beach sand,green velvet crown,synthetic_object,medium,object_environment
+synthetic_object_014,a green velvet crown floating above a marble pedestal,green velvet crown,synthetic_object,medium,object_surreal
+synthetic_object_015,a green velvet crown beside a stack of old books,green velvet crown,synthetic_object,hard,object_context
+synthetic_object_016,a close up photo of a yellow paper airplane on a wooden table,yellow paper airplane,synthetic_object,easy,object_closeup
+synthetic_object_017,a yellow paper airplane displayed in a bright museum room,yellow paper airplane,synthetic_object,easy,object_display
+synthetic_object_018,a yellow paper airplane half buried in clean beach sand,yellow paper airplane,synthetic_object,medium,object_environment
+synthetic_object_019,a yellow paper airplane floating above a marble pedestal,yellow paper airplane,synthetic_object,medium,object_surreal
+synthetic_object_020,a yellow paper airplane beside a stack of old books,yellow paper airplane,synthetic_object,hard,object_context
+synthetic_object_021,a close up photo of a silver pocket compass on a wooden table,silver pocket compass,synthetic_object,easy,object_closeup
+synthetic_object_022,a silver pocket compass displayed in a bright museum room,silver pocket compass,synthetic_object,easy,object_display
+synthetic_object_023,a silver pocket compass half buried in clean beach sand,silver pocket compass,synthetic_object,medium,object_environment
+synthetic_object_024,a silver pocket compass floating above a marble pedestal,silver pocket compass,synthetic_object,medium,object_surreal
+synthetic_object_025,a silver pocket compass beside a stack of old books,silver pocket compass,synthetic_object,hard,object_context
+synthetic_object_026,a close up photo of a orange ceramic mask on a wooden table,orange ceramic mask,synthetic_object,easy,object_closeup
+synthetic_object_027,an orange ceramic mask displayed in a bright museum room,orange ceramic mask,synthetic_object,easy,object_display
+synthetic_object_028,an orange ceramic mask half buried in clean beach sand,orange ceramic mask,synthetic_object,medium,object_environment
+synthetic_object_029,an orange ceramic mask floating above a marble pedestal,orange ceramic mask,synthetic_object,medium,object_surreal
+synthetic_object_030,an orange ceramic mask beside a stack of old books,orange ceramic mask,synthetic_object,hard,object_context
+synthetic_object_031,a close up photo of a purple neon umbrella on a wooden table,purple neon umbrella,synthetic_object,easy,object_closeup
+synthetic_object_032,a purple neon umbrella displayed in a bright museum room,purple neon umbrella,synthetic_object,easy,object_display
+synthetic_object_033,a purple neon umbrella half buried in clean beach sand,purple neon umbrella,synthetic_object,medium,object_environment
+synthetic_object_034,a purple neon umbrella floating above a marble pedestal,purple neon umbrella,synthetic_object,medium,object_surreal
+synthetic_object_035,a purple neon umbrella beside a stack of old books,purple neon umbrella,synthetic_object,hard,object_context
+synthetic_object_036,a close up photo of a black marble chessboard on a wooden table,black marble chessboard,synthetic_object,easy,object_closeup
+synthetic_object_037,a black marble chessboard displayed in a bright museum room,black marble chessboard,synthetic_object,easy,object_display
+synthetic_object_038,a black marble chessboard half buried in clean beach sand,black marble chessboard,synthetic_object,medium,object_environment
+synthetic_object_039,a black marble chessboard floating above a marble pedestal,black marble chessboard,synthetic_object,medium,object_surreal
+synthetic_object_040,a black marble chessboard beside a stack of old books,black marble chessboard,synthetic_object,hard,object_context
+synthetic_object_041,a close up photo of a teal clockwork flower on a wooden table,teal clockwork flower,synthetic_object,easy,object_closeup
+synthetic_object_042,a teal clockwork flower displayed in a bright museum room,teal clockwork flower,synthetic_object,easy,object_display
+synthetic_object_043,a teal clockwork flower half buried in clean beach sand,teal clockwork flower,synthetic_object,medium,object_environment
+synthetic_object_044,a teal clockwork flower floating above a marble pedestal,teal clockwork flower,synthetic_object,medium,object_surreal
+synthetic_object_045,a teal clockwork flower beside a stack of old books,teal clockwork flower,synthetic_object,hard,object_context
+synthetic_object_046,a close up photo of a pink velvet suitcase on a wooden table,pink velvet suitcase,synthetic_object,easy,object_closeup
+synthetic_object_047,a pink velvet suitcase displayed in a bright museum room,pink velvet suitcase,synthetic_object,easy,object_display
+synthetic_object_048,a pink velvet suitcase half buried in clean beach sand,pink velvet suitcase,synthetic_object,medium,object_environment
+synthetic_object_049,a pink velvet suitcase floating above a marble pedestal,pink velvet suitcase,synthetic_object,medium,object_surreal
+synthetic_object_050,a pink velvet suitcase beside a stack of old books,pink velvet suitcase,synthetic_object,hard,object_context
+synthetic_emblem_001,a green owl emblem printed on a white notebook cover,green owl emblem,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_002,a green owl emblem glowing on a storefront sign,green owl emblem,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_003,a green owl emblem stitched onto a denim jacket,green owl emblem,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_004,a green owl emblem painted on a round shield,green owl emblem,synthetic_emblem,medium,emblem_object
+synthetic_emblem_005,a green owl emblem carved into a stone wall,green owl emblem,synthetic_emblem,hard,emblem_material
+synthetic_emblem_006,a red sun badge printed on a white notebook cover,red sun badge,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_007,a red sun badge glowing on a storefront sign,red sun badge,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_008,a red sun badge stitched onto a denim jacket,red sun badge,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_009,a red sun badge painted on a round shield,red sun badge,synthetic_emblem,medium,emblem_object
+synthetic_emblem_010,a red sun badge carved into a stone wall,red sun badge,synthetic_emblem,hard,emblem_material
+synthetic_emblem_011,a blue wave logo printed on a white notebook cover,blue wave logo,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_012,a blue wave logo glowing on a storefront sign,blue wave logo,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_013,a blue wave logo stitched onto a denim jacket,blue wave logo,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_014,a blue wave logo painted on a round shield,blue wave logo,synthetic_emblem,medium,emblem_object
+synthetic_emblem_015,a blue wave logo carved into a stone wall,blue wave logo,synthetic_emblem,hard,emblem_material
+synthetic_emblem_016,a golden leaf seal printed on a white notebook cover,golden leaf seal,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_017,a golden leaf seal glowing on a storefront sign,golden leaf seal,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_018,a golden leaf seal stitched onto a denim jacket,golden leaf seal,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_019,a golden leaf seal painted on a round shield,golden leaf seal,synthetic_emblem,medium,emblem_object
+synthetic_emblem_020,a golden leaf seal carved into a stone wall,golden leaf seal,synthetic_emblem,hard,emblem_material
+synthetic_emblem_021,a purple comet insignia printed on a white notebook cover,purple comet insignia,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_022,a purple comet insignia glowing on a storefront sign,purple comet insignia,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_023,a purple comet insignia stitched onto a denim jacket,purple comet insignia,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_024,a purple comet insignia painted on a round shield,purple comet insignia,synthetic_emblem,medium,emblem_object
+synthetic_emblem_025,a purple comet insignia carved into a stone wall,purple comet insignia,synthetic_emblem,hard,emblem_material
+synthetic_emblem_026,a silver anchor mark printed on a white notebook cover,silver anchor mark,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_027,a silver anchor mark glowing on a storefront sign,silver anchor mark,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_028,a silver anchor mark stitched onto a denim jacket,silver anchor mark,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_029,a silver anchor mark painted on a round shield,silver anchor mark,synthetic_emblem,medium,emblem_object
+synthetic_emblem_030,a silver anchor mark carved into a stone wall,silver anchor mark,synthetic_emblem,hard,emblem_material
+synthetic_emblem_031,an orange fox crest printed on a white notebook cover,orange fox crest,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_032,an orange fox crest glowing on a storefront sign,orange fox crest,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_033,an orange fox crest stitched onto a denim jacket,orange fox crest,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_034,an orange fox crest painted on a round shield,orange fox crest,synthetic_emblem,medium,emblem_object
+synthetic_emblem_035,an orange fox crest carved into a stone wall,orange fox crest,synthetic_emblem,hard,emblem_material
+synthetic_emblem_036,a teal mountain symbol printed on a white notebook cover,teal mountain symbol,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_037,a teal mountain symbol glowing on a storefront sign,teal mountain symbol,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_038,a teal mountain symbol stitched onto a denim jacket,teal mountain symbol,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_039,a teal mountain symbol painted on a round shield,teal mountain symbol,synthetic_emblem,medium,emblem_object
+synthetic_emblem_040,a teal mountain symbol carved into a stone wall,teal mountain symbol,synthetic_emblem,hard,emblem_material
+synthetic_emblem_041,a black rose stamp printed on a white notebook cover,black rose stamp,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_042,a black rose stamp glowing on a storefront sign,black rose stamp,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_043,a black rose stamp stitched onto a denim jacket,black rose stamp,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_044,a black rose stamp painted on a round shield,black rose stamp,synthetic_emblem,medium,emblem_object
+synthetic_emblem_045,a black rose stamp carved into a stone wall,black rose stamp,synthetic_emblem,hard,emblem_material
+synthetic_emblem_046,a pink shell icon printed on a white notebook cover,pink shell icon,synthetic_emblem,easy,emblem_surface
+synthetic_emblem_047,a pink shell icon glowing on a storefront sign,pink shell icon,synthetic_emblem,easy,emblem_sign
+synthetic_emblem_048,a pink shell icon stitched onto a denim jacket,pink shell icon,synthetic_emblem,medium,emblem_cloth
+synthetic_emblem_049,a pink shell icon painted on a round shield,pink shell icon,synthetic_emblem,medium,emblem_object
+synthetic_emblem_050,a pink shell icon carved into a stone wall,pink shell icon,synthetic_emblem,hard,emblem_material
+synthetic_vehicle_001,a blue rocket bike parked near a glass station,blue rocket bike,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_002,a blue rocket bike crossing a bridge at sunrise,blue rocket bike,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_003,a blue rocket bike beside a mechanic in a clean garage,blue rocket bike,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_004,a blue rocket bike floating over a calm lake,blue rocket bike,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_005,a blue rocket bike racing through a neon tunnel,blue rocket bike,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_006,a red submarine cart parked near a glass station,red submarine cart,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_007,a red submarine cart crossing a bridge at sunrise,red submarine cart,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_008,a red submarine cart beside a mechanic in a clean garage,red submarine cart,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_009,a red submarine cart floating over a calm lake,red submarine cart,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_010,a red submarine cart racing through a neon tunnel,red submarine cart,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_011,a green solar train parked near a glass station,green solar train,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_012,a green solar train crossing a bridge at sunrise,green solar train,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_013,a green solar train beside a mechanic in a clean garage,green solar train,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_014,a green solar train floating over a calm lake,green solar train,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_015,a green solar train racing through a neon tunnel,green solar train,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_016,a yellow balloon ship parked near a glass station,yellow balloon ship,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_017,a yellow balloon ship crossing a bridge at sunrise,yellow balloon ship,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_018,a yellow balloon ship beside a mechanic in a clean garage,yellow balloon ship,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_019,a yellow balloon ship floating over a calm lake,yellow balloon ship,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_020,a yellow balloon ship racing through a neon tunnel,yellow balloon ship,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_021,a silver dune rover parked near a glass station,silver dune rover,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_022,a silver dune rover crossing a bridge at sunrise,silver dune rover,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_023,a silver dune rover beside a mechanic in a clean garage,silver dune rover,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_024,a silver dune rover floating over a calm lake,silver dune rover,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_025,a silver dune rover racing through a neon tunnel,silver dune rover,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_026,an orange hover scooter parked near a glass station,orange hover scooter,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_027,an orange hover scooter crossing a bridge at sunrise,orange hover scooter,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_028,an orange hover scooter beside a mechanic in a clean garage,orange hover scooter,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_029,an orange hover scooter floating over a calm lake,orange hover scooter,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_030,an orange hover scooter racing through a neon tunnel,orange hover scooter,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_031,a purple crystal carriage parked near a glass station,purple crystal carriage,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_032,a purple crystal carriage crossing a bridge at sunrise,purple crystal carriage,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_033,a purple crystal carriage beside a mechanic in a clean garage,purple crystal carriage,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_034,a purple crystal carriage floating over a calm lake,purple crystal carriage,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_035,a purple crystal carriage racing through a neon tunnel,purple crystal carriage,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_036,a black racing canoe parked near a glass station,black racing canoe,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_037,a black racing canoe crossing a bridge at sunrise,black racing canoe,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_038,a black racing canoe beside a mechanic in a clean garage,black racing canoe,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_039,a black racing canoe floating over a calm lake,black racing canoe,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_040,a black racing canoe racing through a neon tunnel,black racing canoe,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_041,a teal clockwork glider parked near a glass station,teal clockwork glider,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_042,a teal clockwork glider crossing a bridge at sunrise,teal clockwork glider,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_043,a teal clockwork glider beside a mechanic in a clean garage,teal clockwork glider,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_044,a teal clockwork glider floating over a calm lake,teal clockwork glider,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_045,a teal clockwork glider racing through a neon tunnel,teal clockwork glider,synthetic_vehicle,hard,vehicle_action
+synthetic_vehicle_046,a pink snowmobile parked near a glass station,pink snowmobile,synthetic_vehicle,easy,vehicle_static
+synthetic_vehicle_047,a pink snowmobile crossing a bridge at sunrise,pink snowmobile,synthetic_vehicle,easy,vehicle_motion
+synthetic_vehicle_048,a pink snowmobile beside a mechanic in a clean garage,pink snowmobile,synthetic_vehicle,medium,vehicle_context
+synthetic_vehicle_049,a pink snowmobile floating over a calm lake,pink snowmobile,synthetic_vehicle,medium,vehicle_surreal
+synthetic_vehicle_050,a pink snowmobile racing through a neon tunnel,pink snowmobile,synthetic_vehicle,hard,vehicle_action
+synthetic_creature_001,a blue glass whale swimming through clear water,blue glass whale,synthetic_creature,easy,creature_motion
+synthetic_creature_002,a blue glass whale resting under a glowing tree,blue glass whale,synthetic_creature,easy,creature_rest
+synthetic_creature_003,a blue glass whale looking at a silver moon,blue glass whale,synthetic_creature,medium,creature_scene
+synthetic_creature_004,a blue glass whale surrounded by floating flowers,blue glass whale,synthetic_creature,medium,creature_surreal
+synthetic_creature_005,a blue glass whale crossing a quiet city street,blue glass whale,synthetic_creature,hard,creature_unusual
+synthetic_creature_006,a red moss turtle swimming through clear water,red moss turtle,synthetic_creature,easy,creature_motion
+synthetic_creature_007,a red moss turtle resting under a glowing tree,red moss turtle,synthetic_creature,easy,creature_rest
+synthetic_creature_008,a red moss turtle looking at a silver moon,red moss turtle,synthetic_creature,medium,creature_scene
+synthetic_creature_009,a red moss turtle surrounded by floating flowers,red moss turtle,synthetic_creature,medium,creature_surreal
+synthetic_creature_010,a red moss turtle crossing a quiet city street,red moss turtle,synthetic_creature,hard,creature_unusual
+synthetic_creature_011,a green cloud serpent swimming through clear water,green cloud serpent,synthetic_creature,easy,creature_motion
+synthetic_creature_012,a green cloud serpent resting under a glowing tree,green cloud serpent,synthetic_creature,easy,creature_rest
+synthetic_creature_013,a green cloud serpent looking at a silver moon,green cloud serpent,synthetic_creature,medium,creature_scene
+synthetic_creature_014,a green cloud serpent surrounded by floating flowers,green cloud serpent,synthetic_creature,medium,creature_surreal
+synthetic_creature_015,a green cloud serpent crossing a quiet city street,green cloud serpent,synthetic_creature,hard,creature_unusual
+synthetic_creature_016,a yellow feathered lizard swimming through clear water,yellow feathered lizard,synthetic_creature,easy,creature_motion
+synthetic_creature_017,a yellow feathered lizard resting under a glowing tree,yellow feathered lizard,synthetic_creature,easy,creature_rest
+synthetic_creature_018,a yellow feathered lizard looking at a silver moon,yellow feathered lizard,synthetic_creature,medium,creature_scene
+synthetic_creature_019,a yellow feathered lizard surrounded by floating flowers,yellow feathered lizard,synthetic_creature,medium,creature_surreal
+synthetic_creature_020,a yellow feathered lizard crossing a quiet city street,yellow feathered lizard,synthetic_creature,hard,creature_unusual
+synthetic_creature_021,a silver forest deer swimming through clear water,silver forest deer,synthetic_creature,easy,creature_motion
+synthetic_creature_022,a silver forest deer resting under a glowing tree,silver forest deer,synthetic_creature,easy,creature_rest
+synthetic_creature_023,a silver forest deer looking at a silver moon,silver forest deer,synthetic_creature,medium,creature_scene
+synthetic_creature_024,a silver forest deer surrounded by floating flowers,silver forest deer,synthetic_creature,medium,creature_surreal
+synthetic_creature_025,a silver forest deer crossing a quiet city street,silver forest deer,synthetic_creature,hard,creature_unusual
+synthetic_creature_026,an orange stone crab swimming through clear water,orange stone crab,synthetic_creature,easy,creature_motion
+synthetic_creature_027,an orange stone crab resting under a glowing tree,orange stone crab,synthetic_creature,easy,creature_rest
+synthetic_creature_028,an orange stone crab looking at a silver moon,orange stone crab,synthetic_creature,medium,creature_scene
+synthetic_creature_029,an orange stone crab surrounded by floating flowers,orange stone crab,synthetic_creature,medium,creature_surreal
+synthetic_creature_030,an orange stone crab crossing a quiet city street,orange stone crab,synthetic_creature,hard,creature_unusual
+synthetic_creature_031,a purple cave salamander swimming through clear water,purple cave salamander,synthetic_creature,easy,creature_motion
+synthetic_creature_032,a purple cave salamander resting under a glowing tree,purple cave salamander,synthetic_creature,easy,creature_rest
+synthetic_creature_033,a purple cave salamander looking at a silver moon,purple cave salamander,synthetic_creature,medium,creature_scene
+synthetic_creature_034,a purple cave salamander surrounded by floating flowers,purple cave salamander,synthetic_creature,medium,creature_surreal
+synthetic_creature_035,a purple cave salamander crossing a quiet city street,purple cave salamander,synthetic_creature,hard,creature_unusual
+synthetic_creature_036,a black ice wolf swimming through clear water,black ice wolf,synthetic_creature,easy,creature_motion
+synthetic_creature_037,a black ice wolf resting under a glowing tree,black ice wolf,synthetic_creature,easy,creature_rest
+synthetic_creature_038,a black ice wolf looking at a silver moon,black ice wolf,synthetic_creature,medium,creature_scene
+synthetic_creature_039,a black ice wolf surrounded by floating flowers,black ice wolf,synthetic_creature,medium,creature_surreal
+synthetic_creature_040,a black ice wolf crossing a quiet city street,black ice wolf,synthetic_creature,hard,creature_unusual
+synthetic_creature_041,a teal firefly swarm swimming through clear water,teal firefly swarm,synthetic_creature,easy,creature_motion
+synthetic_creature_042,a teal firefly swarm resting under a glowing tree,teal firefly swarm,synthetic_creature,easy,creature_rest
+synthetic_creature_043,a teal firefly swarm looking at a silver moon,teal firefly swarm,synthetic_creature,medium,creature_scene
+synthetic_creature_044,a teal firefly swarm surrounded by floating flowers,teal firefly swarm,synthetic_creature,medium,creature_surreal
+synthetic_creature_045,a teal firefly swarm crossing a quiet city street,teal firefly swarm,synthetic_creature,hard,creature_unusual
+synthetic_creature_046,a pink coral horse swimming through clear water,pink coral horse,synthetic_creature,easy,creature_motion
+synthetic_creature_047,a pink coral horse resting under a glowing tree,pink coral horse,synthetic_creature,easy,creature_rest
+synthetic_creature_048,a pink coral horse looking at a silver moon,pink coral horse,synthetic_creature,medium,creature_scene
+synthetic_creature_049,a pink coral horse surrounded by floating flowers,pink coral horse,synthetic_creature,medium,creature_surreal
+synthetic_creature_050,a pink coral horse crossing a quiet city street,pink coral horse,synthetic_creature,hard,creature_unusual
+synthetic_action_001,a student studying for an exam in a quiet library,studying for an exam,synthetic_action,easy,action_indoor
+synthetic_action_002,a painter studying for an exam beside a window,studying for an exam,synthetic_action,easy,action_person
+synthetic_action_003,a robot studying for an exam at a small desk,studying for an exam,synthetic_action,medium,action_unusual
+synthetic_action_004,a group of friends studying for an exam under warm lights,studying for an exam,synthetic_action,medium,action_group
+synthetic_action_005,a tiny mascot studying for an exam near a chalkboard,studying for an exam,synthetic_action,hard,action_character
+synthetic_action_006,a knight surrendering in a duel on a grassy field,surrendering in a duel,synthetic_action,easy,action_indoor
+synthetic_action_007,a painter surrendering in a duel beside a window,surrendering in a duel,synthetic_action,easy,action_person
+synthetic_action_008,a robot surrendering in a duel at a small desk,surrendering in a duel,synthetic_action,medium,action_unusual
+synthetic_action_009,a group of friends surrendering in a duel under warm lights,surrendering in a duel,synthetic_action,medium,action_group
+synthetic_action_010,a tiny mascot surrendering in a duel near a chalkboard,surrendering in a duel,synthetic_action,hard,action_character
+synthetic_action_011,a young artist painting a mural in a quiet library,painting a mural,synthetic_action,easy,action_indoor
+synthetic_action_012,a painter painting a mural beside a window,painting a mural,synthetic_action,easy,action_person
+synthetic_action_013,a robot painting a mural at a small desk,painting a mural,synthetic_action,medium,action_unusual
+synthetic_action_014,a group of friends painting a mural under warm lights,painting a mural,synthetic_action,medium,action_group
+synthetic_action_015,a tiny mascot painting a mural near a chalkboard,painting a mural,synthetic_action,hard,action_character
+synthetic_action_016,a mechanic repairing a machine in a quiet library,repairing a machine,synthetic_action,easy,action_indoor
+synthetic_action_017,a painter repairing a machine beside a window,repairing a machine,synthetic_action,easy,action_person
+synthetic_action_018,a robot repairing a machine at a small desk,repairing a machine,synthetic_action,medium,action_unusual
+synthetic_action_019,a group of friends repairing a machine under warm lights,repairing a machine,synthetic_action,medium,action_group
+synthetic_action_020,a tiny mascot repairing a machine near a chalkboard,repairing a machine,synthetic_action,hard,action_character
+synthetic_action_021,a retired coach playing golf in a quiet library,playing golf,synthetic_action,easy,action_indoor
+synthetic_action_022,a painter playing golf beside a window,playing golf,synthetic_action,easy,action_person
+synthetic_action_023,a robot playing golf at a small desk,playing golf,synthetic_action,medium,action_unusual
+synthetic_action_024,a group of friends playing golf under warm lights,playing golf,synthetic_action,medium,action_group
+synthetic_action_025,a tiny mascot playing golf near a chalkboard,playing golf,synthetic_action,hard,action_character
+synthetic_action_026,a child chasing a balloon in a quiet library,chasing a balloon,synthetic_action,easy,action_indoor
+synthetic_action_027,a painter chasing a balloon beside a window,chasing a balloon,synthetic_action,easy,action_person
+synthetic_action_028,a robot chasing a balloon at a small desk,chasing a balloon,synthetic_action,medium,action_unusual
+synthetic_action_029,a group of friends chasing a balloon under warm lights,chasing a balloon,synthetic_action,medium,action_group
+synthetic_action_030,a tiny mascot chasing a balloon near a chalkboard,chasing a balloon,synthetic_action,hard,action_character
+synthetic_action_031,a guard guarding a doorway in a quiet library,guarding a doorway,synthetic_action,easy,action_indoor
+synthetic_action_032,a painter guarding a doorway beside a window,guarding a doorway,synthetic_action,easy,action_person
+synthetic_action_033,a robot guarding a doorway at a small desk,guarding a doorway,synthetic_action,medium,action_unusual
+synthetic_action_034,a group of friends guarding a doorway under warm lights,guarding a doorway,synthetic_action,medium,action_group
+synthetic_action_035,a tiny mascot guarding a doorway near a chalkboard,guarding a doorway,synthetic_action,hard,action_character
+synthetic_action_036,a detective solving a puzzle in a quiet library,solving a puzzle,synthetic_action,easy,action_indoor
+synthetic_action_037,a painter solving a puzzle beside a window,solving a puzzle,synthetic_action,easy,action_person
+synthetic_action_038,a robot solving a puzzle at a small desk,solving a puzzle,synthetic_action,medium,action_unusual
+synthetic_action_039,a group of friends solving a puzzle under warm lights,solving a puzzle,synthetic_action,medium,action_group
+synthetic_action_040,a tiny mascot solving a puzzle near a chalkboard,solving a puzzle,synthetic_action,hard,action_character
+synthetic_action_041,a chef cooking breakfast in a quiet library,cooking breakfast,synthetic_action,easy,action_indoor
+synthetic_action_042,a painter cooking breakfast beside a window,cooking breakfast,synthetic_action,easy,action_person
+synthetic_action_043,a robot cooking breakfast at a small desk,cooking breakfast,synthetic_action,medium,action_unusual
+synthetic_action_044,a group of friends cooking breakfast under warm lights,cooking breakfast,synthetic_action,medium,action_group
+synthetic_action_045,a tiny mascot cooking breakfast near a chalkboard,cooking breakfast,synthetic_action,hard,action_character
+synthetic_action_046,a traveler reading a map in a quiet library,reading a map,synthetic_action,easy,action_indoor
+synthetic_action_047,a painter reading a map beside a window,reading a map,synthetic_action,easy,action_person
+synthetic_action_048,a robot reading a map at a small desk,reading a map,synthetic_action,medium,action_unusual
+synthetic_action_049,a group of friends reading a map under warm lights,reading a map,synthetic_action,medium,action_group
+synthetic_action_050,a tiny mascot reading a map near a chalkboard,reading a map,synthetic_action,hard,action_character

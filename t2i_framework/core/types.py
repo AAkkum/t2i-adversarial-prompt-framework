@@ -29,6 +29,15 @@ class GenerationResult:
 
 
 @dataclass
+class PromptCase:
+    prompt: str
+    target_concept: str | None = None
+    case_id: str | None = None
+    category: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class EvaluationResult:
     run_id: str
     model_name: str
@@ -44,5 +53,7 @@ class EvaluationResult:
     success: bool
     query_count: int
     runtime_seconds: float
+    case_id: str | None = None
+    category: str | None = None
     scores: dict[str, float] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)

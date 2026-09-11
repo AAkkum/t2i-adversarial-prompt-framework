@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 models = ["torch", "diffusers", "transformers", "accelerate", "safetensors"]
+eval = ["sentence-transformers"]
 dev = ["pytest", "ruff"]
 
 [tool.setuptools.packages.find]

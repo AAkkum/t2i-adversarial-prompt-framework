@@ -19,3 +19,8 @@ class Attack(ABC):
         context: dict[str, Any] | None = None,
     ) -> list[AttackCandidate]:
         ...
+
+    def cleanup(self, context: dict[str, Any] | None = None) -> None:
+        """Release optional resources held by an attack."""
+
+        return None

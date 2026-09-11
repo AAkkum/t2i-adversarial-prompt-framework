@@ -1,0 +1,6 @@
+attack:
+  name: textfooler_style
+  min_similarity: 0.7
+  candidate_count: 5
+  max_candidate_batches: 2
+  log_similarity: true
