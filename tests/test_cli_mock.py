@@ -60,3 +60,34 @@ def test_cli_mock_can_write_multiple_attack_candidates(tmp_path: Path) -> None:
     assert len((out / "results.jsonl").read_text(encoding="utf-8").splitlines()) == 3
     images = list((out / "images").glob("*.png"))
     assert len(images) == 3
+
+
+def test_cli_omitted_out_uses_timestamped_results_dir(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    runner = CliRunner()
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(
+        app,
+        [
+            "--model",
+            "mock",
+            "--attack",
+            "identity",
+            "--defense",
+            "none",
+            "--prompt",
+            "a blue rabbit mascot standing in a garden",
+            "--target",
+            "blue rabbit mascot",
+            "--seed",
+            "42",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    run_dirs = list(Path("results/runs").glob("*_mock_identity_none"))
+    assert len(run_dirs) == 1
+    assert (run_dirs[0] / "config.yaml").exists()
+    assert (run_dirs[0] / "results.jsonl").exists()

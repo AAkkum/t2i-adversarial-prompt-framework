@@ -39,8 +39,10 @@ pip install -e ".[dev]"
 Single prompt with the CPU-only mock model:
 
 ```bash
-python main.py --model mock --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --seed 42 --out results/debug_run
+python main.py --model mock --attack identity --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --seed 42
 ```
+
+If `--out` is omitted, results are written to a timestamped folder under `results/runs/`, for example `results/runs/20260911_131500_mock_identity_none`. Pass `--out` only when you intentionally want a fixed output folder.
 
 Single prompt with the normalization defense:
 
@@ -138,6 +140,8 @@ Each run writes:
 - `config.yaml`: run configuration snapshot
 - `images/*.png`: compatibility mirror for allowed generated images
 - root-level `*.png`: allowed generated images and selected best images for search-style runs
+
+The output folder name does not need to describe the experiment. `config.yaml` stores the selected model, attack, defense, seed, candidate count, and merged YAML config.
 
 ## Current Limitations
 

@@ -293,7 +293,7 @@ Attacks that only return one candidate will still produce one row even if `--max
 Fast framework test:
 
 ```bash
-python main.py --model mock --attack identity --defense none --prompt-file data/example_prompts.csv --out results/smoke_identity
+python main.py --model mock --attack identity --defense none --prompt-file data/example_prompts.csv
 ```
 
 Groot-lite with prompt and image metrics:
@@ -307,3 +307,5 @@ Search attack with character filter:
 ```bash
 python main.py --model mock --attack search_attack --defense character_filter --prompt "a robotic rabbit standing in a modern laboratory" --target "robotic rabbit" --max-candidates 5 --out results/smoke_search
 ```
+
+If `--out` is omitted, the CLI creates a timestamped directory under `results/runs/`. Use explicit `--out` paths only when you want a fixed folder name.

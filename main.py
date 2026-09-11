@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -29,7 +30,11 @@ def main(
     prompt_file: Optional[Path] = typer.Option(None, "--prompt-file", help="CSV with prompt,target_concept."),
     target: Optional[str] = typer.Option(None, "--target", help="Target concept for a single prompt."),
     seed: int = typer.Option(42, "--seed", help="Random seed."),
-    out: Path = typer.Option(Path("results/run"), "--out", help="Output directory."),
+    out: Optional[Path] = typer.Option(
+        None,
+        "--out",
+        help="Output directory. If omitted, a timestamped folder is created under results/runs/.",
+    ),
     config: Optional[Path] = typer.Option(None, "--config", help="Optional YAML config path."),
     model_config: Optional[Path] = typer.Option(None, "--model-config", help="Optional model YAML config path."),
     attack_config: Optional[Path] = typer.Option(None, "--attack-config", help="Optional attack YAML config path."),
@@ -85,15 +90,16 @@ def main(
         if prompt is not None
         else read_prompt_file(prompt_file)  # type: ignore[arg-type]
     )
+    output_dir = out or _timestamped_output_dir(model_builder_name, attack, defense)
     runner = ExperimentRunner(
         model=image_model,
         attack=attack_module,
         defense=defense_module,
-        output_dir=out,
+        output_dir=output_dir,
         max_candidates=max_candidates,
     )
     results = runner.run(prompts=prompts, seed=seed, config=config_data)
-    console.print(f"Wrote {len(results)} result row(s) to {out}")
+    console.print(f"Wrote {len(results)} result row(s) to {output_dir}")
 
 
 def _print_components() -> None:
@@ -130,6 +136,11 @@ def _available_config_presets(kind: str) -> list[str]:
     if not path.exists():
         return []
     return sorted(config_path.stem for config_path in path.glob("*.yaml"))
+
+
+def _timestamped_output_dir(model: str, attack: str, defense: str) -> Path:
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Path("results") / "runs" / f"{stamp}_{model}_{attack}_{defense}"
 
 
 if __name__ == "__main__":
