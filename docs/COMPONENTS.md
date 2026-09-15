@@ -85,7 +85,7 @@ python scripts/build_groot_decomposition_template.py data/datasets/synthetic/syn
 
 ### `search_attack`
 
-Search-style prompt variant attack. It returns the original prompt plus generated variants built from phrase fragments.
+Search-style prompt variant attack. It returns the original prompt plus generated variants built from phrase fragments. When `--target` is provided, it is treated as the blocked concept to rewrite; the replacement description comes from `concept_targets.json` or `attack.replacement_concept`.
 
 Main data files:
 
@@ -100,7 +100,7 @@ Usually paired with:
 Example:
 
 ```bash
-python main.py --model mock --attack search_attack --defense character_filter --prompt "a robotic rabbit standing in a modern laboratory" --target "robotic rabbit" --max-candidates 10 --out results/search_mock
+python main.py --model mock --attack search_attack --defense character_filter --prompt "Mario standing in a modern university laboratory" --target "mario" --max-candidates 10 --out results/search_mock
 ```
 
 ### `textfooler_style`

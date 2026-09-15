@@ -7,7 +7,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data/search_attack"
+DATA_DIR = Path(__file__).resolve().parents[2] / "data/search_attack"
 
 
 def normalize_text(text: str) -> str:
@@ -65,11 +65,73 @@ def scene_description(prompt: str) -> str:
     return match.group().strip().rstrip(".!? ") if match else ""
 
 
-def semantic_base(prompt: str, target: str | None, mapping: dict[str, str]) -> str:
-    """Keep target wording and merge overlapping action/location words once."""
+def semantic_base(
+    prompt: str,
+    target: str | None,
+    mapping: dict[str, str],
+    replacement_concept: str | None = None,
+    *,
+    target_mode: str = "blocked_term",
+) -> str:
+    """Build the base subject/scene text for search_attack variants."""
     if target is None:
         return replace_concepts(prompt.strip(), mapping)
-    subject = target.strip().rstrip(".!? ")
+
+    if target_mode == "replacement":
+        return _merge_subject_and_scene(prompt, target, mapping)
+    if target_mode != "blocked_term":
+        raise ValueError("target_mode must be either 'blocked_term' or 'replacement'.")
+
+    replacement = _replacement_for_target(target, mapping, replacement_concept)
+    if replacement is None:
+        return replace_concepts(prompt.strip(), mapping).rstrip(".!? ")
+
+    target_mapping = _target_alias_mapping(target, replacement, mapping)
+    replaced_prompt = replace_concepts(prompt.strip(), target_mapping)
+    if replaced_prompt != prompt.strip():
+        return replaced_prompt.rstrip(".!? ")
+
+    return _merge_subject_and_scene(prompt, replacement, mapping)
+
+
+def _replacement_for_target(
+    target: str,
+    mapping: dict[str, str],
+    replacement_concept: str | None,
+) -> str | None:
+    if isinstance(replacement_concept, str) and replacement_concept.strip():
+        return replacement_concept.strip().rstrip(".!? ")
+
+    normalized_target = normalize_text(target)
+    for term, description in mapping.items():
+        if normalize_text(term) == normalized_target:
+            return description
+    return None
+
+
+def _target_alias_mapping(
+    target: str,
+    replacement: str,
+    mapping: dict[str, str],
+) -> dict[str, str]:
+    normalized_target = normalize_text(target)
+    normalized_replacement = normalize_text(replacement)
+    aliases = {
+        term: description
+        for term, description in mapping.items()
+        if normalize_text(term) == normalized_target
+        or normalize_text(description) == normalized_replacement
+    }
+    aliases.setdefault(target, replacement)
+    return aliases
+
+
+def _merge_subject_and_scene(
+    prompt: str,
+    subject: str,
+    mapping: dict[str, str],
+) -> str:
+    subject = subject.strip().rstrip(".!? ")
     normalized_prompt = normalize_text(prompt)
     normalized_target = normalize_text(subject)
     if f" {normalized_target} " in f" {normalized_prompt} ":

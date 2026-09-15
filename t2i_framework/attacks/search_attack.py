@@ -8,7 +8,7 @@ from typing import Any
 
 from t2i_framework.attacks.base import Attack
 from t2i_framework.core.types import AttackCandidate
-from t2i_framework.search_support import (
+from t2i_framework.attacks.search_support import (
     DATA_DIR,
     load_concept_targets,
     semantic_base,
@@ -62,7 +62,16 @@ class SearchAttack(Attack):
         if max_candidates == 1:
             return candidates
         mapping = load_concept_targets()
-        base = semantic_base(prompt, target_concept, mapping)
+        attack_config = dict(((context or {}).get("config") or {}).get("attack", {}))
+        replacement_concept = attack_config.get("replacement_concept")
+        target_mode = attack_config.get("target_mode", "blocked_term")
+        base = semantic_base(
+            prompt,
+            target_concept,
+            mapping,
+            replacement_concept=replacement_concept,
+            target_mode=target_mode,
+        )
         variant_pool = _build_variant_pool(base, "", seed=context.get("seed", 0))
         for text, categories in variant_pool[: max_candidates - 1]:
             candidates.append(

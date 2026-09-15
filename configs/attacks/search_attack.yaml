@@ -1,0 +1,4 @@
+attack:
+  name: search_attack
+  target_mode: blocked_term
+  replacement_concept: null

@@ -21,7 +21,7 @@ from t2i_framework.defenses.character_filter import (
     load_protected_concepts,
 )
 from t2i_framework.defenses.semantic_concepts import MiniLMConceptMatcher, SemanticMatch
-from t2i_framework.search_support import DATA_DIR, semantic_base
+from t2i_framework.attacks.search_support import DATA_DIR, semantic_base
 
 CASES = json.loads((DATA_DIR / "test_cases.json").read_text(encoding="utf-8"))
 
@@ -207,8 +207,11 @@ def test_candidate_counts_original_target_and_unique(case, count) -> None:
     keyword_only = CharacterFilterDefense(
         enable_semantic_prompt=False, enable_image_semantic=False
     )
+    expected_subject = case["protected_concept"] or "robotic rabbit"
     for item in candidates[1:]:
-        assert case["target"] in item.text
+        assert expected_subject in item.text
+        if case["blocked_term"] is not None:
+            assert case["blocked_term"] not in _normalized_candidate(item.text)
         assert keyword_only.check_prompt(item.text).allowed
         assert len(item.text.split()) <= 80
 
@@ -220,7 +223,10 @@ def test_bad_candidate_count(count) -> None:
 
 
 def test_seed_and_pool_diversity() -> None:
-    pools = [_build_variant_pool(CASES[1]["target"], "in a park", seed) for seed in (42, 7, 42)]
+    pools = [
+        _build_variant_pool(CASES[1]["protected_concept"], "in a park", seed)
+        for seed in (42, 7, 42)
+    ]
     assert pools[0] == pools[2]
     assert pools[0] != pools[1]
     for pool in pools:
