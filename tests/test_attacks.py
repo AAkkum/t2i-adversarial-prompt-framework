@@ -3,6 +3,19 @@ from pathlib import Path
 from t2i_framework.attacks.char_perturb import CharPerturbAttack
 from t2i_framework.attacks.groot_lite import GrootLiteAttack
 from t2i_framework.attacks.identity import IdentityAttack
+from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
+from t2i_framework.core.types import DefenseDecision
+
+
+class TargetBlockingDefense:
+    def check_prompt(self, prompt: str, target_concept=None, context=None) -> DefenseDecision:
+        blocked = bool(target_concept and target_concept.lower() in prompt.lower())
+        return DefenseDecision(
+            allowed=not blocked,
+            reason="blocked target" if blocked else "allowed",
+            score=1.0 if blocked else 0.0,
+            metadata={},
+        )
 
 
 def test_identity_returns_original_prompt() -> None:
@@ -75,3 +88,35 @@ concepts:
     )
 
     assert candidates[0].text == "a yellow three-cornered flying toy in the sky"
+
+
+def test_textfooler_selects_highest_llm_judge_similarity() -> None:
+    judge_scores = {
+        "first visual replacement": 0.80,
+        "better visual replacement": 0.95,
+    }
+    attack = TextFoolerStyleAttack(
+        paraphraser=lambda _unit, _context, _count: [
+            "first visual replacement",
+            "better visual replacement",
+        ],
+        candidate_count=2,
+        max_rounds=1,
+        similarity_scorer=lambda _source, _candidate: 0.20,
+        use_llm_judge_fallback=True,
+        llm_judge=lambda _source, candidate, _context: judge_scores[candidate],
+        llm_judge_threshold=0.75,
+        log_similarity=False,
+        log_llm_judge=False,
+        unload_ollama_after_attack=False,
+    )
+
+    candidates = attack.generate(
+        "mario jumping",
+        target_concept="mario",
+        context={"defense": TargetBlockingDefense()},
+    )
+
+    assert candidates[0].text == "better visual replacement jumping"
+    assert candidates[0].metadata["selected_similarity"] == 0.95
+    assert candidates[0].metadata["selected_similarity_method"] == "llm_judge"

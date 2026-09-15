@@ -131,191 +131,37 @@ class TextFoolerStyleAttack(Attack):
                 if not self._contains_unit(current_prompt, unit):
                     continue
 
-                best_blocked_prompt = None
-                best_blocked_decision = None
-                best_allowed: dict[str, Any] | None = None
-
-                for batch_index in range(self.max_candidate_batches):
-                    replacements = self._replacement_candidates(
-                        unit,
-                        current_prompt,
-                        target_concept,
-                    )
-                    if not replacements:
-                        break
-
-                    candidate_records = []
-                    for replacement in replacements:
-                        candidate_prompt = self._replace_unit(current_prompt, unit, replacement)
-                        if candidate_prompt == current_prompt:
-                            continue
-
-                        similarity = self._score_similarity(unit, replacement)
-                        similarity_allowed = similarity >= self.min_similarity
-                        if self.log_similarity:
-                            console.print(
-                                "[textfooler_style] "
-                                f'unit="{unit}" candidate="{replacement}" '
-                                f"clip_similarity={similarity:.3f} "
-                                f"threshold={self.min_similarity:.3f}",
-                                markup=False,
-                            )
-
-                        trace_item: dict[str, Any] = {
-                            "unit": unit,
-                            "replacement": replacement,
-                            "candidate_prompt": candidate_prompt,
-                            "candidate_batch": batch_index,
-                            "similarity": similarity,
-                            "clip_similarity": similarity,
-                            "similarity_method": "clip",
-                            "similarity_allowed": similarity_allowed,
-                            "min_similarity": self.min_similarity,
-                        }
-
-                        candidate_records.append(
-                            {
-                                "replacement": replacement,
-                                "candidate_prompt": candidate_prompt,
-                                "trace_item": trace_item,
-                                "similarity": similarity,
-                                "similarity_allowed": similarity_allowed,
-                                "similarity_method": "clip",
-                            }
-                        )
-
-                    if (
-                        candidate_records
-                        and self.use_llm_judge_fallback
-                        and not any(record["similarity_allowed"] for record in candidate_records)
-                    ):
-                        if self.log_llm_judge:
-                            console.print(
-                                "[textfooler_style] "
-                                f'CLIP rejected all candidates for "{unit}"; '
-                                "using LLM judge fallback",
-                                markup=False,
-                            )
-                        for record in candidate_records:
-                            judge_score = self._score_llm_judge(
-                                unit,
-                                record["replacement"],
-                                current_prompt,
-                            )
-                            judge_query_count += 1
-                            judge_allowed = judge_score >= self.llm_judge_threshold
-                            record["trace_item"].update(
-                                {
-                                    "judge_similarity": judge_score,
-                                    "judge_allowed": judge_allowed,
-                                    "judge_threshold": self.llm_judge_threshold,
-                                }
-                            )
-                            if self.log_llm_judge:
-                                console.print(
-                                    "[textfooler_style] "
-                                    f'llm_judge unit="{unit}" '
-                                    f'candidate="{record["replacement"]}" '
-                                    f"score={judge_score:.3f} "
-                                    f"threshold={self.llm_judge_threshold:.3f}",
-                                    markup=False,
-                                )
-                            if judge_allowed:
-                                record["similarity"] = judge_score
-                                record["similarity_allowed"] = True
-                                record["similarity_method"] = "llm_judge"
-                                record["trace_item"].update(
-                                    {
-                                        "similarity": judge_score,
-                                        "similarity_allowed": True,
-                                        "similarity_method": "llm_judge",
-                                    }
-                                )
-
-                    for record in candidate_records:
-                        replacement = record["replacement"]
-                        candidate_prompt = record["candidate_prompt"]
-                        trace_item = record["trace_item"]
-
-                        if not record["similarity_allowed"]:
-                            trace_item["status"] = (
-                                "discarded_low_similarity_and_judge"
-                                if "judge_similarity" in trace_item
-                                else "discarded_low_similarity"
-                            )
-                            trace.append(trace_item)
-                            continue
-
-                        candidate_decision = self._check(
-                            defense,
-                            candidate_prompt,
-                            target_concept,
-                            context,
-                        )
-                        query_count += 1
-                        trace_item.update(
-                            {
-                                "status": "defense_checked",
-                                "allowed": candidate_decision.allowed,
-                                "score": candidate_decision.score,
-                                "reason": candidate_decision.reason,
-                            }
-                        )
-                        trace.append(trace_item)
-
-                        if candidate_decision.allowed:
-                            allowed_candidate = {
-                                "prompt": candidate_prompt,
-                                "decision": candidate_decision,
-                                "replacement": replacement,
-                                "similarity": record["similarity"],
-                                "similarity_method": record["similarity_method"],
-                                "clip_similarity": trace_item.get("clip_similarity"),
-                                "judge_similarity": trace_item.get("judge_similarity"),
-                                "unit": unit,
-                            }
-                            if best_allowed is None or similarity > best_allowed["similarity"]:
-                                best_allowed = allowed_candidate
-                            continue
-
-                        if best_blocked_decision is None or self._is_better(
-                            candidate_decision,
-                            best_blocked_decision,
-                        ):
-                            best_blocked_prompt = candidate_prompt
-                            best_blocked_decision = candidate_decision
-
-                    if best_allowed is not None:
-                        break
+                unit_result = self._try_unit(
+                    unit,
+                    current_prompt,
+                    target_concept,
+                    defense,
+                    context,
+                    trace,
+                )
+                query_count += unit_result["query_count"]
+                judge_query_count += unit_result["judge_query_count"]
+                best_allowed = unit_result["best_allowed"]
 
                 if best_allowed is not None:
                     final_decision = best_allowed["decision"]
                     return [
-                        AttackCandidate(
-                            text=best_allowed["prompt"],
-                            metadata={
-                                "method": self.name,
-                                "status": "bypassed_prompt_defense",
-                                "query_count": query_count,
-                                "selected_unit": best_allowed["unit"],
-                                "selected_replacement": best_allowed["replacement"],
-                                "selected_similarity": best_allowed["similarity"],
-                                "selected_similarity_method": best_allowed["similarity_method"],
-                                "selected_clip_similarity": best_allowed["clip_similarity"],
-                                "selected_judge_similarity": best_allowed["judge_similarity"],
-                                "min_similarity": self.min_similarity,
-                                "llm_judge_threshold": self.llm_judge_threshold,
-                                "judge_query_count": judge_query_count,
-                                "original_defense": asdict(original_decision),
-                                "final_defense": asdict(final_decision),
-                                "trace": trace,
-                            },
+                        self._make_success_candidate(
+                            best_allowed,
+                            query_count,
+                            judge_query_count,
+                            original_decision,
+                            final_decision,
+                            trace,
                         )
                     ]
 
-                if best_blocked_prompt is not None and best_blocked_decision is not None:
-                    current_prompt = best_blocked_prompt
-                    current_decision = best_blocked_decision
+                if (
+                    unit_result["best_blocked_prompt"] is not None
+                    and unit_result["best_blocked_decision"] is not None
+                ):
+                    current_prompt = unit_result["best_blocked_prompt"]
+                    current_decision = unit_result["best_blocked_decision"]
                     changed = True
 
             if not changed:
@@ -324,21 +170,303 @@ class TextFoolerStyleAttack(Attack):
                 break
 
         return [
-            AttackCandidate(
-                text=current_prompt,
-                metadata={
-                    "method": self.name,
-                    "status": "no_passing_candidate",
-                    "query_count": query_count,
-                    "min_similarity": self.min_similarity,
-                    "llm_judge_threshold": self.llm_judge_threshold,
-                    "judge_query_count": judge_query_count,
-                    "original_defense": asdict(original_decision),
-                    "final_defense": asdict(current_decision),
-                    "trace": trace,
-                },
+            self._make_failure_candidate(
+                current_prompt,
+                query_count,
+                judge_query_count,
+                original_decision,
+                current_decision,
+                trace,
             )
         ]
+
+    def _try_unit(
+        self,
+        unit: str,
+        current_prompt: str,
+        target_concept: str | None,
+        defense: Any,
+        context: dict[str, Any],
+        trace: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        best_blocked_prompt = None
+        best_blocked_decision = None
+        best_allowed: dict[str, Any] | None = None
+        query_count = 0
+        judge_query_count = 0
+
+        for batch_index in range(self.max_candidate_batches):
+            candidate_records = self._build_candidate_records(
+                unit,
+                current_prompt,
+                target_concept,
+                batch_index,
+            )
+            if candidate_records is None:
+                break
+
+            judge_query_count += self._apply_llm_judge_fallback(
+                unit,
+                current_prompt,
+                candidate_records,
+            )
+            result = self._evaluate_candidate_records(
+                candidate_records,
+                unit,
+                target_concept,
+                defense,
+                context,
+                trace,
+            )
+            query_count += result["query_count"]
+
+            if result["best_allowed"] is not None:
+                if (
+                    best_allowed is None
+                    or result["best_allowed"]["similarity"] > best_allowed["similarity"]
+                ):
+                    best_allowed = result["best_allowed"]
+
+            if result["best_blocked_decision"] is not None and (
+                best_blocked_decision is None
+                or self._is_better(result["best_blocked_decision"], best_blocked_decision)
+            ):
+                best_blocked_prompt = result["best_blocked_prompt"]
+                best_blocked_decision = result["best_blocked_decision"]
+
+            if best_allowed is not None:
+                break
+
+        return {
+            "best_allowed": best_allowed,
+            "best_blocked_prompt": best_blocked_prompt,
+            "best_blocked_decision": best_blocked_decision,
+            "query_count": query_count,
+            "judge_query_count": judge_query_count,
+        }
+
+    def _build_candidate_records(
+        self,
+        unit: str,
+        current_prompt: str,
+        target_concept: str | None,
+        batch_index: int,
+    ) -> list[dict[str, Any]] | None:
+        replacements = self._replacement_candidates(unit, current_prompt, target_concept)
+        if not replacements:
+            return None
+
+        records = []
+        for replacement in replacements:
+            candidate_prompt = self._replace_unit(current_prompt, unit, replacement)
+            if candidate_prompt == current_prompt:
+                continue
+
+            similarity = self._score_similarity(unit, replacement)
+            similarity_allowed = similarity >= self.min_similarity
+            self._log_similarity(unit, replacement, similarity)
+
+            trace_item: dict[str, Any] = {
+                "unit": unit,
+                "replacement": replacement,
+                "candidate_prompt": candidate_prompt,
+                "candidate_batch": batch_index,
+                "similarity": similarity,
+                "clip_similarity": similarity,
+                "similarity_method": "clip",
+                "similarity_allowed": similarity_allowed,
+                "min_similarity": self.min_similarity,
+            }
+            records.append(
+                {
+                    "replacement": replacement,
+                    "candidate_prompt": candidate_prompt,
+                    "trace_item": trace_item,
+                    "similarity": similarity,
+                    "similarity_allowed": similarity_allowed,
+                    "similarity_method": "clip",
+                }
+            )
+        return records
+
+    def _apply_llm_judge_fallback(
+        self,
+        unit: str,
+        current_prompt: str,
+        candidate_records: list[dict[str, Any]],
+    ) -> int:
+        if (
+            not candidate_records
+            or not self.use_llm_judge_fallback
+            or any(record["similarity_allowed"] for record in candidate_records)
+        ):
+            return 0
+
+        if self.log_llm_judge:
+            console.print(
+                "[textfooler_style] "
+                f'CLIP rejected all candidates for "{unit}"; '
+                "using LLM judge fallback",
+                markup=False,
+            )
+
+        judge_query_count = 0
+        for record in candidate_records:
+            judge_score = self._score_llm_judge(
+                unit,
+                record["replacement"],
+                current_prompt,
+            )
+            judge_query_count += 1
+            judge_allowed = judge_score >= self.llm_judge_threshold
+            record["trace_item"].update(
+                {
+                    "judge_similarity": judge_score,
+                    "judge_allowed": judge_allowed,
+                    "judge_threshold": self.llm_judge_threshold,
+                }
+            )
+            self._log_llm_judge(unit, record["replacement"], judge_score)
+            if judge_allowed:
+                record["similarity"] = judge_score
+                record["similarity_allowed"] = True
+                record["similarity_method"] = "llm_judge"
+                record["trace_item"].update(
+                    {
+                        "similarity": judge_score,
+                        "similarity_allowed": True,
+                        "similarity_method": "llm_judge",
+                    }
+                )
+        return judge_query_count
+
+    def _evaluate_candidate_records(
+        self,
+        candidate_records: list[dict[str, Any]],
+        unit: str,
+        target_concept: str | None,
+        defense: Any,
+        context: dict[str, Any],
+        trace: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        best_allowed: dict[str, Any] | None = None
+        best_blocked_prompt = None
+        best_blocked_decision = None
+        query_count = 0
+
+        for record in candidate_records:
+            trace_item = record["trace_item"]
+            if not record["similarity_allowed"]:
+                trace_item["status"] = (
+                    "discarded_low_similarity_and_judge"
+                    if "judge_similarity" in trace_item
+                    else "discarded_low_similarity"
+                )
+                trace.append(trace_item)
+                continue
+
+            candidate_decision = self._check(
+                defense,
+                record["candidate_prompt"],
+                target_concept,
+                context,
+            )
+            query_count += 1
+            trace_item.update(
+                {
+                    "status": "defense_checked",
+                    "allowed": candidate_decision.allowed,
+                    "score": candidate_decision.score,
+                    "reason": candidate_decision.reason,
+                }
+            )
+            trace.append(trace_item)
+
+            if candidate_decision.allowed:
+                allowed_candidate = {
+                    "prompt": record["candidate_prompt"],
+                    "decision": candidate_decision,
+                    "replacement": record["replacement"],
+                    "similarity": record["similarity"],
+                    "similarity_method": record["similarity_method"],
+                    "clip_similarity": trace_item.get("clip_similarity"),
+                    "judge_similarity": trace_item.get("judge_similarity"),
+                    "unit": unit,
+                }
+                if (
+                    best_allowed is None
+                    or record["similarity"] > best_allowed["similarity"]
+                ):
+                    best_allowed = allowed_candidate
+                continue
+
+            if best_blocked_decision is None or self._is_better(
+                candidate_decision,
+                best_blocked_decision,
+            ):
+                best_blocked_prompt = record["candidate_prompt"]
+                best_blocked_decision = candidate_decision
+
+        return {
+            "best_allowed": best_allowed,
+            "best_blocked_prompt": best_blocked_prompt,
+            "best_blocked_decision": best_blocked_decision,
+            "query_count": query_count,
+        }
+
+    def _make_success_candidate(
+        self,
+        best_allowed: dict[str, Any],
+        query_count: int,
+        judge_query_count: int,
+        original_decision: DefenseDecision,
+        final_decision: DefenseDecision,
+        trace: list[dict[str, Any]],
+    ) -> AttackCandidate:
+        return AttackCandidate(
+            text=best_allowed["prompt"],
+            metadata={
+                "method": self.name,
+                "status": "bypassed_prompt_defense",
+                "query_count": query_count,
+                "selected_unit": best_allowed["unit"],
+                "selected_replacement": best_allowed["replacement"],
+                "selected_similarity": best_allowed["similarity"],
+                "selected_similarity_method": best_allowed["similarity_method"],
+                "selected_clip_similarity": best_allowed["clip_similarity"],
+                "selected_judge_similarity": best_allowed["judge_similarity"],
+                "min_similarity": self.min_similarity,
+                "llm_judge_threshold": self.llm_judge_threshold,
+                "judge_query_count": judge_query_count,
+                "original_defense": asdict(original_decision),
+                "final_defense": asdict(final_decision),
+                "trace": trace,
+            },
+        )
+
+    def _make_failure_candidate(
+        self,
+        current_prompt: str,
+        query_count: int,
+        judge_query_count: int,
+        original_decision: DefenseDecision,
+        current_decision: DefenseDecision,
+        trace: list[dict[str, Any]],
+    ) -> AttackCandidate:
+        return AttackCandidate(
+            text=current_prompt,
+            metadata={
+                "method": self.name,
+                "status": "no_passing_candidate",
+                "query_count": query_count,
+                "min_similarity": self.min_similarity,
+                "llm_judge_threshold": self.llm_judge_threshold,
+                "judge_query_count": judge_query_count,
+                "original_defense": asdict(original_decision),
+                "final_defense": asdict(current_decision),
+                "trace": trace,
+            },
+        )
 
     def cleanup(self, context: dict[str, Any] | None = None) -> None:
         if not self.unload_ollama_after_attack:
@@ -574,6 +702,29 @@ class TextFoolerStyleAttack(Attack):
         }
         leaked_action_terms = context_words & self.CONTEXT_LEAK_TERMS
         return any(self._contains_unit(candidate, term) for term in leaked_action_terms)
+
+    def _log_similarity(self, unit: str, replacement: str, similarity: float) -> None:
+        if not self.log_similarity:
+            return
+        console.print(
+            "[textfooler_style] "
+            f'unit="{unit}" candidate="{replacement}" '
+            f"clip_similarity={similarity:.3f} "
+            f"threshold={self.min_similarity:.3f}",
+            markup=False,
+        )
+
+    def _log_llm_judge(self, unit: str, replacement: str, judge_score: float) -> None:
+        if not self.log_llm_judge:
+            return
+        console.print(
+            "[textfooler_style] "
+            f'llm_judge unit="{unit}" '
+            f'candidate="{replacement}" '
+            f"score={judge_score:.3f} "
+            f"threshold={self.llm_judge_threshold:.3f}",
+            markup=False,
+        )
 
     def _log_candidate_filter(self, unit: str, candidate: str, reason: str) -> None:
         if not self.log_candidate_filtering:
