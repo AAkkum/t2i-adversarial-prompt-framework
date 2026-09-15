@@ -185,6 +185,8 @@ Main data files:
 - `data/search_attack/blocked_terms.txt`
 - `data/search_attack/concept_targets.json`
 
+When `--target` is provided, the target is also treated as a run-specific protected concept. That means you can test a new target without first adding it to the character-filter data files.
+
 This defense can run before and after image generation.
 
 ### `image_clip_filter`

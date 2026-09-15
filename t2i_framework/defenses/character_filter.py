@@ -67,6 +67,7 @@ class CharacterFilterDefense(Defense):
         enable_image_semantic: bool = True,
         semantic_prompt_threshold: float = SEMANTIC_PROMPT_THRESHOLD,
         semantic_image_threshold: float = SEMANTIC_IMAGE_THRESHOLD,
+        use_target_concept: bool = True,
         semantic_matcher: MiniLMConceptMatcher | None = None,
         captioner: BlipCaptioner | None = None,
     ) -> None:
@@ -84,6 +85,7 @@ class CharacterFilterDefense(Defense):
         self.semantic_image_threshold = _validate_threshold(
             semantic_image_threshold, "semantic_image_threshold"
         )
+        self.use_target_concept = use_target_concept
         self.semantic_matcher = semantic_matcher or MiniLMConceptMatcher()
         self.captioner = captioner or BlipCaptioner()
 
@@ -94,13 +96,14 @@ class CharacterFilterDefense(Defense):
         context: dict[str, Any] | None = None,
     ) -> DefenseDecision:
         self._apply_context_config(context)
-        del target_concept  # Protected concepts come only from concept_targets.json.
         if not isinstance(prompt, str) or not prompt.strip():
             raise ValueError("character_filter requires a non-empty prompt.")
 
-        matched_term = self._find_keyword(prompt)
+        protected_concepts = self._runtime_protected_concepts(target_concept)
+        target_metadata = self._target_concept_metadata(target_concept)
+        matched_term = self._find_keyword(prompt, target_concept)
         if matched_term is not None:
-            concept = self.protected_concepts.get(matched_term)
+            concept = protected_concepts.get(matched_term)
             metadata = {
                 "direct_blocked_term": matched_term,
                 "matched_keyword_block": matched_term,
@@ -112,6 +115,7 @@ class CharacterFilterDefense(Defense):
                 "blocked_by": "KEYWORD",
                 "final_defense": "BLOCKED",
             }
+            metadata.update(target_metadata)
             decision = DefenseDecision(
                 allowed=False,
                 reason=f"Blocked term: {matched_term}",
@@ -136,14 +140,16 @@ class CharacterFilterDefense(Defense):
                     "semantic_prompt_threshold": self.semantic_prompt_threshold,
                     "blocked_by": "NONE",
                     "final_defense": "ALLOWED",
+                    **target_metadata,
                 },
             )
             self._print_prompt(context, prompt, decision)
             return decision
 
-        match = self.semantic_matcher.match(prompt, self.protected_concepts)
+        match = self.semantic_matcher.match(prompt, protected_concepts)
         blocked = match.similarity >= self.semantic_prompt_threshold
         metadata = self._semantic_prompt_metadata(match, blocked)
+        metadata.update(target_metadata)
         decision = DefenseDecision(
             allowed=not blocked,
             reason=(
@@ -164,12 +170,17 @@ class CharacterFilterDefense(Defense):
         context: dict[str, Any] | None = None,
     ) -> DefenseDecision:
         self._apply_context_config(context)
-        del target_concept
+        protected_concepts = self._runtime_protected_concepts(target_concept)
+        target_metadata = self._target_concept_metadata(target_concept)
         if not self.enable_image_semantic:
             return DefenseDecision(
                 allowed=True,
                 reason="BLIP/MiniLM image defense disabled",
-                metadata={"image_result": "DISABLED", "blocked_by": "NONE"},
+                metadata={
+                    "image_result": "DISABLED",
+                    "blocked_by": "NONE",
+                    **target_metadata,
+                },
             )
 
         if context is not None:
@@ -180,7 +191,7 @@ class CharacterFilterDefense(Defense):
             context["image_error_stage"] = "minilm_image"
         print("BLIP executed: YES")
         print(f"BLIP Caption: {caption}")
-        match = self.semantic_matcher.match(caption, self.protected_concepts)
+        match = self.semantic_matcher.match(caption, protected_concepts)
         blocked = match.similarity >= self.semantic_image_threshold
         metadata = {
             "blip_caption": caption,
@@ -191,6 +202,7 @@ class CharacterFilterDefense(Defense):
             "image_result": "BLOCKED" if blocked else "PASS",
             "blocked_by": "BLIP_MINILM_IMAGE" if blocked else "NONE",
             "final_defense": "BLOCKED" if blocked else "ALLOWED",
+            **target_metadata,
         }
         decision = DefenseDecision(
             allowed=not blocked,
@@ -233,13 +245,40 @@ class CharacterFilterDefense(Defense):
                 defense_config["semantic_image_threshold"],
                 "semantic_image_threshold",
             )
+        if "use_target_concept" in defense_config:
+            self.use_target_concept = bool(defense_config["use_target_concept"])
 
-    def _find_keyword(self, prompt: str) -> str | None:
+    def _find_keyword(self, prompt: str, target_concept: str | None = None) -> str | None:
         normalized_prompt = normalize_character_text(prompt)
-        for term in self.blocked_terms:
+        target_term = self._runtime_target_term(target_concept)
+        terms = set(self.blocked_terms)
+        if target_term is not None:
+            terms.add(target_term)
+
+        for term in sorted(terms, key=lambda item: (-len(item), item)):
             if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", normalized_prompt):
                 return term
         return None
+
+    def _runtime_protected_concepts(self, target_concept: str | None) -> dict[str, str]:
+        concepts = dict(self.protected_concepts)
+        target_term = self._runtime_target_term(target_concept)
+        if target_term is not None:
+            concepts.setdefault(target_term, target_concept.strip())
+        return concepts
+
+    def _runtime_target_term(self, target_concept: str | None) -> str | None:
+        if not self.use_target_concept or not isinstance(target_concept, str):
+            return None
+        target_term = normalize_character_text(target_concept)
+        return target_term or None
+
+    def _target_concept_metadata(self, target_concept: str | None) -> dict[str, Any]:
+        target_term = self._runtime_target_term(target_concept)
+        return {
+            "target_concept_used": target_term is not None,
+            "target_concept_term": target_term,
+        }
 
     def _semantic_prompt_metadata(
         self, match: SemanticMatch, blocked: bool

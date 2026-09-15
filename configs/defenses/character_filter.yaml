@@ -1,0 +1,7 @@
+defense:
+  name: character_filter
+  use_target_concept: true
+  enable_semantic_prompt: true
+  enable_image_semantic: true
+  semantic_prompt_threshold: 0.5
+  semantic_image_threshold: 0.5

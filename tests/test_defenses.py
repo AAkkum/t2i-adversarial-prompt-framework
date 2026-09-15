@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
+from t2i_framework.defenses.character_filter import CharacterFilterDefense
+from t2i_framework.defenses.semantic_concepts import SemanticMatch
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
@@ -16,6 +18,25 @@ class FakeImageTextScorer:
 
 def fake_clip_text_scorer(_prompt: str, terms: list[str]) -> list[float]:
     return [0.8 if term == "blue rabbit mascot" else 0.1 for term in terms]
+
+
+class FakeCharacterMatcher:
+    def __init__(self, score: float = 0.9) -> None:
+        self.score = score
+        self.seen_concepts: list[dict[str, str]] = []
+
+    def match(self, _text: str, concepts: dict[str, str]) -> SemanticMatch:
+        self.seen_concepts.append(dict(concepts))
+        term = next(iter(concepts))
+        return SemanticMatch(term, concepts[term], self.score)
+
+
+class FakeCaptioner:
+    def __init__(self, caption: str = "target-like generated caption") -> None:
+        self.caption_text = caption
+
+    def caption(self, _image_path: Path) -> str:
+        return self.caption_text
 
 
 def test_none_defense_allows() -> None:
@@ -59,6 +80,69 @@ def test_clip_similarity_can_hide_score_from_decision() -> None:
     assert "matched_term" not in decision.metadata
     assert "threshold" not in decision.metadata
     assert decision.metadata["score_exposed"] is False
+
+
+def test_character_filter_blocks_target_as_runtime_keyword(tmp_path: Path) -> None:
+    terms_path = tmp_path / "blocked_terms.txt"
+    concepts_path = tmp_path / "concept_targets.json"
+    terms_path.write_text("", encoding="utf-8")
+    concepts_path.write_text("{}", encoding="utf-8")
+    defense = CharacterFilterDefense(
+        terms_path=terms_path,
+        concepts_path=concepts_path,
+        enable_semantic_prompt=False,
+        enable_image_semantic=False,
+    )
+
+    decision = defense.check_prompt("mario jumping in the air", target_concept="mario")
+
+    assert not decision.allowed
+    assert decision.metadata["matched_keyword_block"] == "mario"
+    assert decision.metadata["closest_protected_concept"] == "mario"
+    assert decision.metadata["target_concept_used"] is True
+
+
+def test_character_filter_adds_target_to_semantic_prompt_concepts(tmp_path: Path) -> None:
+    terms_path = tmp_path / "blocked_terms.txt"
+    concepts_path = tmp_path / "concept_targets.json"
+    terms_path.write_text("", encoding="utf-8")
+    concepts_path.write_text("{}", encoding="utf-8")
+    matcher = FakeCharacterMatcher(score=0.9)
+    defense = CharacterFilterDefense(
+        terms_path=terms_path,
+        concepts_path=concepts_path,
+        semantic_matcher=matcher,
+        captioner=FakeCaptioner(),
+        enable_image_semantic=False,
+    )
+
+    decision = defense.check_prompt("red capped hero in a platform game", target_concept="mario")
+
+    assert not decision.allowed
+    assert matcher.seen_concepts[0]["mario"] == "mario"
+    assert decision.metadata["target_concept_used"] is True
+
+
+def test_character_filter_adds_target_to_image_semantic_concepts(tmp_path: Path) -> None:
+    terms_path = tmp_path / "blocked_terms.txt"
+    concepts_path = tmp_path / "concept_targets.json"
+    image_path = tmp_path / "image.png"
+    terms_path.write_text("", encoding="utf-8")
+    concepts_path.write_text("{}", encoding="utf-8")
+    image_path.write_bytes(b"placeholder")
+    matcher = FakeCharacterMatcher(score=0.9)
+    defense = CharacterFilterDefense(
+        terms_path=terms_path,
+        concepts_path=concepts_path,
+        semantic_matcher=matcher,
+        captioner=FakeCaptioner("red capped hero in a platform game"),
+    )
+
+    decision = defense.check_image(image_path, target_concept="mario")
+
+    assert not decision.allowed
+    assert matcher.seen_concepts[0]["mario"] == "mario"
+    assert decision.metadata["target_concept_used"] is True
 
 
 def test_image_clip_filter_blocks_high_similarity(tmp_path: Path) -> None:
