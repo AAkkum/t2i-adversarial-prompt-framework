@@ -3,4 +3,4 @@ defense:
   threshold: 0.7
   include_aliases: false
   log_similarity: true
-  expose_score: true
+  expose_score: false

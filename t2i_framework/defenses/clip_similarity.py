@@ -26,12 +26,14 @@ class CLIPSimilarityDefense(Defense):
         threshold: float = 0.7,
         include_aliases: bool = True,
         log_similarity: bool = True,
+        expose_score: bool = True,
         similarity_scorer: SimilarityScorer | None = None,
     ) -> None:
         self.concepts_path = concepts_path or Path("data/restricted_concepts.yaml")
         self.threshold = threshold
         self.include_aliases = include_aliases
         self.log_similarity = log_similarity
+        self.expose_score = expose_score
         self.similarity_scorer = similarity_scorer
         self.concepts = self._load_concepts(self.concepts_path)
         self._clip_similarity_scorer = None
@@ -66,11 +68,7 @@ class CLIPSimilarityDefense(Defense):
         best_index, best_score = max(enumerate(scores), key=lambda item: item[1])
         matched_term = terms[best_index]
         allowed = best_score < self.threshold
-        reason = (
-            f"CLIP similarity {best_score:.3f} >= threshold {self.threshold:.3f}: {matched_term}"
-            if not allowed
-            else f"max CLIP similarity {best_score:.3f} below threshold {self.threshold:.3f}"
-        )
+        reason = self._decision_reason(allowed, best_score, matched_term)
 
         if self.log_similarity:
             console.print(
@@ -84,13 +82,8 @@ class CLIPSimilarityDefense(Defense):
         return DefenseDecision(
             allowed=allowed,
             reason=reason,
-            score=best_score,
-            metadata={
-                "matched_term": matched_term,
-                "similarity": best_score,
-                "threshold": self.threshold,
-                "checked_terms": len(terms),
-            },
+            score=best_score if self.expose_score else None,
+            metadata=self._decision_metadata(matched_term, best_score, len(terms)),
         )
 
     @staticmethod
@@ -145,6 +138,38 @@ class CLIPSimilarityDefense(Defense):
                 self.concepts_path = concepts_path
                 self.concepts = self._load_concepts(self.concepts_path)
 
-        for key in ["threshold", "include_aliases", "log_similarity"]:
+        for key in ["threshold", "include_aliases", "log_similarity", "expose_score"]:
             if key in defense_config:
                 setattr(self, key, defense_config[key])
+
+    def _decision_reason(self, allowed: bool, best_score: float, matched_term: str) -> str:
+        if self.expose_score:
+            return (
+                f"CLIP similarity {best_score:.3f} >= threshold {self.threshold:.3f}: {matched_term}"
+                if not allowed
+                else f"max CLIP similarity {best_score:.3f} below threshold {self.threshold:.3f}"
+            )
+        return (
+            "CLIP similarity exceeded threshold"
+            if not allowed
+            else "CLIP similarity below threshold"
+        )
+
+    def _decision_metadata(
+        self,
+        matched_term: str,
+        best_score: float,
+        checked_terms: int,
+    ) -> dict[str, Any]:
+        if not self.expose_score:
+            return {
+                "score_exposed": False,
+                "details_exposed": False,
+            }
+        return {
+            "matched_term": matched_term,
+            "similarity": best_score,
+            "threshold": self.threshold,
+            "checked_terms": checked_terms,
+            "score_exposed": True,
+        }

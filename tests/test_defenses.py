@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
@@ -11,6 +12,10 @@ class FakeImageTextScorer:
 
     def score(self, image_path: Path, text: str) -> float:
         return self.fixed_score
+
+
+def fake_clip_text_scorer(_prompt: str, terms: list[str]) -> list[float]:
+    return [0.8 if term == "blue rabbit mascot" else 0.1 for term in terms]
 
 
 def test_none_defense_allows() -> None:
@@ -32,6 +37,28 @@ def test_normalize_keywords_allows_unrelated_prompt() -> None:
         target_concept="blue rabbit mascot",
     )
     assert decision.allowed
+
+
+def test_clip_similarity_can_hide_score_from_decision() -> None:
+    defense = CLIPSimilarityDefense(
+        threshold=0.7,
+        similarity_scorer=fake_clip_text_scorer,
+        expose_score=False,
+        log_similarity=False,
+    )
+
+    decision = defense.check_prompt(
+        "a blue rabbit mascot standing in a garden",
+        target_concept="blue rabbit mascot",
+    )
+
+    assert not decision.allowed
+    assert decision.score is None
+    assert "0.8" not in decision.reason
+    assert "similarity" not in decision.metadata
+    assert "matched_term" not in decision.metadata
+    assert "threshold" not in decision.metadata
+    assert decision.metadata["score_exposed"] is False
 
 
 def test_image_clip_filter_blocks_high_similarity(tmp_path: Path) -> None:

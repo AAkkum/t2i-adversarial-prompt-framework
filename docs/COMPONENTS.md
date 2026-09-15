@@ -163,8 +163,11 @@ Prompt defense that compares the attacked prompt text against restricted concept
 Example config:
 
 - `configs/defenses/clip_similarity.yaml`
+- `configs/defenses/clip_similarity_black_box.yaml`
 
 This is a pre-generation defense. If it blocks the prompt, no image is generated.
+
+Set `expose_score: false` to make the defense return only the allow/block decision. The CLIP score is still computed internally, but the returned `DefenseDecision` hides the numeric score and matched term.
 
 ### `character_filter`
 
