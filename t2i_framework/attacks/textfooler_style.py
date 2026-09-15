@@ -20,7 +20,15 @@ SimilarityJudge = Callable[[str, str, str], float]
 
 
 class TextFoolerStyleAttack(Attack):
-    """Adaptive TextFooler-style attack using deletion tests and paraphrase candidates."""
+    """Adaptive TextFooler-style prompt rewriting attack.
+
+    The attack is inspired by TextFooler's word-importance ranking and
+    replacement loop, but adapts it to text-to-image prompt defenses. It first
+    checks whether the original prompt is blocked, ranks important prompt units
+    through deletion tests, asks a paraphraser for replacements, keeps only
+    similarity-preserving candidates, and queries the defense until a candidate
+    passes or the configured search budget is exhausted.
+    """
 
     name = "textfooler_style"
 
@@ -53,6 +61,45 @@ class TextFoolerStyleAttack(Attack):
         unload_ollama_after_attack: bool = True,
         log_ollama_unload: bool = True,
     ) -> None:
+        """Create a configurable TextFooler-style attack instance.
+
+        Args:
+            paraphraser: Optional injected paraphraser for tests or alternate
+                backends. It receives the selected unit, full prompt context,
+                and requested candidate count.
+            candidate_count: Maximum number of replacement candidates to keep
+                per paraphrase batch.
+            max_rounds: Maximum number of times the attack may re-rank and
+                continue from the best blocked rewrite.
+            stop_words: Words ignored when building deletion-test units.
+            use_qwen_fallback: Whether to use the Ollama Qwen paraphraser when
+                no injected paraphraser is provided.
+            min_similarity: Minimum candidate similarity required before a
+                candidate is checked against the defense.
+            similarity_scorer: Optional injected text similarity scorer.
+            use_clip_similarity: Whether to use CLIP text similarity when no
+                injected scorer is provided.
+            max_candidate_batches: Number of paraphrase batches to request for
+                each selected unit.
+            log_similarity: Whether to print candidate similarity scores.
+            use_llm_judge_fallback: Whether to ask an LLM judge when CLIP
+                rejects every candidate in a batch.
+            llm_judge_threshold: Minimum LLM judge score required to recover a
+                CLIP-rejected candidate.
+            llm_judge_model: Optional Ollama model name for the judge.
+            llm_judge: Optional injected judge for tests or alternate backends.
+            log_llm_judge: Whether to print judge scores.
+            filter_context_leaks: Whether to discard replacements that leak
+                target/action words from the prompt context.
+            log_candidate_filtering: Whether to print why raw candidates are
+                filtered out.
+            log_raw_paraphrases: Whether to print raw and parsed paraphraser
+                outputs.
+            paraphraser_model: Optional Ollama model name for paraphrasing.
+            unload_ollama_after_attack: Whether cleanup should ask Ollama to
+                unload paraphraser/judge models after candidate generation.
+            log_ollama_unload: Whether to print successful unload messages.
+        """
         self.paraphraser = paraphraser
         self.candidate_count = candidate_count
         self.max_rounds = max_rounds
@@ -86,6 +133,24 @@ class TextFoolerStyleAttack(Attack):
         target_concept: str | None = None,
         context: dict[str, Any] | None = None,
     ) -> list[AttackCandidate]:
+        """Generate one adversarial prompt candidate for the runner.
+
+        The method returns early if there is no defense object or if the
+        original prompt already passes. Otherwise it performs the adaptive
+        attack loop: rank units, try paraphrase replacements, accept a passing
+        candidate, or continue from the best blocked candidate.
+
+        Args:
+            prompt: Original user prompt.
+            target_concept: Optional restricted concept that should be attacked
+                first when it appears in the prompt.
+            context: Runner context. The attack expects `defense`, `config`,
+                and optional bookkeeping values such as `seed`.
+
+        Returns:
+            A single-item list containing either the successful attacked prompt
+            or the best prompt reached before the search budget ended.
+        """
         context = context or {}
         self._apply_context_config(context)
         defense = context.get("defense")
@@ -189,6 +254,25 @@ class TextFoolerStyleAttack(Attack):
         context: dict[str, Any],
         trace: list[dict[str, Any]],
     ) -> dict[str, Any]:
+        """Try to replace one ranked prompt unit.
+
+        The method may request multiple paraphrase batches for the same unit.
+        It returns the best passing candidate if one exists; otherwise it
+        returns the best blocked candidate so the outer attack loop can continue
+        from the strongest partial rewrite.
+
+        Args:
+            unit: Word or phrase selected by deletion-based ranking.
+            current_prompt: Prompt state before replacing this unit.
+            target_concept: Restricted concept passed by the runner.
+            defense: Defense object used for prompt checks.
+            context: Runner context passed through to the defense.
+            trace: Shared trace list updated with every candidate decision.
+
+        Returns:
+            A dictionary containing `best_allowed`, `best_blocked_prompt`,
+            `best_blocked_decision`, and query counters.
+        """
         best_blocked_prompt = None
         best_blocked_decision = None
         best_allowed: dict[str, Any] | None = None
@@ -252,6 +336,23 @@ class TextFoolerStyleAttack(Attack):
         target_concept: str | None,
         batch_index: int,
     ) -> list[dict[str, Any]] | None:
+        """Create scored candidate records for one paraphrase batch.
+
+        Raw paraphrases are converted into full prompt rewrites and scored with
+        the configured similarity scorer. Records that are too dissimilar are
+        kept in the trace later, but they are not sent to the defense unless a
+        judge fallback accepts them.
+
+        Args:
+            unit: Word or phrase being replaced.
+            current_prompt: Prompt state before replacement.
+            target_concept: Restricted concept used by optional leak filtering.
+            batch_index: Zero-based paraphrase batch number for trace metadata.
+
+        Returns:
+            A list of candidate records, or `None` when no replacements were
+            available for this unit.
+        """
         replacements = self._replacement_candidates(unit, current_prompt, target_concept)
         if not replacements:
             return None
@@ -295,6 +396,20 @@ class TextFoolerStyleAttack(Attack):
         current_prompt: str,
         candidate_records: list[dict[str, Any]],
     ) -> int:
+        """Recover CLIP-rejected candidates with an optional LLM judge.
+
+        The judge runs only when enabled and every candidate in the batch failed
+        the normal similarity threshold. Accepted judge scores replace the
+        candidate similarity value used for final selection.
+
+        Args:
+            unit: Word or phrase being replaced.
+            current_prompt: Prompt context used by the judge.
+            candidate_records: Mutable candidate records for the current batch.
+
+        Returns:
+            Number of judge queries performed.
+        """
         if (
             not candidate_records
             or not self.use_llm_judge_fallback
@@ -349,6 +464,24 @@ class TextFoolerStyleAttack(Attack):
         context: dict[str, Any],
         trace: list[dict[str, Any]],
     ) -> dict[str, Any]:
+        """Check similarity-approved candidates against the defense.
+
+        Passing candidates are ranked by their active similarity score. Blocked
+        candidates are ranked by `_is_better`, which uses defense scores when
+        available and falls back to binary behavior for black-box defenses.
+
+        Args:
+            candidate_records: Candidate rewrites and trace metadata.
+            unit: Word or phrase being replaced.
+            target_concept: Restricted concept passed to the defense.
+            defense: Defense object used for prompt checks.
+            context: Runner context passed through to the defense.
+            trace: Shared trace list updated with candidate outcomes.
+
+        Returns:
+            A dictionary containing the best allowed candidate, best blocked
+            candidate, and the number of defense queries performed.
+        """
         best_allowed: dict[str, Any] | None = None
         best_blocked_prompt = None
         best_blocked_decision = None
@@ -423,6 +556,19 @@ class TextFoolerStyleAttack(Attack):
         final_decision: DefenseDecision,
         trace: list[dict[str, Any]],
     ) -> AttackCandidate:
+        """Build the successful attack candidate returned to the runner.
+
+        Args:
+            best_allowed: Best passing candidate record selected by the attack.
+            query_count: Number of prompt-defense queries performed.
+            judge_query_count: Number of LLM judge queries performed.
+            original_decision: Defense decision for the original prompt.
+            final_decision: Defense decision for the selected prompt.
+            trace: Full attack trace for debugging and result analysis.
+
+        Returns:
+            AttackCandidate with the selected prompt and detailed metadata.
+        """
         return AttackCandidate(
             text=best_allowed["prompt"],
             metadata={
@@ -453,6 +599,19 @@ class TextFoolerStyleAttack(Attack):
         current_decision: DefenseDecision,
         trace: list[dict[str, Any]],
     ) -> AttackCandidate:
+        """Build the fallback candidate when no prompt bypasses the defense.
+
+        Args:
+            current_prompt: Last prompt state reached by the search.
+            query_count: Number of prompt-defense queries performed.
+            judge_query_count: Number of LLM judge queries performed.
+            original_decision: Defense decision for the original prompt.
+            current_decision: Defense decision for the last prompt state.
+            trace: Full attack trace for debugging and result analysis.
+
+        Returns:
+            AttackCandidate marked with `status="no_passing_candidate"`.
+        """
         return AttackCandidate(
             text=current_prompt,
             metadata={
@@ -469,6 +628,12 @@ class TextFoolerStyleAttack(Attack):
         )
 
     def cleanup(self, context: dict[str, Any] | None = None) -> None:
+        """Release optional Ollama paraphraser and judge models after the run.
+
+        Args:
+            context: Unused runner context, accepted to match the attack
+                cleanup interface.
+        """
         if not self.unload_ollama_after_attack:
             return
 
@@ -505,6 +670,18 @@ class TextFoolerStyleAttack(Attack):
         original_decision: DefenseDecision,
         context: dict[str, Any],
     ) -> list[tuple[str, float]]:
+        """Rank prompt units by deletion-test importance.
+
+        Args:
+            prompt: Current prompt state.
+            target_concept: Optional restricted concept to prioritize.
+            defense: Defense queried after deleting each candidate unit.
+            original_decision: Defense decision for the current prompt.
+            context: Runner context passed through to the defense.
+
+        Returns:
+            `(unit, importance)` pairs sorted from most to least important.
+        """
         units = self._candidate_units(prompt, target_concept, original_decision)
         ranked = []
 
@@ -523,6 +700,16 @@ class TextFoolerStyleAttack(Attack):
         target_concept: str | None,
         original_decision: DefenseDecision,
     ) -> list[str]:
+        """Collect target, matched terms, known phrases, and content words.
+
+        Args:
+            prompt: Current prompt state.
+            target_concept: Optional restricted concept from the runner.
+            original_decision: Defense decision that may expose a matched term.
+
+        Returns:
+            Ordered unique units that can be deletion-tested and replaced.
+        """
         units = []
         matched_term = original_decision.metadata.get("matched_term")
 
@@ -557,6 +744,21 @@ class TextFoolerStyleAttack(Attack):
         unit: str,
         target_concept: str | None,
     ) -> float:
+        """Compute how important a unit looked during deletion testing.
+
+        The score strongly rewards deletions that make a blocked prompt pass.
+        When the defense exposes numeric scores, lower deleted-prompt scores
+        also increase importance. The explicit target receives a small bonus.
+
+        Args:
+            original_decision: Defense decision before deleting the unit.
+            deleted_decision: Defense decision after deleting the unit.
+            unit: Deleted word or phrase.
+            target_concept: Optional restricted concept from the runner.
+
+        Returns:
+            Higher score means the unit should be tried earlier.
+        """
         score = 0.0
         if not original_decision.allowed and deleted_decision.allowed:
             score += 100.0
@@ -572,6 +774,16 @@ class TextFoolerStyleAttack(Attack):
         context_prompt: str,
         target_concept: str | None,
     ) -> list[str]:
+        """Generate, normalize, deduplicate, and filter replacements.
+
+        Args:
+            unit: Word or phrase being replaced.
+            context_prompt: Prompt context passed to the paraphraser.
+            target_concept: Restricted concept used by optional leak filtering.
+
+        Returns:
+            Up to `candidate_count` candidate replacement strings.
+        """
         candidates = []
         candidates.extend(self._generate_candidates(unit, context_prompt))
 
@@ -608,6 +820,16 @@ class TextFoolerStyleAttack(Attack):
         return unique_candidates
 
     def _generate_candidates(self, unit: str, context_prompt: str) -> list[str]:
+        """Request raw replacement candidates from an injected or Ollama paraphraser.
+
+        Args:
+            unit: Word or phrase being replaced.
+            context_prompt: Full prompt context sent to the paraphraser.
+
+        Returns:
+            Raw candidate strings parsed by the paraphraser backend. Returns an
+            empty list if no backend is enabled or the backend fails.
+        """
         if self.paraphraser is not None:
             candidates = self.paraphraser(unit, context_prompt, self.candidate_count)
             self._log_raw_paraphrases(unit, None, candidates)
@@ -635,6 +857,17 @@ class TextFoolerStyleAttack(Attack):
             return []
 
     def _score_similarity(self, source: str, candidate: str) -> float:
+        """Score whether a replacement preserves the selected unit's meaning.
+
+        Args:
+            source: Original word or phrase.
+            candidate: Candidate replacement phrase.
+
+        Returns:
+            Similarity score in the range expected by the configured scorer. If
+            CLIP is disabled or unavailable, returns `1.0` so candidates are not
+            filtered by this stage.
+        """
         if self.similarity_scorer is not None:
             return float(self.similarity_scorer(source, candidate))
 
@@ -652,6 +885,16 @@ class TextFoolerStyleAttack(Attack):
             return 1.0
 
     def _score_llm_judge(self, source: str, candidate: str, context_prompt: str) -> float:
+        """Ask the optional LLM judge for a replacement-preservation score.
+
+        Args:
+            source: Original word or phrase.
+            candidate: Candidate replacement phrase.
+            context_prompt: Full prompt context for judging.
+
+        Returns:
+            Judge score as a float, or `0.0` if the judge backend fails.
+        """
         if self.llm_judge is not None:
             return float(self.llm_judge(source, candidate, context_prompt))
 
@@ -673,9 +916,16 @@ class TextFoolerStyleAttack(Attack):
         target_concept: str | None,
         context: dict[str, Any],
     ) -> DefenseDecision:
+        """Run the prompt-stage defense with the framework's standard signature."""
         return defense.check_prompt(prompt, target_concept=target_concept, context=context)
 
     def _is_better(self, candidate_decision: DefenseDecision, best_decision: DefenseDecision) -> bool:
+        """Return whether a blocked candidate is a better partial rewrite.
+
+        Score-returning defenses use lower scores as better because they are
+        closer to passing. If scores are hidden, only an allowed candidate can
+        beat a blocked one, so black-box blocked candidates keep their order.
+        """
         if candidate_decision.score is not None and best_decision.score is not None:
             return candidate_decision.score < best_decision.score
         if candidate_decision.score is not None:
@@ -691,6 +941,18 @@ class TextFoolerStyleAttack(Attack):
         context_prompt: str,
         target_concept: str | None,
     ) -> bool:
+        """Detect optional candidate leakage from the surrounding prompt.
+
+        Args:
+            candidate: Replacement phrase returned by the paraphraser.
+            unit: Word or phrase being replaced.
+            context_prompt: Prompt before replacing the unit.
+            target_concept: Restricted concept from the runner.
+
+        Returns:
+            True when the replacement reintroduces the target or known action
+            context terms that should stay outside the replacement phrase.
+        """
         if target_concept and target_concept.lower() != unit.lower():
             if self._contains_unit(candidate, target_concept):
                 return True
@@ -704,6 +966,7 @@ class TextFoolerStyleAttack(Attack):
         return any(self._contains_unit(candidate, term) for term in leaked_action_terms)
 
     def _log_similarity(self, unit: str, replacement: str, similarity: float) -> None:
+        """Print the configured similarity score for a replacement candidate."""
         if not self.log_similarity:
             return
         console.print(
@@ -715,6 +978,7 @@ class TextFoolerStyleAttack(Attack):
         )
 
     def _log_llm_judge(self, unit: str, replacement: str, judge_score: float) -> None:
+        """Print the LLM judge score for a replacement candidate."""
         if not self.log_llm_judge:
             return
         console.print(
@@ -727,6 +991,7 @@ class TextFoolerStyleAttack(Attack):
         )
 
     def _log_candidate_filter(self, unit: str, candidate: str, reason: str) -> None:
+        """Print why a raw replacement candidate was discarded."""
         if not self.log_candidate_filtering:
             return
         console.print(
@@ -741,6 +1006,7 @@ class TextFoolerStyleAttack(Attack):
         raw_response: str | None,
         candidates: list[str],
     ) -> None:
+        """Print raw paraphraser output and the parsed candidate list."""
         if not self.log_raw_paraphrases:
             return
 
@@ -758,21 +1024,26 @@ class TextFoolerStyleAttack(Attack):
         )
 
     def _contains_unit(self, prompt: str, unit: str) -> bool:
+        """Return whether a prompt contains a whole-word/phrase unit."""
         return self._unit_pattern(unit).search(prompt) is not None
 
     def _replace_unit(self, prompt: str, unit: str, replacement: str) -> str:
+        """Replace the first whole-word/phrase occurrence of a unit."""
         rewritten = self._unit_pattern(unit).sub(replacement, prompt, count=1)
         return self._normalize_prompt(rewritten)
 
     def _unit_pattern(self, unit: str) -> re.Pattern[str]:
+        """Build a case-insensitive regex for whole-unit matching."""
         return re.compile(rf"(?<!\w){re.escape(unit)}(?!\w)", re.IGNORECASE)
 
     def _normalize_prompt(self, prompt: str) -> str:
+        """Normalize spacing around punctuation and repeated whitespace."""
         prompt = re.sub(r"\s+([,.;:!?])", r"\1", prompt)
         prompt = re.sub(r"\s+", " ", prompt)
         return prompt.strip()
 
     def _apply_context_config(self, context: dict[str, Any]) -> None:
+        """Apply attack options from the merged runner config."""
         attack_config = dict((context.get("config") or {}).get("attack", {}))
         attack_config.pop("name", None)
 

@@ -38,6 +38,9 @@ This is separate from attack support data. Prompt-case CSVs define experiment in
 - `datasets/political_figures/political_figures_sample_5_per_person.csv`
   Manual 200-row prompt set for public-figure defense testing: 40 people, 5 prompts per person, balanced across 4 subcategories.
 
+- `datasets/animals/animal_prompt_batch_300.csv`
+  Manual 300-row prompt set for recognizable animal defense testing: 100 animals, 3 prompts per animal, covering land, water, flying, reptile/amphibian, and insect cases.
+
 ## Support Files
 
 - `restricted_concepts.yaml`
@@ -75,7 +78,7 @@ id,prompt,target_concept,category,dataset
 Extra metadata columns are kept when available:
 
 ```csv
-difficulty,template_id,prompt_set,seed,source_filename,caption_variant,image_file,source_file,franchise,rights_holder,subcategory,region,role
+difficulty,template_id,prompt_set,seed,source_filename,caption_variant,image_file,source_file,franchise,rights_holder,subcategory,region,role,habitat
 ```
 
 The runner uses `prompt`, `target_concept`, `id`, and `category`. Other columns are stored as prompt-case metadata in the result files.
