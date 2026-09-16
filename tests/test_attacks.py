@@ -187,6 +187,7 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
                     "paraphraser": {
                         "enabled": False,
                         "model": "qwen3:8b",
+                        "detail_level": "detailed",
                         "log_raw": True,
                         "unload_after_attack": False,
                         "log_unload": False,
@@ -209,6 +210,7 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
     assert attack.log_candidate_filtering is True
     assert attack.use_qwen_fallback is False
     assert attack.paraphraser_model == "qwen3:8b"
+    assert attack.paraphraser_detail_level == "detailed"
     assert attack.log_raw_paraphrases is True
     assert attack.unload_ollama_after_attack is False
     assert attack.log_ollama_unload is False

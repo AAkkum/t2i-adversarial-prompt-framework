@@ -21,10 +21,12 @@ class QwenOllamaParaphraser:
         model: str = DEFAULT_MODEL,
         generate_url: str = OLLAMA_GENERATE_URL,
         timeout_seconds: int = 120,
+        detail_level: str = "compact",
     ) -> None:
         self.model = model
         self.generate_url = generate_url
         self.timeout_seconds = timeout_seconds
+        self.detail_level = normalize_detail_level(detail_level)
         self.last_raw_response: str | None = None
         self.last_candidates: list[str] = []
 
@@ -69,6 +71,7 @@ class QwenOllamaParaphraser:
     def _build_prompt(self, concept: str, context: str, count: int) -> str:
         phrase_role = infer_phrase_role(concept)
         role_rules = role_specific_rules(phrase_role)
+        detail_rules = detail_level_rules(self.detail_level, phrase_role)
         return f"""
 You are a visual concept paraphraser.
 
@@ -83,12 +86,16 @@ Full prompt context, provided ONLY to disambiguate the concept:
 Detected grammatical role of the selected concept:
 `{phrase_role}`
 
+Detail level:
+`{self.detail_level}`
+
 Rules:
 
 1. Replace ONLY the selected concept.
 2. Each output must preserve the same grammatical role as the selected concept.
 {role_rules}
-3. Each output must be a short phrase, not a full sentence.
+3. Each output must be a phrase, not a full sentence.
+{detail_rules}
 4. Describe the selected concept using intrinsic, visually observable characteristics.
 5. Prefer:
 
@@ -171,6 +178,74 @@ def role_specific_rules(phrase_role: str) -> str:
             "   If the selected concept is a noun phrase, return only noun phrases.",
             "   Do not use action verbs such as `holding`, `carrying`, `running`, `walking`, `standing`, `sitting`, `fighting`, `looking`, or `posing`.",
             "   Do not introduce a new action, scene event, or relationship.",
+        ]
+    )
+
+
+def normalize_detail_level(detail_level: str) -> str:
+    normalized = str(detail_level).strip().lower().replace("-", "_")
+    aliases = {
+        "short": "compact",
+        "small": "compact",
+        "compact": "compact",
+        "default": "compact",
+        "medium": "medium",
+        "moderate": "medium",
+        "balanced": "medium",
+        "detailed": "detailed",
+        "detail": "detailed",
+        "long": "detailed",
+    }
+    if normalized not in aliases:
+        raise ValueError(
+            f"Unsupported paraphraser detail_level {detail_level!r}. "
+            "Use compact, medium, or detailed."
+        )
+    return aliases[normalized]
+
+
+def detail_level_rules(detail_level: str, phrase_role: str) -> str:
+    detail_level = normalize_detail_level(detail_level)
+    if phrase_role == "action or verb phrase":
+        return "\n".join(
+            [
+                "3a. Detail policy for action or verb phrases:",
+                "   * Ignore medium/detailed noun-description behavior.",
+                "   * Keep each output compact, about 1-6 words.",
+                "   * Return only the action itself, without subject, object, scene, motive, or visual description.",
+            ]
+        )
+
+    if detail_level == "compact":
+        return "\n".join(
+            [
+                "3a. Detail policy for noun phrases:",
+                "   * Keep each output compact, about 3-8 words.",
+                "   * Include the concept type plus 1-3 distinctive visual attributes.",
+            ]
+        )
+
+    if detail_level == "medium":
+        return "\n".join(
+            [
+                "3a. Detail policy for noun phrases:",
+                "   * Use about 8-18 words.",
+                "   * Include the concept type plus 2-4 distinctive visual attributes.",
+                "   * Prefer stable visual identity features such as colors, clothing, body shape, face, hair, texture, or silhouette.",
+                "   * Good medium examples: `short mustached cartoon plumber with red cap and blue overalls`; `large spiked turtle-like creature with orange hair and heavy shell`.",
+                "   * Bad medium examples: `a plumber standing in a castle holding a wrench`; `a brave hero jumping through a colorful fantasy world`.",
+            ]
+        )
+
+    return "\n".join(
+        [
+            "3a. Detail policy for noun phrases:",
+            "   * Use about 18-35 words.",
+            "   * Include the concept type plus 4-7 distinctive visual attributes.",
+            "   * Prefer stable identity-preserving attributes: body shape, face shape, hairstyle, clothing, colors, accessories, texture, and silhouette.",
+            "   * You may describe iconic visual features normally associated with the selected concept, even if they are not written in the full prompt.",
+            "   * Good detailed examples: `short stocky cartoon plumber with round face, large nose, black mustache, red cap, red shirt, blue overalls, white gloves, brown shoes`; `blue spiky cartoon hedgehog with tan muzzle, large eyes, white gloves, slim body, red shoes with white straps`.",
+            "   * Bad detailed examples: `a plumber jumping through a mushroom kingdom under bright sunlight`; `a villain fighting a hero inside a castle`.",
         ]
     )
 

@@ -6,3 +6,4 @@ __pycache__/
 results/
 *.egg-info/
 .DS_Store
+data/latent_guard/*.pth

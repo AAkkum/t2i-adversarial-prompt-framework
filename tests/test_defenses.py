@@ -4,6 +4,7 @@ from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
 from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.semantic_concepts import SemanticMatch
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
+from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 
@@ -18,6 +19,15 @@ class FakeImageTextScorer:
 
 def fake_clip_text_scorer(_prompt: str, terms: list[str]) -> list[float]:
     return [0.8 if term == "blue rabbit mascot" else 0.1 for term in terms]
+
+
+class FakeLatentGuardScorer:
+    def __init__(self) -> None:
+        self.seen_terms: list[str] = []
+
+    def __call__(self, _prompt: str, terms: list[str]) -> list[float]:
+        self.seen_terms = list(terms)
+        return [9.5 if term == "mario" else 1.0 for term in terms]
 
 
 class FakeCharacterMatcher:
@@ -80,6 +90,81 @@ def test_clip_similarity_can_hide_score_from_decision() -> None:
     assert "matched_term" not in decision.metadata
     assert "threshold" not in decision.metadata
     assert decision.metadata["score_exposed"] is False
+
+
+def test_latent_guard_lite_blocks_runtime_target() -> None:
+    scorer = FakeLatentGuardScorer()
+    defense = LatentGuardLiteDefense(
+        threshold=9.0131,
+        scorer=scorer,
+        expose_score=True,
+        log_score=False,
+    )
+
+    decision = defense.check_prompt("red capped hero jumping", target_concept="mario")
+
+    assert not decision.allowed
+    assert decision.score == 9.5
+    assert decision.metadata["matched_term"] == "mario"
+    assert "mario" in scorer.seen_terms
+
+
+def test_latent_guard_lite_can_hide_score_from_decision() -> None:
+    defense = LatentGuardLiteDefense(
+        threshold=9.0131,
+        scorer=FakeLatentGuardScorer(),
+        expose_score=False,
+        log_score=False,
+    )
+
+    decision = defense.check_prompt("red capped hero jumping", target_concept="mario")
+
+    assert not decision.allowed
+    assert decision.score is None
+    assert "9.5" not in decision.reason
+    assert "matched_term" not in decision.metadata
+    assert decision.metadata["score_exposed"] is False
+
+
+def test_latent_guard_lite_uses_context_config(tmp_path: Path) -> None:
+    concepts_path = tmp_path / "concepts.yaml"
+    weights_path = tmp_path / "model_parameters.pth"
+    concepts_path.write_text(
+        """
+concepts:
+  blue rabbit mascot:
+    aliases:
+      - blue bunny mascot
+""".strip(),
+        encoding="utf-8",
+    )
+    weights_path.write_bytes(b"placeholder")
+    defense = LatentGuardLiteDefense(scorer=lambda _prompt, terms: [1.0 for _ in terms])
+
+    decision = defense.check_prompt(
+        "a harmless prompt",
+        context={
+            "config": {
+                "defense": {
+                    "concepts_path": str(concepts_path),
+                    "weights_path": str(weights_path),
+                    "threshold": 2.0,
+                    "include_aliases": False,
+                    "use_target_concept": False,
+                    "expose_score": True,
+                    "log_score": False,
+                }
+            }
+        },
+    )
+
+    assert decision.allowed
+    assert defense.concepts_path == concepts_path
+    assert defense.weights_path == weights_path
+    assert defense.threshold == 2.0
+    assert defense.include_aliases is False
+    assert defense.use_target_concept is False
+    assert decision.metadata["checked_terms"] == 1
 
 
 def test_character_filter_blocks_target_as_runtime_keyword(tmp_path: Path) -> None:

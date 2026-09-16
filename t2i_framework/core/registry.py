@@ -17,6 +17,7 @@ from t2i_framework.defenses.composite import CompositeDefense
 from t2i_framework.defenses.embedding_filter import EmbeddingFilterDefense
 from t2i_framework.defenses.filter_placeholder import FilterPlaceholderDefense
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
+from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 from t2i_framework.models.base import ImageModel
@@ -47,6 +48,7 @@ DEFENSE_REGISTRY: dict[str, Callable[[], Defense]] = {
     "embedding_filter": EmbeddingFilterDefense,
     "filter_placeholder": FilterPlaceholderDefense,
     "image_clip_filter": ImageClipFilterDefense,
+    "latent_guard_lite": LatentGuardLiteDefense,
     "composite": CompositeDefense,
 }
 

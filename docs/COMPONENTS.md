@@ -142,6 +142,7 @@ attack:
     enabled: true
     provider: ollama
     model: qwen3:14b
+    detail_level: medium
 
   judge:
     enabled: true
@@ -202,6 +203,26 @@ Example config:
 This is a pre-generation defense. If it blocks the prompt, no image is generated.
 
 Set `expose_score: false` to make the defense return only the allow/block decision. The CLIP score is still computed internally, but the returned `DefenseDecision` hides the numeric score and matched term.
+
+### `latent_guard_lite`
+
+LatentGuard-inspired prompt defense using the public LatentGuard Embedding Mapping Layer architecture and optional pretrained state dict.
+
+It checks:
+
+```text
+prompt CLIP token embeddings + protected concept embedding -> learned mapping layer -> score
+```
+
+Example config:
+
+- `configs/defenses/latent_guard_lite.yaml`
+
+Expected local weights path:
+
+- `data/latent_guard/model_parameters.pth`
+
+This is a lightweight adapter, not a full reproduction or retraining pipeline. It uses the released LatentGuard parameters when available and compares prompts against the runtime `--target` plus configured restricted concepts. The default threshold `9.0131` follows the public LatentGuard inference script and should be recalibrated for new concept categories.
 
 ### `character_filter`
 

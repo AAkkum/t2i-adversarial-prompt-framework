@@ -44,6 +44,8 @@ TextFooler-style paraphrasing and LLM judge mode also require Ollama to be insta
 ollama pull qwen3:14b
 ```
 
+The optional `latent_guard_lite` defense also needs the released LatentGuard weights placed at `data/latent_guard/model_parameters.pth`. See `data/latent_guard/README.md`.
+
 Development dependencies:
 
 ```bash

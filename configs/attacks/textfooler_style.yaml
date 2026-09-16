@@ -20,6 +20,7 @@ attack:
     enabled: true
     provider: ollama
     model: qwen3:14b
+    detail_level: detailed
     log_raw: false
     unload_after_attack: true
     log_unload: true

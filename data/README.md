@@ -64,6 +64,9 @@ For a new prompt batch, use `scripts/build_groot_decomposition_template.py` to i
   - `variant_phrases.json`: phrase fragments used to generate search variants
   - `test_cases.json`: small search-attack examples
 
+- `latent_guard/`
+  Optional local folder for the LatentGuard pretrained `model_parameters.pth` file used by `latent_guard_lite`.
+
 - `example_prompts.csv`
   Tiny smoke-test CSV.
 

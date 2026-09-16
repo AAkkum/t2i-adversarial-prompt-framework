@@ -5,6 +5,7 @@ from t2i_framework.defenses.composite import CompositeDefense
 from t2i_framework.defenses.embedding_filter import EmbeddingFilterDefense
 from t2i_framework.defenses.filter_placeholder import FilterPlaceholderDefense
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
+from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 
@@ -16,6 +17,7 @@ __all__ = [
     "EmbeddingFilterDefense",
     "FilterPlaceholderDefense",
     "ImageClipFilterDefense",
+    "LatentGuardLiteDefense",
     "NoneDefense",
     "NormalizeKeywordsDefense",
 ]

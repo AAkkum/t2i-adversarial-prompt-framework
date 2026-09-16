@@ -1,0 +1,15 @@
+defense:
+  name: latent_guard_lite
+  weights_path: data/latent_guard/model_parameters.pth
+  model_id: openai/clip-vit-large-patch14
+  threshold: 7.0
+  device: null
+  include_aliases: true
+  use_target_concept: true
+  expose_score: true
+  log_score: true
+  num_heads: 16
+  head_dim: 32
+  out_dim: 128
+  input_dim: 768
+  batch_size: 64

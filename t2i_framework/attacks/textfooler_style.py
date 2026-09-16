@@ -62,6 +62,7 @@ class TextFoolerStyleAttack(Attack):
         log_candidate_filtering: bool = False,
         log_raw_paraphrases: bool = False,
         paraphraser_model: str | None = None,
+        paraphraser_detail_level: str = "compact",
         unload_ollama_after_attack: bool = True,
         log_ollama_unload: bool = True,
     ) -> None:
@@ -107,6 +108,8 @@ class TextFoolerStyleAttack(Attack):
             log_raw_paraphrases: Whether to print raw and parsed paraphraser
                 outputs.
             paraphraser_model: Optional Ollama model name for paraphrasing.
+            paraphraser_detail_level: Prompt detail level for generated visual
+                replacements: `compact`, `medium`, or `detailed`.
             unload_ollama_after_attack: Whether cleanup should ask Ollama to
                 unload paraphraser/judge models after candidate generation.
             log_ollama_unload: Whether to print successful unload messages.
@@ -137,6 +140,7 @@ class TextFoolerStyleAttack(Attack):
         self.log_candidate_filtering = log_candidate_filtering
         self.log_raw_paraphrases = log_raw_paraphrases
         self.paraphraser_model = paraphraser_model
+        self.paraphraser_detail_level = paraphraser_detail_level
         self.unload_ollama_after_attack = unload_ollama_after_attack
         self.log_ollama_unload = log_ollama_unload
         self._similarity_backend_scorer = None
@@ -863,7 +867,11 @@ class TextFoolerStyleAttack(Attack):
 
         try:
             if self._ollama_paraphraser is None:
-                kwargs = {"model": self.paraphraser_model} if self.paraphraser_model else {}
+                kwargs = {
+                    "detail_level": self.paraphraser_detail_level,
+                }
+                if self.paraphraser_model:
+                    kwargs["model"] = self.paraphraser_model
                 self._ollama_paraphraser = QwenOllamaParaphraser(**kwargs)
             candidates = self._ollama_paraphraser.generate_candidates(
                 unit,
@@ -1135,8 +1143,13 @@ class TextFoolerStyleAttack(Attack):
                 self.use_qwen_fallback = bool(paraphraser_config["enabled"])
             if "model" in paraphraser_config:
                 self.paraphraser_model = paraphraser_config["model"]
+                self._ollama_paraphraser = None
             if "model_id" in paraphraser_config:
                 self.paraphraser_model = paraphraser_config["model_id"]
+                self._ollama_paraphraser = None
+            if "detail_level" in paraphraser_config:
+                self.paraphraser_detail_level = paraphraser_config["detail_level"]
+                self._ollama_paraphraser = None
             if "log_raw" in paraphraser_config:
                 self.log_raw_paraphrases = bool(paraphraser_config["log_raw"])
             if "unload_after_attack" in paraphraser_config:
@@ -1190,6 +1203,7 @@ class TextFoolerStyleAttack(Attack):
             "log_candidate_filtering",
             "log_raw_paraphrases",
             "paraphraser_model",
+            "paraphraser_detail_level",
             "unload_ollama_after_attack",
             "log_ollama_unload",
         ]:

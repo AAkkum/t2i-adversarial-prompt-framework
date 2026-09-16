@@ -1,4 +1,8 @@
-from t2i_framework.paraphrasers.qwen_ollama import QwenOllamaParaphraser, infer_phrase_role
+from t2i_framework.paraphrasers.qwen_ollama import (
+    QwenOllamaParaphraser,
+    infer_phrase_role,
+    normalize_detail_level,
+)
 
 
 def test_infer_phrase_role_detects_action_phrase() -> None:
@@ -22,6 +26,36 @@ def test_qwen_prompt_preserves_noun_phrase_role() -> None:
 
     assert "noun phrase" in prompt
     assert "return only noun phrases" in prompt
+
+
+def test_qwen_prompt_uses_medium_detail_for_noun_phrases() -> None:
+    prompt = QwenOllamaParaphraser(detail_level="medium")._build_prompt(
+        "mario",
+        "mario jumping",
+        5,
+    )  # noqa: SLF001
+
+    assert "Detail level:" in prompt
+    assert "`medium`" in prompt
+    assert "Use about 8-18 words" in prompt
+    assert "2-4 distinctive visual attributes" in prompt
+
+
+def test_qwen_prompt_keeps_actions_compact_even_when_detailed() -> None:
+    prompt = QwenOllamaParaphraser(detail_level="detailed")._build_prompt(
+        "surrendering",
+        "a figure surrendering",
+        5,
+    )  # noqa: SLF001
+
+    assert "`detailed`" in prompt
+    assert "Ignore medium/detailed noun-description behavior" in prompt
+    assert "about 1-6 words" in prompt
+
+
+def test_qwen_detail_level_aliases() -> None:
+    assert normalize_detail_level("balanced") == "medium"
+    assert normalize_detail_level("long") == "detailed"
 
 
 def test_qwen_paraphraser_stores_raw_response() -> None:

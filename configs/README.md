@@ -45,6 +45,7 @@ The CLI also auto-loads `configs/defenses/<defense>.yaml` when it exists.
 - `configs/defenses/clip_similarity.yaml`
 - `configs/defenses/clip_similarity_black_box.yaml`
 - `configs/defenses/character_filter.yaml`
+- `configs/defenses/latent_guard_lite.yaml`
 - `configs/defenses/normalize_keywords.yaml`
 
 ## Evaluation Configs
