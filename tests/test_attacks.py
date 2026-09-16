@@ -120,3 +120,99 @@ def test_textfooler_selects_highest_llm_judge_similarity() -> None:
     assert candidates[0].text == "better visual replacement jumping"
     assert candidates[0].metadata["selected_similarity"] == 0.95
     assert candidates[0].metadata["selected_similarity_method"] == "llm_judge"
+
+
+def test_textfooler_similarity_config_can_disable_similarity() -> None:
+    attack = TextFoolerStyleAttack(
+        paraphraser=lambda _unit, _context, _count: ["red plumber"],
+        candidate_count=1,
+        max_rounds=1,
+        log_similarity=False,
+        unload_ollama_after_attack=False,
+    )
+
+    candidates = attack.generate(
+        "mario jumping",
+        target_concept="mario",
+        context={
+            "defense": TargetBlockingDefense(),
+            "config": {"attack": {"similarity": {"enabled": False}}},
+        },
+    )
+
+    assert candidates[0].text == "red plumber jumping"
+    assert candidates[0].metadata["selected_similarity"] == 1.0
+    assert candidates[0].metadata["selected_similarity_method"] == "none"
+
+
+def test_textfooler_similarity_config_accepts_sentence_transformer_alias() -> None:
+    attack = TextFoolerStyleAttack(use_clip_similarity=False)
+
+    attack._apply_context_config(
+        {
+            "config": {
+                "attack": {
+                    "similarity": {
+                        "enabled": True,
+                        "method": "minilm",
+                        "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+                        "device": "cpu",
+                        "threshold": 0.62,
+                    }
+                }
+            }
+        }
+    )
+
+    assert attack.similarity_method == "sentence_transformer"
+    assert attack.similarity_model_id == "sentence-transformers/all-MiniLM-L6-v2"
+    assert attack.similarity_device == "cpu"
+    assert attack.min_similarity == 0.62
+
+
+def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> None:
+    attack = TextFoolerStyleAttack()
+
+    attack._apply_context_config(
+        {
+            "config": {
+                "attack": {
+                    "search": {
+                        "candidate_count": 3,
+                        "max_rounds": 4,
+                        "max_candidate_batches": 5,
+                        "filter_context_leaks": True,
+                        "log_candidate_filtering": True,
+                    },
+                    "paraphraser": {
+                        "enabled": False,
+                        "model": "qwen3:8b",
+                        "log_raw": True,
+                        "unload_after_attack": False,
+                        "log_unload": False,
+                    },
+                    "judge": {
+                        "enabled": True,
+                        "model": "qwen3:14b",
+                        "threshold": 0.81,
+                        "log": False,
+                    },
+                }
+            }
+        }
+    )
+
+    assert attack.candidate_count == 3
+    assert attack.max_rounds == 4
+    assert attack.max_candidate_batches == 5
+    assert attack.filter_context_leaks is True
+    assert attack.log_candidate_filtering is True
+    assert attack.use_qwen_fallback is False
+    assert attack.paraphraser_model == "qwen3:8b"
+    assert attack.log_raw_paraphrases is True
+    assert attack.unload_ollama_after_attack is False
+    assert attack.log_ollama_unload is False
+    assert attack.use_llm_judge_fallback is True
+    assert attack.llm_judge_model == "qwen3:14b"
+    assert attack.llm_judge_threshold == 0.81
+    assert attack.log_llm_judge is False

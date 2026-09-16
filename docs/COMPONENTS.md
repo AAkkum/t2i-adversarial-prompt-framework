@@ -122,6 +122,40 @@ Example config:
 
 - `configs/attacks/textfooler_style.yaml`
 
+Similarity filtering is configurable:
+
+```yaml
+attack:
+  search:
+    candidate_count: 5
+    max_rounds: 2
+    max_candidate_batches: 2
+
+  similarity:
+    enabled: true
+    method: clip_text
+    model_id: openai/clip-vit-base-patch32
+    device: null
+    threshold: 0.7
+
+  paraphraser:
+    enabled: true
+    provider: ollama
+    model: qwen3:14b
+
+  judge:
+    enabled: true
+    provider: ollama
+    model: qwen3:14b
+    threshold: 0.75
+```
+
+Supported methods are:
+
+- `clip_text`: visual-language-oriented CLIP text embeddings;
+- `sentence_transformer`: sentence-transformer semantic embeddings, for example `sentence-transformers/all-MiniLM-L6-v2`;
+- `none`: disables candidate similarity filtering.
+
 For TextFooler against the CLIP text defense, combine:
 
 - `--attack textfooler_style`
@@ -277,6 +311,7 @@ Dataset-specific batches:
 - `data/datasets/celebcaption/celebcaption_sample_5_per_person.csv`
 - `data/datasets/copyrighted_characters/copyrighted_characters_sample_5_per_character.csv`
 - `data/datasets/political_figures/political_figures_sample_5_per_person.csv`
+- `data/datasets/animals/animal_prompt_batch_300.csv`
 
 `--prompt-file` supports CSV, JSON, and JSONL.
 

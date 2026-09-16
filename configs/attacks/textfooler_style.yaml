@@ -1,17 +1,32 @@
 attack:
   name: textfooler_style
-  min_similarity: 0.7
-  candidate_count: 5
-  max_rounds: 2
-  max_candidate_batches: 2
-  log_similarity: true
-  filter_context_leaks: false
-  log_candidate_filtering: false
-  log_raw_paraphrases: false
-  paraphraser_model: qwen3:14b
-  unload_ollama_after_attack: true
-  log_ollama_unload: true
-  use_llm_judge_fallback: true
-  llm_judge_threshold: 0.75
-  llm_judge_model: qwen3:14b
-  log_llm_judge: true
+
+  search:
+    candidate_count: 5
+    max_rounds: 2
+    max_candidate_batches: 2
+    filter_context_leaks: false
+    log_candidate_filtering: false
+
+  similarity:
+    enabled: true
+    method: clip_text
+    model_id: openai/clip-vit-base-patch32
+    device: null
+    threshold: 0.7
+    log: true
+
+  paraphraser:
+    enabled: true
+    provider: ollama
+    model: qwen3:14b
+    log_raw: false
+    unload_after_attack: true
+    log_unload: true
+
+  judge:
+    enabled: true
+    provider: ollama
+    model: qwen3:14b
+    threshold: 0.75
+    log: true

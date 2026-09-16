@@ -5,8 +5,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-import torch
-
 from t2i_framework.attacks.base import Attack
 from t2i_framework.core.types import AttackCandidate
 
@@ -52,7 +50,16 @@ class _LLMBackend:
 
     def __init__(self, model_id: str, device: str = "cuda:1",
                  cache_path: str = "outputs/cache/llm_cache.json"):
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+        except ImportError as exc:
+            raise RuntimeError(
+                "PGJAttack requires torch and transformers. "
+                'Install model dependencies with: pip install -e ".[models]"'
+            ) from exc
+
+        self._torch = torch
         print(f"[LLM] Loading {model_id} on {device}")
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -94,7 +101,7 @@ class _LLMBackend:
         first_device = next(self.model.parameters()).device
         inputs = self.tokenizer(text, return_tensors="pt").to(first_device)
 
-        with torch.no_grad():
+        with self._torch.no_grad():
             out = self.model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,

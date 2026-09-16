@@ -16,9 +16,29 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-models = ["torch", "diffusers", "transformers", "accelerate", "safetensors"]
+models = [
+    "torch",
+    "torchvision",
+    "diffusers",
+    "transformers",
+    "accelerate",
+    "safetensors",
+    "huggingface_hub",
+]
 eval = ["sentence-transformers"]
 dev = ["pytest", "ruff"]
+full = [
+    "torch",
+    "torchvision",
+    "diffusers",
+    "transformers",
+    "accelerate",
+    "safetensors",
+    "huggingface_hub",
+    "sentence-transformers",
+    "pytest",
+    "ruff",
+]
 
 [tool.setuptools.packages.find]
 include = ["t2i_framework*"]

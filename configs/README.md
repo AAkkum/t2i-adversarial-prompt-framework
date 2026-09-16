@@ -26,6 +26,7 @@ The CLI also auto-loads `configs/attacks/<attack>.yaml` when it exists.
 
 - `configs/attacks/groot_lite.yaml`
 - `configs/attacks/groot_lite_external.yaml`
+- `configs/attacks/search_attack.yaml`
 - `configs/attacks/textfooler_style.yaml`
 - `configs/attacks/pgj.yaml`
 
@@ -42,6 +43,8 @@ Use with `--defense-config` when you want a non-default defense config.
 The CLI also auto-loads `configs/defenses/<defense>.yaml` when it exists.
 
 - `configs/defenses/clip_similarity.yaml`
+- `configs/defenses/clip_similarity_black_box.yaml`
+- `configs/defenses/character_filter.yaml`
 - `configs/defenses/normalize_keywords.yaml`
 
 ## Evaluation Configs

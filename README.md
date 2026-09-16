@@ -22,10 +22,26 @@ Optional local Hugging Face model dependencies:
 pip install -e ".[models]"
 ```
 
+This enables the Diffusers image models, CLIP prompt/image similarity, BLIP captioning, MiniLM through `transformers`, and the Hugging Face LLM used by `pgj`.
+
 Optional evaluation dependencies for prompt-prompt similarity:
 
 ```bash
 pip install -e ".[eval]"
+```
+
+Full local setup for all built-in attacks, defenses, models, metrics, and tests:
+
+```bash
+pip install -e ".[full]"
+```
+
+On Windows/CUDA machines, make sure `torch` and `torchvision` are installed as a compatible pair. If you see errors such as `operator torchvision::nms does not exist`, reinstall matching PyTorch/Torchvision builds for your CUDA version.
+
+TextFooler-style paraphrasing and LLM judge mode also require Ollama to be installed and running separately, plus the configured model pulled locally, for example:
+
+```bash
+ollama pull qwen3:14b
 ```
 
 Development dependencies:

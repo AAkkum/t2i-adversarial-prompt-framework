@@ -12,6 +12,7 @@ from t2i_framework.core.word_lists import load_replacement_map, load_term_set
 from t2i_framework.judges.ollama_similarity import OllamaSimilarityJudge
 from t2i_framework.paraphrasers.qwen_ollama import QwenOllamaParaphraser
 from t2i_framework.similarity.clip_text import CLIPTextSimilarityScorer
+from t2i_framework.similarity.sentence_text import SentenceTextSimilarityScorer
 
 
 Paraphraser = Callable[[str, str, int], list[str]]
@@ -46,6 +47,9 @@ class TextFoolerStyleAttack(Attack):
         use_qwen_fallback: bool = True,
         min_similarity: float = 0.7,
         similarity_scorer: SimilarityScorer | None = None,
+        similarity_method: str | None = None,
+        similarity_model_id: str | None = None,
+        similarity_device: str | None = None,
         use_clip_similarity: bool = True,
         max_candidate_batches: int = 2,
         log_similarity: bool = True,
@@ -77,13 +81,20 @@ class TextFoolerStyleAttack(Attack):
             min_similarity: Minimum candidate similarity required before a
                 candidate is checked against the defense.
             similarity_scorer: Optional injected text similarity scorer.
+            similarity_method: Built-in similarity backend. Supported values are
+                `clip_text`, `sentence_transformer`, and `none`.
+            similarity_model_id: Optional model identifier for the configured
+                built-in similarity backend.
+            similarity_device: Optional device for the configured built-in
+                similarity backend.
             use_clip_similarity: Whether to use CLIP text similarity when no
-                injected scorer is provided.
+                injected scorer is provided. Kept as a legacy alias for
+                `similarity_method`.
             max_candidate_batches: Number of paraphrase batches to request for
                 each selected unit.
             log_similarity: Whether to print candidate similarity scores.
-            use_llm_judge_fallback: Whether to ask an LLM judge when CLIP
-                rejects every candidate in a batch.
+            use_llm_judge_fallback: Whether to ask an LLM judge when the
+                configured similarity scorer rejects every candidate in a batch.
             llm_judge_threshold: Minimum LLM judge score required to recover a
                 CLIP-rejected candidate.
             llm_judge_model: Optional Ollama model name for the judge.
@@ -107,6 +118,13 @@ class TextFoolerStyleAttack(Attack):
         self.use_qwen_fallback = use_qwen_fallback
         self.min_similarity = min_similarity
         self.similarity_scorer = similarity_scorer
+        self.similarity_method = (
+            self._normalize_similarity_method(similarity_method)
+            if similarity_method is not None
+            else ("clip_text" if use_clip_similarity else "none")
+        )
+        self.similarity_model_id = similarity_model_id
+        self.similarity_device = similarity_device
         self.use_clip_similarity = use_clip_similarity
         self.max_candidate_batches = max_candidate_batches
         self.log_similarity = log_similarity
@@ -121,7 +139,8 @@ class TextFoolerStyleAttack(Attack):
         self.paraphraser_model = paraphraser_model
         self.unload_ollama_after_attack = unload_ollama_after_attack
         self.log_ollama_unload = log_ollama_unload
-        self._clip_similarity_scorer = None
+        self._similarity_backend_scorer = None
+        self._similarity_backend_key = None
         self._similarity_warning_printed = False
         self._ollama_paraphraser = None
         self._ollama_judge = None
@@ -363,9 +382,10 @@ class TextFoolerStyleAttack(Attack):
             if candidate_prompt == current_prompt:
                 continue
 
+            similarity_method = self._similarity_method_name()
             similarity = self._score_similarity(unit, replacement)
             similarity_allowed = similarity >= self.min_similarity
-            self._log_similarity(unit, replacement, similarity)
+            self._log_similarity(unit, replacement, similarity, similarity_method)
 
             trace_item: dict[str, Any] = {
                 "unit": unit,
@@ -373,8 +393,11 @@ class TextFoolerStyleAttack(Attack):
                 "candidate_prompt": candidate_prompt,
                 "candidate_batch": batch_index,
                 "similarity": similarity,
-                "clip_similarity": similarity,
-                "similarity_method": "clip",
+                "similarity_method": similarity_method,
+                "clip_similarity": similarity if similarity_method == "clip_text" else None,
+                "sentence_similarity": (
+                    similarity if similarity_method == "sentence_transformer" else None
+                ),
                 "similarity_allowed": similarity_allowed,
                 "min_similarity": self.min_similarity,
             }
@@ -385,7 +408,7 @@ class TextFoolerStyleAttack(Attack):
                     "trace_item": trace_item,
                     "similarity": similarity,
                     "similarity_allowed": similarity_allowed,
-                    "similarity_method": "clip",
+                    "similarity_method": similarity_method,
                 }
             )
         return records
@@ -396,7 +419,7 @@ class TextFoolerStyleAttack(Attack):
         current_prompt: str,
         candidate_records: list[dict[str, Any]],
     ) -> int:
-        """Recover CLIP-rejected candidates with an optional LLM judge.
+        """Recover similarity-rejected candidates with an optional LLM judge.
 
         The judge runs only when enabled and every candidate in the batch failed
         the normal similarity threshold. Accepted judge scores replace the
@@ -420,7 +443,7 @@ class TextFoolerStyleAttack(Attack):
         if self.log_llm_judge:
             console.print(
                 "[textfooler_style] "
-                f'CLIP rejected all candidates for "{unit}"; '
+                f'{self._similarity_method_name()} rejected all candidates for "{unit}"; '
                 "using LLM judge fallback",
                 markup=False,
             )
@@ -865,24 +888,57 @@ class TextFoolerStyleAttack(Attack):
 
         Returns:
             Similarity score in the range expected by the configured scorer. If
-            CLIP is disabled or unavailable, returns `1.0` so candidates are not
-            filtered by this stage.
+            similarity checks are disabled or unavailable, returns `1.0` so
+            candidates are not filtered by this stage.
         """
         if self.similarity_scorer is not None:
             return float(self.similarity_scorer(source, candidate))
 
-        if not self.use_clip_similarity:
+        method = self._normalize_similarity_method(self.similarity_method)
+        if method == "none":
             return 1.0
 
         try:
-            if self._clip_similarity_scorer is None:
-                self._clip_similarity_scorer = CLIPTextSimilarityScorer()
-            return self._clip_similarity_scorer.score(source, candidate)
+            scorer = self._get_similarity_backend(method)
+            return scorer.score(source, candidate)
         except RuntimeError as exc:
             if not self._similarity_warning_printed:
-                console.print(f"[textfooler_style] CLIP similarity disabled: {exc}")
+                console.print(
+                    f"[textfooler_style] {method} similarity disabled: {exc}",
+                    markup=False,
+                )
                 self._similarity_warning_printed = True
             return 1.0
+
+    def _get_similarity_backend(self, method: str) -> Any:
+        """Return the lazily-created built-in similarity scorer."""
+        key = (method, self.similarity_model_id, self.similarity_device)
+        if self._similarity_backend_scorer is not None and self._similarity_backend_key == key:
+            return self._similarity_backend_scorer
+
+        if method == "clip_text":
+            kwargs = {}
+            if self.similarity_model_id:
+                kwargs["model_id"] = self.similarity_model_id
+            if self.similarity_device:
+                kwargs["device"] = self.similarity_device
+            scorer = CLIPTextSimilarityScorer(**kwargs)
+        elif method == "sentence_transformer":
+            kwargs = {}
+            if self.similarity_model_id:
+                kwargs["model_id"] = self.similarity_model_id
+            if self.similarity_device:
+                kwargs["device"] = self.similarity_device
+            scorer = SentenceTextSimilarityScorer(**kwargs)
+        else:
+            raise RuntimeError(
+                "Unsupported TextFooler similarity method "
+                f"{method!r}. Use clip_text, sentence_transformer, or none."
+            )
+
+        self._similarity_backend_scorer = scorer
+        self._similarity_backend_key = key
+        return scorer
 
     def _score_llm_judge(self, source: str, candidate: str, context_prompt: str) -> float:
         """Ask the optional LLM judge for a replacement-preservation score.
@@ -965,14 +1021,20 @@ class TextFoolerStyleAttack(Attack):
         leaked_action_terms = context_words & self.CONTEXT_LEAK_TERMS
         return any(self._contains_unit(candidate, term) for term in leaked_action_terms)
 
-    def _log_similarity(self, unit: str, replacement: str, similarity: float) -> None:
+    def _log_similarity(
+        self,
+        unit: str,
+        replacement: str,
+        similarity: float,
+        method: str,
+    ) -> None:
         """Print the configured similarity score for a replacement candidate."""
         if not self.log_similarity:
             return
         console.print(
             "[textfooler_style] "
             f'unit="{unit}" candidate="{replacement}" '
-            f"clip_similarity={similarity:.3f} "
+            f"{method}_similarity={similarity:.3f} "
             f"threshold={self.min_similarity:.3f}",
             markup=False,
         )
@@ -1047,10 +1109,75 @@ class TextFoolerStyleAttack(Attack):
         attack_config = dict((context.get("config") or {}).get("attack", {}))
         attack_config.pop("name", None)
 
+        similarity_config = attack_config.pop("similarity", None)
+        has_similarity_config = isinstance(similarity_config, dict)
+        if has_similarity_config:
+            if similarity_config.get("enabled") is False:
+                self.similarity_method = "none"
+                self.use_clip_similarity = False
+            if "method" in similarity_config:
+                self.similarity_method = self._normalize_similarity_method(
+                    similarity_config["method"]
+                )
+                self.use_clip_similarity = self.similarity_method == "clip_text"
+            if "threshold" in similarity_config:
+                self.min_similarity = similarity_config["threshold"]
+            if "model_id" in similarity_config:
+                self.similarity_model_id = similarity_config["model_id"]
+            if "device" in similarity_config:
+                self.similarity_device = similarity_config["device"]
+            if "log" in similarity_config:
+                self.log_similarity = bool(similarity_config["log"])
+
+        paraphraser_config = attack_config.pop("paraphraser", None)
+        if isinstance(paraphraser_config, dict):
+            if "enabled" in paraphraser_config:
+                self.use_qwen_fallback = bool(paraphraser_config["enabled"])
+            if "model" in paraphraser_config:
+                self.paraphraser_model = paraphraser_config["model"]
+            if "model_id" in paraphraser_config:
+                self.paraphraser_model = paraphraser_config["model_id"]
+            if "log_raw" in paraphraser_config:
+                self.log_raw_paraphrases = bool(paraphraser_config["log_raw"])
+            if "unload_after_attack" in paraphraser_config:
+                self.unload_ollama_after_attack = bool(
+                    paraphraser_config["unload_after_attack"]
+                )
+            if "log_unload" in paraphraser_config:
+                self.log_ollama_unload = bool(paraphraser_config["log_unload"])
+
+        judge_config = attack_config.pop("judge", None)
+        if isinstance(judge_config, dict):
+            if "enabled" in judge_config:
+                self.use_llm_judge_fallback = bool(judge_config["enabled"])
+            if "model" in judge_config:
+                self.llm_judge_model = judge_config["model"]
+            if "model_id" in judge_config:
+                self.llm_judge_model = judge_config["model_id"]
+            if "threshold" in judge_config:
+                self.llm_judge_threshold = judge_config["threshold"]
+            if "log" in judge_config:
+                self.log_llm_judge = bool(judge_config["log"])
+
+        search_config = attack_config.pop("search", None)
+        if isinstance(search_config, dict):
+            for key in [
+                "candidate_count",
+                "max_rounds",
+                "max_candidate_batches",
+                "filter_context_leaks",
+                "log_candidate_filtering",
+            ]:
+                if key in search_config:
+                    setattr(self, key, search_config[key])
+
         for key in [
             "candidate_count",
             "max_rounds",
             "min_similarity",
+            "similarity_method",
+            "similarity_model_id",
+            "similarity_device",
             "use_clip_similarity",
             "max_candidate_batches",
             "log_similarity",
@@ -1067,4 +1194,52 @@ class TextFoolerStyleAttack(Attack):
             "log_ollama_unload",
         ]:
             if key in attack_config:
-                setattr(self, key, attack_config[key])
+                if key == "use_clip_similarity" and has_similarity_config:
+                    continue
+                if (
+                    key == "min_similarity"
+                    and has_similarity_config
+                    and "threshold" in similarity_config
+                ):
+                    continue
+                value = attack_config[key]
+                if key == "similarity_method":
+                    value = self._normalize_similarity_method(value)
+                    self.use_clip_similarity = value == "clip_text"
+                elif key == "use_clip_similarity":
+                    self.similarity_method = "clip_text" if value else "none"
+                setattr(self, key, value)
+
+    def _similarity_method_name(self) -> str:
+        """Return the active similarity method label used in logs and metadata."""
+        if self.similarity_scorer is not None:
+            return "custom"
+        return self._normalize_similarity_method(self.similarity_method)
+
+    def _normalize_similarity_method(self, method: Any) -> str:
+        """Normalize config aliases into internal similarity method names."""
+        if method is None:
+            return "none"
+        normalized = str(method).strip().lower().replace("-", "_")
+        aliases = {
+            "false": "none",
+            "off": "none",
+            "disabled": "none",
+            "no": "none",
+            "none": "none",
+            "clip": "clip_text",
+            "clip_text": "clip_text",
+            "openai_clip": "clip_text",
+            "sentence": "sentence_transformer",
+            "sentence_transformer": "sentence_transformer",
+            "sentence_transformers": "sentence_transformer",
+            "minilm": "sentence_transformer",
+            "all_minilm": "sentence_transformer",
+            "all_minilm_l6_v2": "sentence_transformer",
+        }
+        if normalized not in aliases:
+            raise ValueError(
+                "Unsupported TextFooler similarity method "
+                f"{method!r}. Use clip_text, sentence_transformer, or none."
+            )
+        return aliases[normalized]
