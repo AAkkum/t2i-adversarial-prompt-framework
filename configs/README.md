@@ -26,6 +26,7 @@ The CLI also auto-loads `configs/attacks/<attack>.yaml` when it exists.
 
 - `configs/attacks/groot_lite.yaml`
 - `configs/attacks/groot_lite_external.yaml`
+- `configs/attacks/groot_lite_representative_100.yaml`
 - `configs/attacks/search_attack.yaml`
 - `configs/attacks/textfooler_style.yaml`
 - `configs/attacks/pgj.yaml`

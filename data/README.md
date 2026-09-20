@@ -41,6 +41,9 @@ This is separate from attack support data. Prompt-case CSVs define experiment in
 - `datasets/animals/animal_prompt_batch_300.csv`
   Manual 300-row prompt set for recognizable animal defense testing: 100 animals, 3 prompts per animal, covering land, water, flying, reptile/amphibian, and insect cases.
 
+- `datasets/representative/representative_prompt_batch_100.csv`
+  Compact 100-row benchmark batch with 100 unique targets, sampled across synthetic, animal, unbranding, copyrighted-character, political/public-figure, and celebcaption datasets.
+
 ## Support Files
 
 - `restricted_concepts.yaml`
@@ -51,6 +54,9 @@ This is separate from attack support data. Prompt-case CSVs define experiment in
 
 - `groot_decompositions_external_template.yaml`
   Alternate/template decomposition file for `groot_lite`.
+
+- `groot_decompositions_representative_100_template.yaml`
+  Groot-lite decomposition template for the 100 unique targets in `datasets/representative/representative_prompt_batch_100.csv`.
 
 For a new prompt batch, use `scripts/build_groot_decomposition_template.py` to identify which `target_concept` values still need Groot-lite decompositions.
 

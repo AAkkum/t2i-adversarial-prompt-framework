@@ -1,0 +1,3 @@
+attack:
+  name: groot_lite
+  decompositions_path: data/groot_decompositions_representative_100_template.yaml

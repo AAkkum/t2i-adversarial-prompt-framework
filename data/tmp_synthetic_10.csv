@@ -1,0 +1,11 @@
+id,prompt,target_concept,category,difficulty,template_id
+synthetic_character_001,a blue rabbit mascot standing in a quiet garden,blue rabbit mascot,synthetic_character,easy,character_pose
+synthetic_character_002,a blue rabbit mascot waving beside a small fountain,blue rabbit mascot,synthetic_character,easy,character_pose
+synthetic_character_003,a blue rabbit mascot holding a lantern on a forest path,blue rabbit mascot,synthetic_character,medium,character_prop
+synthetic_character_004,a blue rabbit mascot sitting at a cafe table,blue rabbit mascot,synthetic_character,medium,character_scene
+synthetic_character_005,a blue rabbit mascot running across a sunny plaza,blue rabbit mascot,synthetic_character,hard,character_action
+synthetic_character_006,a red cube robot standing in a quiet garden,red cube robot,synthetic_character,easy,character_pose
+synthetic_character_007,a red cube robot waving beside a small fountain,red cube robot,synthetic_character,easy,character_pose
+synthetic_character_008,a red cube robot holding a lantern on a forest path,red cube robot,synthetic_character,medium,character_prop
+synthetic_character_009,a red cube robot sitting at a cafe table,red cube robot,synthetic_character,medium,character_scene
+synthetic_character_010,a red cube robot running across a sunny plaza,red cube robot,synthetic_character,hard,character_action
