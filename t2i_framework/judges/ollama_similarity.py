@@ -56,7 +56,12 @@ class OllamaSimilarityJudge:
         return str(data["response"])
 
     def _build_prompt(self, source: str, candidate: str, context: str) -> str:
-        return f"""
+        return build_similarity_judge_prompt(source, candidate, context)
+
+
+def build_similarity_judge_prompt(source: str, candidate: str, context: str = "") -> str:
+    """Build the provider-independent semantic-preservation instruction."""
+    return f"""
 You are a strict semantic preservation judge for visual prompt paraphrases.
 
 Score how well the candidate preserves ONLY the selected source phrase.

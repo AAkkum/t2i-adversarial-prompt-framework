@@ -69,10 +69,21 @@ class QwenOllamaParaphraser:
         return str(data["response"])
 
     def _build_prompt(self, concept: str, context: str, count: int) -> str:
-        phrase_role = infer_phrase_role(concept)
-        role_rules = role_specific_rules(phrase_role)
-        detail_rules = detail_level_rules(self.detail_level, phrase_role)
-        return f"""
+        return build_paraphrase_prompt(concept, context, count, self.detail_level)
+
+
+def build_paraphrase_prompt(
+    concept: str,
+    context: str,
+    count: int,
+    detail_level: str = "compact",
+) -> str:
+    """Build the provider-independent visual paraphrasing instruction."""
+    detail_level = normalize_detail_level(detail_level)
+    phrase_role = infer_phrase_role(concept)
+    role_rules = role_specific_rules(phrase_role)
+    detail_rules = detail_level_rules(detail_level, phrase_role)
+    return f"""
 You are a visual concept paraphraser.
 
 Generate exactly `{count}` short visual replacement phrases for ONLY the selected concept.
@@ -87,7 +98,7 @@ Detected grammatical role of the selected concept:
 `{phrase_role}`
 
 Detail level:
-`{self.detail_level}`
+`{detail_level}`
 
 Rules:
 

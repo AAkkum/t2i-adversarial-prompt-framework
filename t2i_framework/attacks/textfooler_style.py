@@ -10,7 +10,10 @@ from t2i_framework.core.logging_utils import console
 from t2i_framework.core.types import AttackCandidate, DefenseDecision
 from t2i_framework.core.word_lists import load_replacement_map, load_term_set
 from t2i_framework.judges.ollama_similarity import OllamaSimilarityJudge
+from t2i_framework.judges.transformers_similarity import TransformersSimilarityJudge
+from t2i_framework.llm_backends.qwen_transformers import QwenTransformersBackend
 from t2i_framework.paraphrasers.qwen_ollama import QwenOllamaParaphraser
+from t2i_framework.paraphrasers.qwen_transformers import QwenTransformersParaphraser
 from t2i_framework.similarity.clip_text import CLIPTextSimilarityScorer
 from t2i_framework.similarity.sentence_text import SentenceTextSimilarityScorer
 
@@ -61,8 +64,16 @@ class TextFoolerStyleAttack(Attack):
         filter_context_leaks: bool = False,
         log_candidate_filtering: bool = False,
         log_raw_paraphrases: bool = False,
+        paraphraser_provider: str = "ollama",
         paraphraser_model: str | None = None,
+        paraphraser_device: str | None = None,
+        paraphraser_dtype: str | None = None,
+        paraphraser_max_new_tokens: int = 512,
         paraphraser_detail_level: str = "compact",
+        llm_judge_provider: str = "ollama",
+        llm_judge_device: str | None = None,
+        llm_judge_dtype: str | None = None,
+        llm_judge_max_new_tokens: int = 128,
         unload_ollama_after_attack: bool = True,
         log_ollama_unload: bool = True,
     ) -> None:
@@ -107,12 +118,21 @@ class TextFoolerStyleAttack(Attack):
                 filtered out.
             log_raw_paraphrases: Whether to print raw and parsed paraphraser
                 outputs.
-            paraphraser_model: Optional Ollama model name for paraphrasing.
+            paraphraser_provider: Qwen runtime: `ollama` or `transformers`.
+            paraphraser_model: Provider-specific Qwen model name or model ID.
+            paraphraser_device: Optional Transformers device such as `cuda:0`.
+            paraphraser_dtype: Optional Transformers dtype.
+            paraphraser_max_new_tokens: Maximum Transformers response length.
             paraphraser_detail_level: Prompt detail level for generated visual
                 replacements: `compact`, `medium`, or `detailed`.
-            unload_ollama_after_attack: Whether cleanup should ask Ollama to
-                unload paraphraser/judge models after candidate generation.
-            log_ollama_unload: Whether to print successful unload messages.
+            llm_judge_provider: Judge runtime: `ollama` or `transformers`.
+            llm_judge_device: Optional Transformers judge device.
+            llm_judge_dtype: Optional Transformers judge dtype.
+            llm_judge_max_new_tokens: Maximum Transformers judge response length.
+            unload_ollama_after_attack: Whether cleanup should unload Qwen after
+                candidate generation. The legacy name applies to both providers.
+            log_ollama_unload: Whether to print successful unload messages. The
+                legacy name applies to both providers.
         """
         self.paraphraser = paraphraser
         self.candidate_count = candidate_count
@@ -139,8 +159,16 @@ class TextFoolerStyleAttack(Attack):
         self.filter_context_leaks = filter_context_leaks
         self.log_candidate_filtering = log_candidate_filtering
         self.log_raw_paraphrases = log_raw_paraphrases
+        self.paraphraser_provider = self._normalize_llm_provider(paraphraser_provider)
         self.paraphraser_model = paraphraser_model
+        self.paraphraser_device = paraphraser_device
+        self.paraphraser_dtype = paraphraser_dtype
+        self.paraphraser_max_new_tokens = paraphraser_max_new_tokens
         self.paraphraser_detail_level = paraphraser_detail_level
+        self.llm_judge_provider = self._normalize_llm_provider(llm_judge_provider)
+        self.llm_judge_device = llm_judge_device
+        self.llm_judge_dtype = llm_judge_dtype
+        self.llm_judge_max_new_tokens = llm_judge_max_new_tokens
         self.unload_ollama_after_attack = unload_ollama_after_attack
         self.log_ollama_unload = log_ollama_unload
         self._similarity_backend_scorer = None
@@ -148,6 +176,9 @@ class TextFoolerStyleAttack(Attack):
         self._similarity_warning_printed = False
         self._ollama_paraphraser = None
         self._ollama_judge = None
+        self._transformers_paraphraser = None
+        self._transformers_judge = None
+        self._transformers_backends: dict[tuple[Any, ...], QwenTransformersBackend] = {}
         self._judge_warning_printed = False
 
     def generate(
@@ -655,7 +686,7 @@ class TextFoolerStyleAttack(Attack):
         )
 
     def cleanup(self, context: dict[str, Any] | None = None) -> None:
-        """Release optional Ollama paraphraser and judge models after the run.
+        """Release optional paraphraser and judge models after the run.
 
         Args:
             context: Unused runner context, accepted to match the attack
@@ -664,28 +695,37 @@ class TextFoolerStyleAttack(Attack):
         if not self.unload_ollama_after_attack:
             return
 
-        providers = [self._ollama_paraphraser, self._ollama_judge]
+        providers = [
+            self._ollama_paraphraser,
+            self._ollama_judge,
+            self._transformers_paraphraser,
+            self._transformers_judge,
+        ]
         unloaded = set()
         for provider in providers:
             if provider is None:
                 continue
+            resource = getattr(provider, "backend", provider)
+            resource_id = id(resource)
+            if resource_id in unloaded:
+                continue
             model = getattr(provider, "model", None)
-            if not model or model in unloaded:
+            if not model:
                 continue
             try:
                 provider.unload()
             except Exception as exc:
                 console.print(
                     "[textfooler_style] "
-                    f'could not unload Ollama model "{model}": {exc}',
+                    f'could not unload {type(provider).__name__} model "{model}": {exc}',
                     markup=False,
                 )
                 continue
-            unloaded.add(model)
+            unloaded.add(resource_id)
             if self.log_ollama_unload:
                 console.print(
                     "[textfooler_style] "
-                    f'unloaded Ollama model "{model}"',
+                    f'unloaded {self._provider_label(provider)} model "{model}"',
                     markup=False,
                 )
 
@@ -847,7 +887,7 @@ class TextFoolerStyleAttack(Attack):
         return unique_candidates
 
     def _generate_candidates(self, unit: str, context_prompt: str) -> list[str]:
-        """Request raw replacement candidates from an injected or Ollama paraphraser.
+        """Request raw replacement candidates from the configured paraphraser.
 
         Args:
             unit: Word or phrase being replaced.
@@ -866,26 +906,63 @@ class TextFoolerStyleAttack(Attack):
             return []
 
         try:
-            if self._ollama_paraphraser is None:
-                kwargs = {
-                    "detail_level": self.paraphraser_detail_level,
-                }
-                if self.paraphraser_model:
-                    kwargs["model"] = self.paraphraser_model
-                self._ollama_paraphraser = QwenOllamaParaphraser(**kwargs)
-            candidates = self._ollama_paraphraser.generate_candidates(
+            if self.paraphraser_provider == "transformers":
+                if self._transformers_paraphraser is None:
+                    backend = self._get_transformers_backend(
+                        model_id=self.paraphraser_model or "Qwen/Qwen3-14B",
+                        device=self.paraphraser_device,
+                        dtype=self.paraphraser_dtype,
+                    )
+                    self._transformers_paraphraser = QwenTransformersParaphraser(
+                        backend=backend,
+                        detail_level=self.paraphraser_detail_level,
+                        max_new_tokens=self.paraphraser_max_new_tokens,
+                    )
+                active_paraphraser = self._transformers_paraphraser
+            else:
+                if self._ollama_paraphraser is None:
+                    kwargs = {"detail_level": self.paraphraser_detail_level}
+                    if self.paraphraser_model:
+                        kwargs["model"] = self.paraphraser_model
+                    self._ollama_paraphraser = QwenOllamaParaphraser(**kwargs)
+                active_paraphraser = self._ollama_paraphraser
+
+            candidates = active_paraphraser.generate_candidates(
                 unit,
                 context=context_prompt,
                 count=self.candidate_count,
             )
             self._log_raw_paraphrases(
                 unit,
-                self._ollama_paraphraser.last_raw_response,
+                active_paraphraser.last_raw_response,
                 candidates,
             )
             return candidates
-        except Exception:
+        except Exception as exc:
+            if self.log_raw_paraphrases:
+                console.print(
+                    f"[textfooler_style] {self.paraphraser_provider} paraphraser failed: {exc}",
+                    markup=False,
+                )
             return []
+
+    def _get_transformers_backend(
+        self,
+        model_id: str,
+        device: str | None,
+        dtype: str | None,
+    ) -> QwenTransformersBackend:
+        """Return a shared lazy Transformers backend for matching settings."""
+        key = (model_id, device, dtype)
+        backend = self._transformers_backends.get(key)
+        if backend is None:
+            backend = QwenTransformersBackend(
+                model_id=model_id,
+                device=device,
+                dtype=dtype,
+            )
+            self._transformers_backends[key] = backend
+        return backend
 
     def _score_similarity(self, source: str, candidate: str) -> float:
         """Score whether a replacement preserves the selected unit's meaning.
@@ -963,10 +1040,24 @@ class TextFoolerStyleAttack(Attack):
             return float(self.llm_judge(source, candidate, context_prompt))
 
         try:
-            if self._ollama_judge is None:
-                kwargs = {"model": self.llm_judge_model} if self.llm_judge_model else {}
-                self._ollama_judge = OllamaSimilarityJudge(**kwargs)
-            return self._ollama_judge.score(source, candidate, context_prompt)
+            if self.llm_judge_provider == "transformers":
+                if self._transformers_judge is None:
+                    backend = self._get_transformers_backend(
+                        model_id=self.llm_judge_model or "Qwen/Qwen3-14B",
+                        device=self.llm_judge_device,
+                        dtype=self.llm_judge_dtype,
+                    )
+                    self._transformers_judge = TransformersSimilarityJudge(
+                        backend,
+                        max_new_tokens=self.llm_judge_max_new_tokens,
+                    )
+                active_judge = self._transformers_judge
+            else:
+                if self._ollama_judge is None:
+                    kwargs = {"model": self.llm_judge_model} if self.llm_judge_model else {}
+                    self._ollama_judge = OllamaSimilarityJudge(**kwargs)
+                active_judge = self._ollama_judge
+            return active_judge.score(source, candidate, context_prompt)
         except Exception as exc:
             if not self._judge_warning_printed:
                 console.print(f"[textfooler_style] LLM judge fallback disabled: {exc}")
@@ -1141,15 +1232,31 @@ class TextFoolerStyleAttack(Attack):
         if isinstance(paraphraser_config, dict):
             if "enabled" in paraphraser_config:
                 self.use_qwen_fallback = bool(paraphraser_config["enabled"])
+            if "provider" in paraphraser_config:
+                self.paraphraser_provider = self._normalize_llm_provider(
+                    paraphraser_config["provider"]
+                )
+                self._reset_paraphraser_provider()
             if "model" in paraphraser_config:
                 self.paraphraser_model = paraphraser_config["model"]
-                self._ollama_paraphraser = None
+                self._reset_paraphraser_provider()
             if "model_id" in paraphraser_config:
                 self.paraphraser_model = paraphraser_config["model_id"]
-                self._ollama_paraphraser = None
+                self._reset_paraphraser_provider()
+            if "device" in paraphraser_config:
+                self.paraphraser_device = paraphraser_config["device"]
+                self._reset_paraphraser_provider()
+            if "dtype" in paraphraser_config:
+                self.paraphraser_dtype = paraphraser_config["dtype"]
+                self._reset_paraphraser_provider()
+            if "max_new_tokens" in paraphraser_config:
+                self.paraphraser_max_new_tokens = int(
+                    paraphraser_config["max_new_tokens"]
+                )
+                self._reset_paraphraser_provider()
             if "detail_level" in paraphraser_config:
                 self.paraphraser_detail_level = paraphraser_config["detail_level"]
-                self._ollama_paraphraser = None
+                self._reset_paraphraser_provider()
             if "log_raw" in paraphraser_config:
                 self.log_raw_paraphrases = bool(paraphraser_config["log_raw"])
             if "unload_after_attack" in paraphraser_config:
@@ -1163,10 +1270,26 @@ class TextFoolerStyleAttack(Attack):
         if isinstance(judge_config, dict):
             if "enabled" in judge_config:
                 self.use_llm_judge_fallback = bool(judge_config["enabled"])
+            if "provider" in judge_config:
+                self.llm_judge_provider = self._normalize_llm_provider(
+                    judge_config["provider"]
+                )
+                self._reset_judge_provider()
             if "model" in judge_config:
                 self.llm_judge_model = judge_config["model"]
+                self._reset_judge_provider()
             if "model_id" in judge_config:
                 self.llm_judge_model = judge_config["model_id"]
+                self._reset_judge_provider()
+            if "device" in judge_config:
+                self.llm_judge_device = judge_config["device"]
+                self._reset_judge_provider()
+            if "dtype" in judge_config:
+                self.llm_judge_dtype = judge_config["dtype"]
+                self._reset_judge_provider()
+            if "max_new_tokens" in judge_config:
+                self.llm_judge_max_new_tokens = int(judge_config["max_new_tokens"])
+                self._reset_judge_provider()
             if "threshold" in judge_config:
                 self.llm_judge_threshold = judge_config["threshold"]
             if "log" in judge_config:
@@ -1202,8 +1325,16 @@ class TextFoolerStyleAttack(Attack):
             "filter_context_leaks",
             "log_candidate_filtering",
             "log_raw_paraphrases",
+            "paraphraser_provider",
             "paraphraser_model",
+            "paraphraser_device",
+            "paraphraser_dtype",
+            "paraphraser_max_new_tokens",
             "paraphraser_detail_level",
+            "llm_judge_provider",
+            "llm_judge_device",
+            "llm_judge_dtype",
+            "llm_judge_max_new_tokens",
             "unload_ollama_after_attack",
             "log_ollama_unload",
         ]:
@@ -1222,7 +1353,40 @@ class TextFoolerStyleAttack(Attack):
                     self.use_clip_similarity = value == "clip_text"
                 elif key == "use_clip_similarity":
                     self.similarity_method = "clip_text" if value else "none"
+                elif key in {"paraphraser_provider", "llm_judge_provider"}:
+                    value = self._normalize_llm_provider(value)
                 setattr(self, key, value)
+
+    def _reset_paraphraser_provider(self) -> None:
+        """Discard provider wrappers after their configuration changes."""
+        self._ollama_paraphraser = None
+        self._transformers_paraphraser = None
+
+    def _reset_judge_provider(self) -> None:
+        """Discard provider wrappers after their configuration changes."""
+        self._ollama_judge = None
+        self._transformers_judge = None
+
+    def _provider_label(self, provider: Any) -> str:
+        """Return a concise provider label for cleanup logs."""
+        return "Transformers" if hasattr(provider, "backend") else "Ollama"
+
+    def _normalize_llm_provider(self, provider: Any) -> str:
+        """Normalize configured local-LLM provider aliases."""
+        normalized = str(provider or "ollama").strip().lower().replace("-", "_")
+        aliases = {
+            "ollama": "ollama",
+            "hf": "transformers",
+            "hugging_face": "transformers",
+            "huggingface": "transformers",
+            "transformer": "transformers",
+            "transformers": "transformers",
+        }
+        if normalized not in aliases:
+            raise ValueError(
+                f"Unsupported Qwen provider {provider!r}. Use ollama or transformers."
+            )
+        return aliases[normalized]
 
     def _similarity_method_name(self) -> str:
         """Return the active similarity method label used in logs and metadata."""

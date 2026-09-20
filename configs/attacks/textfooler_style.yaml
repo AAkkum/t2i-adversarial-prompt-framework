@@ -5,7 +5,7 @@ attack:
     candidate_count: 5
     max_rounds: 2
     max_candidate_batches: 2
-    filter_context_leaks: false
+    filter_context_leaks: true
     log_candidate_filtering: false
 
   similarity:
@@ -18,8 +18,11 @@ attack:
 
   paraphraser:
     enabled: true
-    provider: ollama
-    model: qwen3:14b
+    provider: transformers
+    model: Qwen/Qwen3-4B
+    device: cuda:0
+    dtype: bfloat16
+    max_new_tokens: 512
     detail_level: detailed
     log_raw: false
     unload_after_attack: true
@@ -27,7 +30,10 @@ attack:
 
   judge:
     enabled: true
-    provider: ollama
-    model: qwen3:14b
+    provider: transformers
+    model: Qwen/Qwen3-4B
+    device: cuda:0
+    dtype: bfloat16
+    max_new_tokens: 128
     threshold: 0.75
     log: true

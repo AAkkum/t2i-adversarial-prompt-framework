@@ -3,6 +3,17 @@ from t2i_framework.paraphrasers.qwen_ollama import (
     infer_phrase_role,
     normalize_detail_level,
 )
+from t2i_framework.paraphrasers.qwen_transformers import QwenTransformersParaphraser
+
+
+class FakeTransformersBackend:
+    model_id = "Qwen/test"
+
+    def generate(self, prompt, **kwargs):
+        return '["first option", "second option"]'
+
+    def unload(self):
+        return None
 
 
 def test_infer_phrase_role_detects_action_phrase() -> None:
@@ -67,3 +78,12 @@ def test_qwen_paraphraser_stores_raw_response() -> None:
     assert candidates == ["first option", "second option"]
     assert paraphraser.last_raw_response == '["first option", "second option"]'
     assert paraphraser.last_candidates == ["first option", "second option"]
+
+
+def test_transformers_paraphraser_reuses_qwen_prompt_and_parser() -> None:
+    paraphraser = QwenTransformersParaphraser(FakeTransformersBackend())
+
+    candidates = paraphraser.generate_candidates("source phrase", count=5)
+
+    assert candidates == ["first option", "second option"]
+    assert paraphraser.last_raw_response == '["first option", "second option"]'

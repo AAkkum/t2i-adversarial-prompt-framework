@@ -5,6 +5,8 @@ from t2i_framework.attacks.groot_lite import GrootLiteAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
 from t2i_framework.core.types import DefenseDecision
+from t2i_framework.judges.transformers_similarity import TransformersSimilarityJudge
+from t2i_framework.paraphrasers.qwen_transformers import QwenTransformersParaphraser
 
 
 class TargetBlockingDefense:
@@ -16,6 +18,19 @@ class TargetBlockingDefense:
             score=1.0 if blocked else 0.0,
             metadata={},
         )
+
+
+class FakeSharedTransformersBackend:
+    model_id = "Qwen/test"
+
+    def __init__(self) -> None:
+        self.unload_count = 0
+
+    def generate(self, prompt, **kwargs):
+        return "[]"
+
+    def unload(self) -> None:
+        self.unload_count += 1
 
 
 def test_identity_returns_original_prompt() -> None:
@@ -186,7 +201,11 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
                     },
                     "paraphraser": {
                         "enabled": False,
-                        "model": "qwen3:8b",
+                        "provider": "transformers",
+                        "model": "Qwen/Qwen3-4B",
+                        "device": "cuda:0",
+                        "dtype": "bfloat16",
+                        "max_new_tokens": 384,
                         "detail_level": "detailed",
                         "log_raw": True,
                         "unload_after_attack": False,
@@ -194,7 +213,11 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
                     },
                     "judge": {
                         "enabled": True,
-                        "model": "qwen3:14b",
+                        "provider": "huggingface",
+                        "model": "Qwen/Qwen3-4B",
+                        "device": "cuda:0",
+                        "dtype": "bfloat16",
+                        "max_new_tokens": 96,
                         "threshold": 0.81,
                         "log": False,
                     },
@@ -209,12 +232,31 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
     assert attack.filter_context_leaks is True
     assert attack.log_candidate_filtering is True
     assert attack.use_qwen_fallback is False
-    assert attack.paraphraser_model == "qwen3:8b"
+    assert attack.paraphraser_provider == "transformers"
+    assert attack.paraphraser_model == "Qwen/Qwen3-4B"
+    assert attack.paraphraser_device == "cuda:0"
+    assert attack.paraphraser_dtype == "bfloat16"
+    assert attack.paraphraser_max_new_tokens == 384
     assert attack.paraphraser_detail_level == "detailed"
     assert attack.log_raw_paraphrases is True
     assert attack.unload_ollama_after_attack is False
     assert attack.log_ollama_unload is False
     assert attack.use_llm_judge_fallback is True
-    assert attack.llm_judge_model == "qwen3:14b"
+    assert attack.llm_judge_provider == "transformers"
+    assert attack.llm_judge_model == "Qwen/Qwen3-4B"
+    assert attack.llm_judge_device == "cuda:0"
+    assert attack.llm_judge_dtype == "bfloat16"
+    assert attack.llm_judge_max_new_tokens == 96
     assert attack.llm_judge_threshold == 0.81
     assert attack.log_llm_judge is False
+
+
+def test_textfooler_unloads_shared_transformers_backend_once() -> None:
+    backend = FakeSharedTransformersBackend()
+    attack = TextFoolerStyleAttack(log_ollama_unload=False)
+    attack._transformers_paraphraser = QwenTransformersParaphraser(backend)  # noqa: SLF001
+    attack._transformers_judge = TransformersSimilarityJudge(backend)  # noqa: SLF001
+
+    attack.cleanup()
+
+    assert backend.unload_count == 1
