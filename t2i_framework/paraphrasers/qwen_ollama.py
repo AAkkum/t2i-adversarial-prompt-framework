@@ -180,8 +180,9 @@ def role_specific_rules(phrase_role: str) -> str:
         return "\n".join(
             [
                 "   If the selected concept is an action or verb phrase, return only action or verb phrases.",
-                "   Do not introduce a new subject, object, character, costume, location, or background.",
-                "   Good examples for an action phrase: `giving up`, `yielding`, `lowering their guard`.",
+                "   Preserve every object, recipient, direction, particle, or other complement that is already part of the selected concept.",
+                "   Do not remove an existing participant and do not introduce a new subject, object, character, costume, location, or background.",
+                "   Good examples: `chasing a balloon` -> `pursuing a balloon`; `giving up` -> `yielding`; `lowering their guard` -> `dropping their guard`.",
             ]
         )
     return "\n".join(
@@ -222,8 +223,9 @@ def detail_level_rules(detail_level: str, phrase_role: str) -> str:
             [
                 "3a. Detail policy for action or verb phrases:",
                 "   * Ignore medium/detailed noun-description behavior.",
-                "   * Keep each output compact, about 1-6 words.",
-                "   * Return only the action itself, without subject, object, scene, motive, or visual description.",
+                "   * Keep each output compact, normally about 1-10 words.",
+                "   * Return the action together with every object or complement already contained in the selected concept.",
+                "   * Do not add a subject, new object, scene, motive, or visual description.",
             ]
         )
 
