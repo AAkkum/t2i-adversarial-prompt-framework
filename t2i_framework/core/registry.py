@@ -4,8 +4,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from t2i_framework.attacks.base import Attack
-from t2i_framework.attacks.char_perturb import CharPerturbAttack
-from t2i_framework.attacks.groot_lite import GrootLiteAttack
+from t2i_framework.attacks.groot import GrootAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.pgj import PGJAttack
 from t2i_framework.attacks.search_attack import SearchAttack
@@ -13,13 +12,11 @@ from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
 from t2i_framework.defenses.base import Defense
 from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
-from t2i_framework.defenses.composite import CompositeDefense
 from t2i_framework.defenses.embedding_filter import EmbeddingFilterDefense
 from t2i_framework.defenses.filter_placeholder import FilterPlaceholderDefense
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
 from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
-from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 from t2i_framework.models.base import ImageModel
 from t2i_framework.models.diffusers_model import DiffusersImageModel
 from t2i_framework.models.mock_model import MockImageModel
@@ -33,23 +30,20 @@ MODEL_REGISTRY: dict[str, Callable[..., ImageModel]] = {
 
 ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
     "identity": IdentityAttack,
-    "char_perturb": CharPerturbAttack,
     "textfooler_style": TextFoolerStyleAttack,
-    "groot_lite": GrootLiteAttack,
+    "groot": GrootAttack,
     "search_attack": SearchAttack,
     "pgj": PGJAttack,
 }
 
 DEFENSE_REGISTRY: dict[str, Callable[[], Defense]] = {
     "none": NoneDefense,
-    "normalize_keywords": NormalizeKeywordsDefense,
     "character_filter": CharacterFilterDefense,
     "clip_similarity": CLIPSimilarityDefense,
     "embedding_filter": EmbeddingFilterDefense,
     "filter_placeholder": FilterPlaceholderDefense,
     "image_clip_filter": ImageClipFilterDefense,
     "latent_guard_lite": LatentGuardLiteDefense,
-    "composite": CompositeDefense,
 }
 
 

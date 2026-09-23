@@ -24,9 +24,7 @@ Use with `--attack-config` when you want a non-default attack config.
 
 The CLI also auto-loads `configs/attacks/<attack>.yaml` when it exists.
 
-- `configs/attacks/groot_lite.yaml`
-- `configs/attacks/groot_lite_external.yaml`
-- `configs/attacks/groot_lite_representative_100.yaml`
+- `configs/attacks/groot.yaml`
 - `configs/attacks/search_attack.yaml`
 - `configs/attacks/textfooler_style.yaml`
 - `configs/attacks/pgj.yaml`
@@ -34,7 +32,7 @@ The CLI also auto-loads `configs/attacks/<attack>.yaml` when it exists.
 Example:
 
 ```bash
-python main.py --attack groot_lite --attack-config configs/attacks/groot_lite_external.yaml ...
+python main.py --attack groot --attack-config configs/attacks/groot.yaml --max-candidates 5 ...
 ```
 
 ## Defense Configs
@@ -47,7 +45,6 @@ The CLI also auto-loads `configs/defenses/<defense>.yaml` when it exists.
 - `configs/defenses/clip_similarity_black_box.yaml`
 - `configs/defenses/character_filter.yaml`
 - `configs/defenses/latent_guard_lite.yaml`
-- `configs/defenses/normalize_keywords.yaml`
 
 ## Evaluation Configs
 
@@ -65,7 +62,7 @@ Example:
 python main.py \
   --model diffusers \
   --model-config configs/models/sdxl.yaml \
-  --attack groot_lite \
+  --attack groot \
   --defense none \
   --config configs/evaluation/clip_and_prompt_similarity.yaml \
   --prompt "a blue rabbit mascot standing in a garden" \

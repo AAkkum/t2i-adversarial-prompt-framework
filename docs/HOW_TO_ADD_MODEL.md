@@ -20,12 +20,14 @@ Install model dependencies before using the Diffusers adapter:
 pip install -e ".[models]"
 ```
 
-The first real model run may download large model files into the Hugging Face cache. The configs only choose which model is loaded; they do not download all configured models automatically.
+The first real model run may download large model files into the Hugging Face
+cache, normally `~/.cache/huggingface/hub`. The configs only choose which model
+is loaded; they do not download all configured models automatically.
 
 Some models, especially Stability AI models, require accepting Hugging Face terms and logging in locally:
 
 ```bash
-huggingface-cli login
+hf auth login
 ```
 
 After creating a model class, register it in `t2i_framework/core/registry.py` under `MODEL_REGISTRY`.

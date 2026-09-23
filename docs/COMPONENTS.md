@@ -45,43 +45,43 @@ Baseline attack. It returns the original prompt unchanged.
 
 Use it to compare attacked runs against a no-attack baseline.
 
-### `char_perturb`
+### `groot`
 
-Simple character-level perturbation attack. It modifies text form without using an external model.
+Adaptive implementation of the Groot/TREANT paper method. It performs an
+initial target-model probe and can then:
 
-Use it as a lightweight baseline for prompt-filter robustness.
+1. ask a local LLM to build a Prompt Parse Tree containing object, attribute,
+   and relation information;
+2. traverse and shuffle the tree into a semantic-decomposition prompt;
+3. iteratively split leaf nodes after text-stage failures;
+4. apply sensitive-element drowning with independent image panels after
+   image-stage failures; and
+5. use a local multimodal judge as the automated replacement for the paper's
+   manual image labels.
 
-### `groot_lite`
+The implementation supports `full`, `semantic_only`, and `drowning_only` modes
+for the paper's ablations. It works with Ollama or an OpenAI-compatible local
+server such as llama.cpp. It does not need per-target decomposition YAML files.
 
-Semantic decomposition attack. It replaces a target concept with a safe visual description from a YAML decomposition file.
-
-Example:
-
-```text
-blue rabbit mascot -> blue long-eared costume character
-```
-
-Main data file:
-
-- `data/groot_decompositions.yaml`
-
-Switchable template file:
-
-- `data/groot_decompositions_external_template.yaml`
-
-Example:
+Example with Stable Diffusion 3.5 Medium:
 
 ```bash
-python main.py --model mock --attack groot_lite --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_mock
+python main.py \
+  --model diffusers \
+  --model-config configs/models/sd35_medium.yaml \
+  --attack groot \
+  --attack-config configs/attacks/groot.yaml \
+  --defense none \
+  --prompt "a blue rabbit mascot standing in a garden" \
+  --target "blue rabbit mascot" \
+  --max-candidates 5 \
+  --out results/groot_sd35_medium
 ```
 
-Important batch note: `groot_lite` needs a decomposition entry for each `target_concept` you want it to rewrite. If a batch contains targets that are not in the decomposition YAML, those rows are returned unchanged with `status: unsupported_target_concept`.
-
-To create a template showing which batch targets need decompositions:
-
-```bash
-python scripts/build_groot_decomposition_template.py data/datasets/synthetic/synthetic_prompt_batch_300.csv --out data/groot_decompositions_synthetic_template.yaml
-```
+The default `policy_violation` judge mode follows the paper's success
+definition. For the project's harmless protected-concept datasets,
+`target_presence` can be configured instead, but results from that mode are not
+directly comparable to the paper. See `docs/GROOT.md`.
 
 ### `search_attack`
 
@@ -173,7 +173,7 @@ Example config:
 - `configs/models/sd35_large.yaml`
 - `configs/attacks/pgj.yaml`
 
-This attack is heavier than `groot_lite` and requires the configured LLM backend to be available locally or through Hugging Face cache/access.
+This attack requires the configured Hugging Face LLM backend to be available locally or through Hugging Face cache/access.
 
 ## Defenses
 
@@ -182,14 +182,6 @@ This attack is heavier than `groot_lite` and requires the configured LLM backend
 No-op defense. It allows prompts and images.
 
 Use it for attack-only baselines.
-
-### `normalize_keywords`
-
-Prompt defense that normalizes text and checks restricted keywords/aliases.
-
-Main data file:
-
-- `data/restricted_concepts.yaml`
 
 ### `clip_similarity`
 
@@ -267,10 +259,6 @@ Small placeholder defense used by the search-attack work. It is useful for wirin
 
 Placeholder embedding defense. It is registered for framework completeness but is not the main implemented semantic defense.
 
-### `composite`
-
-Defense wrapper for combining multiple checks. Use it when a run needs more than one defense stage under a single defense name.
-
 ## Evaluation Metrics
 
 ### Placeholder Success
@@ -339,7 +327,7 @@ Dataset-specific batches:
 Example:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_synthetic_mock
+python main.py --model mock --attack identity --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/synthetic_mock
 ```
 
 ## `--max-candidates`
@@ -355,6 +343,9 @@ Examples:
 - one `--prompt` and `--max-candidates 3`: at most 3 result rows.
 
 Attacks that only return one candidate will still produce one row even if `--max-candidates` is larger.
+Adaptive attacks such as `groot` generate one candidate at a time from the
+previous result. For Groot, this value is therefore the maximum number of
+target-image-model queries per input, including the original probe.
 
 ## Recommended Small Tests
 
@@ -364,10 +355,10 @@ Fast framework test:
 python main.py --model mock --attack identity --defense none --prompt-file data/example_prompts.csv
 ```
 
-Groot-lite with prompt and image metrics:
+Groot adaptive smoke test requires a running local multimodal server:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/example_prompts.csv --max-candidates 1 --out results/smoke_groot_metrics
+python main.py --model mock --attack groot --defense character_filter --prompt-file data/example_prompts.csv --max-candidates 3 --out results/smoke_groot
 ```
 
 Search attack with character filter:

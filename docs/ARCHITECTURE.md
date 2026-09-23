@@ -12,6 +12,12 @@ original prompt
   -> saved image + JSON/CSV result rows
 ```
 
+Most attacks return a fixed candidate list. An attack with `adaptive = True`
+may inspect each completed result through `process_result(...)` and request the
+next candidate through `next_candidate(...)`. The candidate then re-enters the
+same defense/model/evaluation path. Groot uses this loop for stage-aware
+semantic decomposition and drowning; other attacks retain fixed-list behavior.
+
 The CLI selects one registered model, attack, and defense by name. `ExperimentRunner` coordinates the selected components and writes outputs through `ResultWriter`.
 
 Core extension points:

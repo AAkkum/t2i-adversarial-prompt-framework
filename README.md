@@ -65,7 +65,7 @@ If `--out` is omitted, results are written to a timestamped folder under `result
 Single prompt with the normalization defense:
 
 ```bash
-python main.py --model mock --attack identity --defense normalize_keywords --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/blocked_debug
+python main.py --model mock --attack identity --defense character_filter --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/blocked_debug
 ```
 
 Batch mode:
@@ -86,47 +86,41 @@ python main.py --model diffusers --model-config configs/models/flux.yaml --attac
 
 The SDXL command has been validated with `configs/models/sdxl.yaml`. On the first run, Diffusers downloads the model files from Hugging Face and caches them locally; later runs reuse the cache. These commands require model dependencies, accepted Hugging Face model licenses where applicable, internet access for uncached models, and enough local GPU/VRAM for the selected model.
 
-Semantic decomposition attack with the mock model:
+Groot is an adaptive attack and requires a local text-and-vision model server.
+The default config targets the OpenAI-compatible endpoint exposed by
+`llama-server` on port 8082. The server may use any compatible local multimodal
+model. Basic download and start scripts are provided in `scripts/`; see
+`docs/GROOT.md` for setup. Start that server separately, then run Groot against
+Stable Diffusion 3.5:
 
 ```bash
-python main.py --model mock --attack groot_lite --defense normalize_keywords --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock
+python main.py \
+  --model diffusers \
+  --model-config configs/models/sd35_medium.yaml \
+  --attack groot \
+  --attack-config configs/attacks/groot.yaml \
+  --defense none \
+  --prompt "a blue rabbit mascot standing in a garden" \
+  --target "blue rabbit mascot" \
+  --max-candidates 5 \
+  --out results/groot_sd35_medium
 ```
 
-`groot_lite` uses safe concept decompositions from `data/groot_decompositions.yaml`.
-To test a different decomposition set, point the attack config at another YAML file:
-
-```yaml
-attack:
-  name: groot_lite
-  decompositions_path: data/groot_decompositions_external_template.yaml
-```
-
-Then run with more than one candidate if you want to evaluate multiple decompositions:
-
-```bash
-python main.py --model mock --attack groot_lite --attack-config configs/attacks/groot_lite_external.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --max-candidates 3 --out results/groot_candidates
-```
-
-SDXL with CLIP image-text evaluation:
-
-```bash
-python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_sdxl_clip
-```
-
-Fast CLIP evaluation smoke test with the mock model:
-
-```bash
-python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt "a blue rabbit mascot standing in a garden" --target "blue rabbit mascot" --out results/groot_mock_clip
-```
+Groot first probes the original prompt. It then uses the local LLM to construct and
+iteratively refine a Prompt Parse Tree after text-stage failures, applies
+sensitive-element drowning after image-stage failures, and uses the model's vision input to
+judge the generated image. `--max-candidates` is Groot's image-model query
+budget per input prompt. See `docs/GROOT.md` for server setup, ablation modes,
+success rules, and the differences from the paper's experimental environment.
 
 When CLIP evaluation is enabled, `scores.image_clip_similarity` is written for generated images with a target concept. The `success` field then means the prompt/image were not blocked, an image exists, and the CLIP score is at least the configured threshold.
 
 When prompt-prompt similarity is enabled, `scores.prompt_prompt_similarity` is also written. This compares the original prompt text to the attacked prompt text. It is useful for measuring semantic drift from rewriting attacks, but it does not replace image-text CLIP evaluation.
 
-Larger batch example using Hans' combined prompt file:
+Larger batch example using Hans' combined prompt file and a non-adaptive attack:
 
 ```bash
-python main.py --model mock --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/all_prompt_cases.csv --max-candidates 1 --out results/groot_all_prompt_cases_mock
+python main.py --model mock --attack identity --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/all_prompt_cases.csv --max-candidates 1 --out results/all_prompt_cases_mock
 ```
 
 For diffusion models, the runner keeps the same model adapter alive for the batch instead of starting a new Python process per prompt. Use a small CSV first before running hundreds of prompts on a large model.
@@ -141,6 +135,8 @@ python main.py --list-components
 
 Models implement `ImageModel.generate(prompt, output_dir, seed, context)` and return a `GenerationResult`.
 Attacks implement `Attack.generate(prompt, target_concept, context)` and return `AttackCandidate` objects.
+Adaptive attacks may additionally implement `process_result(...)` and
+`next_candidate(...)`; the runner invokes those hooks without changing the CLI.
 Defenses implement `check_prompt(...)` and/or `check_image(...)`, returning `DefenseDecision`.
 
 ## Adding Attacks
@@ -148,6 +144,8 @@ Defenses implement `check_prompt(...)` and/or `check_image(...)`, returning `Def
 Create a class in `t2i_framework/attacks/`, subclass `Attack`, return one or more `AttackCandidate` objects, then register it in `t2i_framework/core/registry.py`. See `docs/HOW_TO_ADD_ATTACK.md`.
 
 For a plain-English overview of every current model, attack, defense, metric, and batch prompt file, see `docs/COMPONENTS.md`.
+The paper-defense comparison and recommendation are in
+`docs/DEFENSE_PAPER_SELECTION.md`.
 
 ## Results
 
@@ -163,4 +161,4 @@ The output folder name does not need to describe the experiment. `config.yaml` s
 
 ## Current Limitations
 
-Without CLIP image-text evaluation, the default `success` metric only checks that the prompt and image were not blocked and that an image file exists. CLIP scores and prompt-prompt similarity scores are approximate and threshold-dependent, so they should be calibrated with manual inspection before drawing research conclusions. SDXL has been smoke-tested; SD 3.5 Medium, SD 3.5 Large, and FLUX.1-schnell are configured but still need local runtime validation on the target machine.
+Without attack-specific or CLIP evaluation, the default `success` metric only checks that the prompt and image were not blocked and that an image file exists. Groot instead overrides this placeholder with its configured multimodal judge rule. Automated vision judgments and CLIP scores remain approximate and should be validated on a labelled sample before drawing research conclusions. SDXL has been smoke-tested; SD 3.5 Medium, SD 3.5 Large, and FLUX.1-schnell are configured but still need local runtime validation on the target machine.

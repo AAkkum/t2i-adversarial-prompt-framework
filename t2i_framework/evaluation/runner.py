@@ -104,7 +104,9 @@ class ExperimentRunner:
             "config": config,
             "defense": self.defense,
             "max_candidates": self.max_candidates,
+            "prompt_case": prompt_case,
         }
+        adaptive_attack = bool(getattr(self.attack, "adaptive", False))
         try:
             candidates = self.attack.generate(
                 prompt,
@@ -112,10 +114,11 @@ class ExperimentRunner:
                 context=attack_context,
             )[: self.max_candidates]
         finally:
-            try:
-                self.attack.cleanup(attack_context)
-            except Exception as exc:
-                console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
+            if not adaptive_attack:
+                try:
+                    self.attack.cleanup(attack_context)
+                except Exception as exc:
+                    console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
         if not candidates:
             raise ValueError(f"Attack '{self.attack.name}' returned no candidates.")
 
@@ -325,8 +328,30 @@ class ExperimentRunner:
                     "evaluation": evaluation_metadata,
                 },
             )
+            try:
+                self.attack.process_result(result, candidate, context)
+            except Exception as exc:  # noqa: BLE001 -- preserve the experiment row.
+                attack_error = " ".join(str(exc).split())[:300] or type(exc).__name__
+                result.success = False
+                result.metadata["attack_processing_error"] = attack_error
+                result.metadata["selection_eligible"] = False
+                console.print(f"[yellow]Attack result processing failed:[/yellow] {attack_error}")
             self.writer.update(result)
             results.append(result)
+
+            if adaptive_attack and len(candidates) < self.max_candidates:
+                if result.metadata.get("attack_processing_error"):
+                    continue
+                try:
+                    follow_up = self.attack.next_candidate(candidate, result, context)
+                except Exception as exc:  # noqa: BLE001 -- keep completed candidate results.
+                    refinement_error = " ".join(str(exc).split())[:300] or type(exc).__name__
+                    result.metadata["attack_refinement_error"] = refinement_error
+                    self.writer.update(result)
+                    console.print(f"[yellow]Adaptive attack refinement failed:[/yellow] {refinement_error}")
+                    continue
+                if follow_up is not None:
+                    candidates.append(follow_up)
 
         eligible = [result for result in results if result.success]
         if eligible and self.attack.name == "search_attack":
@@ -336,6 +361,12 @@ class ExperimentRunner:
             best.metadata["selected_best"] = True
             best.metadata["final_image_path"] = str(final_path)
             self.writer.update(best)
+
+        if adaptive_attack:
+            try:
+                self.attack.cleanup(attack_context)
+            except Exception as exc:
+                console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
 
         return results
 
