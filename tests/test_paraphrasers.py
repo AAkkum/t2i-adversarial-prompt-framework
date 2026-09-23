@@ -32,6 +32,19 @@ def test_qwen_prompt_preserves_action_phrase_role() -> None:
     assert "return only action or verb phrases" in prompt
 
 
+def test_qwen_prompt_preserves_existing_action_object() -> None:
+    prompt = QwenOllamaParaphraser()._build_prompt(
+        "chasing a balloon",
+        "a dog chasing a balloon through a park",
+        5,
+    )  # noqa: SLF001
+
+    assert "Preserve every object" in prompt
+    assert "`chasing a balloon` -> `pursuing a balloon`" in prompt
+    assert "every object or complement already contained" in prompt
+    assert "without subject, object" not in prompt
+
+
 def test_qwen_prompt_preserves_noun_phrase_role() -> None:
     prompt = QwenOllamaParaphraser()._build_prompt("black cat", "the black cat was hunting a rat", 5)  # noqa: SLF001
 
@@ -61,7 +74,7 @@ def test_qwen_prompt_keeps_actions_compact_even_when_detailed() -> None:
 
     assert "`detailed`" in prompt
     assert "Ignore medium/detailed noun-description behavior" in prompt
-    assert "about 1-6 words" in prompt
+    assert "about 1-10 words" in prompt
 
 
 def test_qwen_detail_level_aliases() -> None:

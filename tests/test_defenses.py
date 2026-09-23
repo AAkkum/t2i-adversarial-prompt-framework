@@ -1,10 +1,15 @@
 from pathlib import Path
 
+import pytest
+
 from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
 from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.semantic_concepts import SemanticMatch
 from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
-from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
+from t2i_framework.defenses.latent_guard_lite import (
+    LatentGuardLiteDefense,
+    _LatentGuardLiteScorer,
+)
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.normalize_keywords import NormalizeKeywordsDefense
 
@@ -151,6 +156,7 @@ concepts:
                     "threshold": 2.0,
                     "include_aliases": False,
                     "use_target_concept": False,
+                    "fail_on_error": True,
                     "expose_score": True,
                     "log_score": False,
                 }
@@ -164,7 +170,94 @@ concepts:
     assert defense.threshold == 2.0
     assert defense.include_aliases is False
     assert defense.use_target_concept is False
+    assert defense.fail_on_error is True
     assert decision.metadata["checked_terms"] == 1
+
+
+def test_latent_guard_lite_raises_when_strict_mode_cannot_load_weights(
+    tmp_path: Path,
+) -> None:
+    defense = LatentGuardLiteDefense(
+        weights_path=tmp_path / "missing.pth",
+        fail_on_error=True,
+        log_score=False,
+    )
+
+    with pytest.raises(RuntimeError, match="weights not found"):
+        defense.check_prompt("red capped hero jumping", target_concept="mario")
+
+
+def test_latent_guard_lite_keeps_loaded_scorer_when_context_is_unchanged() -> None:
+    defense = LatentGuardLiteDefense(
+        scorer=lambda _prompt, terms: [1.0 for _ in terms],
+        log_score=False,
+    )
+    loaded_scorer = object()
+    defense._latent_scorer = loaded_scorer
+
+    defense.check_prompt(
+        "red capped hero jumping",
+        target_concept="mario",
+        context={
+            "config": {
+                "defense": {
+                    "model_id": defense.model_id,
+                    "device": defense.device,
+                    "num_heads": defense.num_heads,
+                    "head_dim": defense.head_dim,
+                    "out_dim": defense.out_dim,
+                    "input_dim": defense.input_dim,
+                    "batch_size": defense.batch_size,
+                }
+            }
+        },
+    )
+
+    assert defense._latent_scorer is loaded_scorer
+
+
+def test_latent_guard_lite_invalidates_loaded_scorer_when_model_config_changes() -> None:
+    defense = LatentGuardLiteDefense(
+        scorer=lambda _prompt, terms: [1.0 for _ in terms],
+        log_score=False,
+    )
+    defense._latent_scorer = object()
+
+    defense.check_prompt(
+        "red capped hero jumping",
+        target_concept="mario",
+        context={"config": {"defense": {"batch_size": defense.batch_size + 1}}},
+    )
+
+    assert defense._latent_scorer is None
+
+
+def test_latent_guard_lite_caches_concept_embeddings(tmp_path: Path) -> None:
+    torch = pytest.importorskip("torch")
+    scorer = _LatentGuardLiteScorer(
+        weights_path=tmp_path / "unused.pth",
+        model_id="unused",
+        device="cpu",
+        num_heads=16,
+        head_dim=32,
+        out_dim=128,
+        input_dim=768,
+        batch_size=64,
+    )
+    scorer._torch = torch
+    embedded_batches: list[list[str]] = []
+
+    def fake_embed_texts(texts: list[str]):
+        embedded_batches.append(list(texts))
+        return torch.ones((len(texts), 2, 3))
+
+    scorer._embed_texts = fake_embed_texts
+
+    scorer._concept_embeddings(["mario", "adidas"])
+    scorer._concept_embeddings(["adidas", "mario", "butterfly"])
+
+    assert embedded_batches == [["mario", "adidas"], ["butterfly"]]
+    assert set(scorer._concept_embedding_cache) == {"mario", "adidas", "butterfly"}
 
 
 def test_character_filter_blocks_target_as_runtime_keyword(tmp_path: Path) -> None:

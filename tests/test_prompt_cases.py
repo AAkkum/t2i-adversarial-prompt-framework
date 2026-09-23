@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 from t2i_framework.evaluation.prompt_cases import read_prompt_file
 
 
@@ -62,3 +64,16 @@ def test_read_prompt_file_supports_jsonl_batches(tmp_path: Path) -> None:
 
     assert prompt_cases[0].target_concept == "red cube robot"
     assert prompt_cases[1].prompt == "a green owl emblem"
+
+
+def test_representative_100_latent_guard_blacklist_matches_dataset() -> None:
+    dataset_path = Path("data/datasets/representative/representative_prompt_batch_100.csv")
+    concepts_path = Path("data/latent_guard/restricted_concepts_representative_100.yaml")
+
+    prompt_cases = read_prompt_file(dataset_path)
+    configured = yaml.safe_load(concepts_path.read_text(encoding="utf-8"))["concepts"]
+    dataset_targets = {case.target_concept for case in prompt_cases}
+
+    assert len(prompt_cases) == 100
+    assert len(dataset_targets) == 100
+    assert set(configured) == dataset_targets

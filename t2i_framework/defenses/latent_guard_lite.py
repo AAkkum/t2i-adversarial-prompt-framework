@@ -34,6 +34,7 @@ class LatentGuardLiteDefense(Defense):
         device: str | None = None,
         include_aliases: bool = True,
         use_target_concept: bool = True,
+        fail_on_error: bool = False,
         expose_score: bool = True,
         log_score: bool = True,
         num_heads: int = 16,
@@ -43,13 +44,14 @@ class LatentGuardLiteDefense(Defense):
         batch_size: int = 64,
         scorer: LatentGuardScorer | None = None,
     ) -> None:
-        self.concepts_path = concepts_path or Path("data/restricted_concepts.yaml")
+        self.concepts_path = concepts_path or Path("data/latent_guard/restricted_concepts.yaml")
         self.weights_path = weights_path or Path("data/latent_guard/model_parameters.pth")
         self.model_id = model_id
         self.threshold = threshold
         self.device = device
         self.include_aliases = include_aliases
         self.use_target_concept = use_target_concept
+        self.fail_on_error = fail_on_error
         self.expose_score = expose_score
         self.log_score = log_score
         self.num_heads = num_heads
@@ -161,6 +163,8 @@ class LatentGuardLiteDefense(Defense):
                 )
             return self._latent_scorer.score_many(prompt, terms)
         except RuntimeError as exc:
+            if self.fail_on_error:
+                raise
             if not self._warning_printed:
                 console.print(f"[latent_guard_lite] disabled: {exc}", markup=False)
                 self._warning_printed = True
@@ -188,6 +192,7 @@ class LatentGuardLiteDefense(Defense):
             "device",
             "include_aliases",
             "use_target_concept",
+            "fail_on_error",
             "expose_score",
             "log_score",
             "num_heads",
@@ -197,7 +202,10 @@ class LatentGuardLiteDefense(Defense):
             "batch_size",
         ]:
             if key in defense_config:
-                setattr(self, key, defense_config[key])
+                new_value = defense_config[key]
+                if getattr(self, key) == new_value:
+                    continue
+                setattr(self, key, new_value)
                 if key in {
                     "model_id",
                     "device",
@@ -271,6 +279,7 @@ class _LatentGuardLiteScorer:
         self._clip_model = None
         self._tokenizer = None
         self._device = None
+        self._concept_embedding_cache: dict[str, Any] = {}
 
     def score_many(self, prompt: str, terms: list[str]) -> list[float]:
         self._load()
@@ -282,11 +291,27 @@ class _LatentGuardLiteScorer:
             prompt_emb = self._embed_texts([prompt])
             for start in range(0, len(terms), self.batch_size):
                 batch_terms = terms[start : start + self.batch_size]
-                concept_emb = self._embed_texts(batch_terms)[:, 0, :]
+                concept_emb = self._concept_embeddings(batch_terms)
                 repeated_prompt = prompt_emb.repeat(len(batch_terms), 1, 1)
                 output = self._model(repeated_prompt, concept_emb)
                 scores.extend(self._forward_contrastive(output).detach().cpu().tolist())
         return [float(score) for score in scores]
+
+    def _concept_embeddings(self, terms: list[str]):
+        missing_terms = list(
+            dict.fromkeys(
+                term for term in terms if term not in self._concept_embedding_cache
+            )
+        )
+        if missing_terms:
+            embeddings = self._embed_texts(missing_terms)[:, 0, :]
+            for term, embedding in zip(missing_terms, embeddings):
+                self._concept_embedding_cache[term] = embedding.detach()
+
+        return self._torch.stack(
+            [self._concept_embedding_cache[term] for term in terms],
+            dim=0,
+        )
 
     def _load(self) -> None:
         if self._model is not None and self._clip_model is not None:

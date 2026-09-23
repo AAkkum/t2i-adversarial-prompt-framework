@@ -25,7 +25,7 @@ class NormalizeKeywordsDefense(Defense):
     name = "normalize_keywords"
 
     def __init__(self, concepts_path: Path | None = None, remove_spaces: bool = True) -> None:
-        self.concepts_path = concepts_path or Path("data/restricted_concepts.yaml")
+        self.concepts_path = concepts_path or Path("data/latent_guard/restricted_concepts.yaml")
         self.remove_spaces = remove_spaces
         self.concepts = self._load_concepts(self.concepts_path)
 

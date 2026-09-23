@@ -29,7 +29,7 @@ class CLIPSimilarityDefense(Defense):
         expose_score: bool = True,
         similarity_scorer: SimilarityScorer | None = None,
     ) -> None:
-        self.concepts_path = concepts_path or Path("data/restricted_concepts.yaml")
+        self.concepts_path = concepts_path or Path("data/latent_guard/restricted_concepts.yaml")
         self.threshold = threshold
         self.include_aliases = include_aliases
         self.log_similarity = log_similarity
