@@ -75,6 +75,8 @@ class TextFoolerStyleAttack(Attack):
         log_candidate_filtering: bool = False,
         log_raw_paraphrases: bool = False,
         paraphraser_detail_level: str = "compact",
+        paraphraser_max_tokens: int = 384,
+        judge_max_tokens: int = 64,
         client: Any | None = None,
     ) -> None:
         """Create a configurable TextFooler-style attack instance.
@@ -119,6 +121,8 @@ class TextFoolerStyleAttack(Attack):
                 outputs.
             paraphraser_detail_level: Prompt detail level for generated visual
                 replacements: `compact`, `medium`, or `detailed`.
+            paraphraser_max_tokens: Maximum output tokens for a paraphraser request.
+            judge_max_tokens: Maximum output tokens for an LLM judge request.
             client: Optional shared local-model client, primarily for tests.
         """
         self.paraphraser = paraphraser
@@ -146,6 +150,8 @@ class TextFoolerStyleAttack(Attack):
         self.log_candidate_filtering = log_candidate_filtering
         self.log_raw_paraphrases = log_raw_paraphrases
         self.paraphraser_detail_level = paraphraser_detail_level
+        self.paraphraser_max_tokens = paraphraser_max_tokens
+        self.judge_max_tokens = judge_max_tokens
         self.client = client
         self._client_injected = client is not None
         self._backend_signature: tuple[Any, ...] | None = None
@@ -846,6 +852,8 @@ class TextFoolerStyleAttack(Attack):
                     self.candidate_count,
                     self.paraphraser_detail_level,
                 ),
+                max_tokens=self.paraphraser_max_tokens,
+                reasoning_effort="none",
             )
             candidates = parse_candidate_list(raw_response, limit=self.candidate_count)
             self._log_raw_paraphrases(
@@ -941,6 +949,8 @@ class TextFoolerStyleAttack(Attack):
             raw_response = self._require_client().complete(
                 JUDGE_SYSTEM_PROMPT,
                 build_similarity_judge_prompt(source, candidate, context_prompt),
+                max_tokens=self.judge_max_tokens,
+                reasoning_effort="none",
             )
             return parse_score(raw_response)
         except Exception as exc:
@@ -1121,6 +1131,8 @@ class TextFoolerStyleAttack(Attack):
                 self.paraphraser_detail_level = paraphraser_config["detail_level"]
             if "log_raw" in paraphraser_config:
                 self.log_raw_paraphrases = bool(paraphraser_config["log_raw"])
+            if "max_tokens" in paraphraser_config:
+                self.paraphraser_max_tokens = int(paraphraser_config["max_tokens"])
 
         judge_config = attack_config.pop("judge", None)
         if isinstance(judge_config, dict):
@@ -1130,6 +1142,8 @@ class TextFoolerStyleAttack(Attack):
                 self.llm_judge_threshold = judge_config["threshold"]
             if "log" in judge_config:
                 self.log_llm_judge = bool(judge_config["log"])
+            if "max_tokens" in judge_config:
+                self.judge_max_tokens = int(judge_config["max_tokens"])
 
         search_config = attack_config.pop("search", None)
         if isinstance(search_config, dict):
@@ -1161,6 +1175,8 @@ class TextFoolerStyleAttack(Attack):
             "log_candidate_filtering",
             "log_raw_paraphrases",
             "paraphraser_detail_level",
+            "paraphraser_max_tokens",
+            "judge_max_tokens",
         ]:
             if key in attack_config:
                 if key == "use_clip_similarity" and has_similarity_config:

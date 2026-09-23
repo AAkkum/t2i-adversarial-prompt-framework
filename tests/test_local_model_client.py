@@ -57,13 +57,22 @@ def test_openai_compatible_client_sends_multimodal_message(
         base_url="http://127.0.0.1:8080/v1",
     )
 
-    response = client.complete("system", "review", image_path=image_path)
+    response = client.complete(
+        "system",
+        "review",
+        image_path=image_path,
+        max_tokens=128,
+        reasoning_effort="none",
+    )
 
     assert response == '{"ok": true}'
     assert captured["url"] == "http://127.0.0.1:8080/v1/chat/completions"
     user_content = captured["payload"]["messages"][1]["content"]
     assert user_content[1]["image_url"]["url"].startswith("data:image/png;base64,")
     assert captured["payload"]["temperature"] == 0.0
+    assert captured["payload"]["max_tokens"] == 128
+    assert captured["payload"]["reasoning_effort"] == "none"
+    assert captured["payload"]["chat_template_kwargs"] == {"enable_thinking": False}
 
 
 def test_ollama_client_sends_image_bytes(tmp_path: Path, monkeypatch) -> None:
@@ -83,8 +92,16 @@ def test_ollama_client_sends_image_bytes(tmp_path: Path, monkeypatch) -> None:
         base_url="http://127.0.0.1:11434",
     )
 
-    response = client.complete("system", "review", image_path=image_path)
+    response = client.complete(
+        "system",
+        "review",
+        image_path=image_path,
+        max_tokens=128,
+        reasoning_effort="none",
+    )
 
     assert response == '{"ok": true}'
     assert captured["url"] == "http://127.0.0.1:11434/api/chat"
     assert captured["payload"]["messages"][1]["images"]
+    assert captured["payload"]["options"]["num_predict"] == 128
+    assert captured["payload"]["think"] is False

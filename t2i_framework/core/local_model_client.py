@@ -37,13 +37,20 @@ class LocalMultimodalClient:
         system_prompt: str,
         user_prompt: str,
         image_path: Path | None = None,
+        *,
+        max_tokens: int | None = None,
+        reasoning_effort: str | None = None,
     ) -> str:
         if self.provider == "ollama":
-            result = self._complete_ollama(system_prompt, user_prompt, image_path)
+            result = self._complete_ollama(
+                system_prompt, user_prompt, image_path, max_tokens, reasoning_effort
+            )
             if self.unload_after_request:
                 self.unload()
             return result
-        return self._complete_openai_compatible(system_prompt, user_prompt, image_path)
+        return self._complete_openai_compatible(
+            system_prompt, user_prompt, image_path, max_tokens, reasoning_effort
+        )
 
     def unload(self) -> None:
         if self.provider != "ollama":
@@ -66,6 +73,8 @@ class LocalMultimodalClient:
         system_prompt: str,
         user_prompt: str,
         image_path: Path | None,
+        max_tokens: int | None,
+        reasoning_effort: str | None,
     ) -> str:
         user_content: str | list[dict[str, Any]] = user_prompt
         if image_path is not None:
@@ -85,6 +94,12 @@ class LocalMultimodalClient:
             "temperature": self.temperature,
             "stream": False,
         }
+        if max_tokens is not None:
+            payload["max_tokens"] = int(max_tokens)
+        if reasoning_effort is not None:
+            payload["reasoning_effort"] = reasoning_effort
+            if reasoning_effort == "none":
+                payload["chat_template_kwargs"] = {"enable_thinking": False}
         endpoint = self.base_url
         if not endpoint.endswith("/chat/completions"):
             endpoint += "/chat/completions"
@@ -102,6 +117,8 @@ class LocalMultimodalClient:
         system_prompt: str,
         user_prompt: str,
         image_path: Path | None,
+        max_tokens: int | None,
+        reasoning_effort: str | None,
     ) -> str:
         user_message: dict[str, Any] = {"role": "user", "content": user_prompt}
         if image_path is not None:
@@ -116,6 +133,10 @@ class LocalMultimodalClient:
             "format": "json",
             "options": {"temperature": self.temperature},
         }
+        if max_tokens is not None:
+            payload["options"]["num_predict"] = int(max_tokens)
+        if reasoning_effort == "none":
+            payload["think"] = False
         endpoint = self.base_url
         if not endpoint.endswith("/api/chat"):
             endpoint += "/api/chat"

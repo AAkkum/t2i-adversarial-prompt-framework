@@ -26,12 +26,15 @@ class FakeGrootClient:
         self.responses = responses
         self.calls: list[dict[str, object]] = []
 
-    def complete(self, system_prompt: str, user_prompt: str, image_path=None) -> str:
+    def complete(
+        self, system_prompt: str, user_prompt: str, image_path=None, **kwargs
+    ) -> str:
         self.calls.append(
             {
                 "system_prompt": system_prompt,
                 "user_prompt": user_prompt,
                 "image_path": image_path,
+                "options": kwargs,
             }
         )
         return self.responses.pop(0)
@@ -283,10 +286,12 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
                     "paraphraser": {
                         "enabled": False,
                         "detail_level": "detailed",
+                        "max_tokens": 256,
                         "log_raw": True,
                     },
                     "judge": {
                         "enabled": True,
+                        "max_tokens": 32,
                         "threshold": 0.81,
                         "log": False,
                     },
@@ -302,9 +307,11 @@ def test_textfooler_accepts_grouped_paraphraser_judge_and_search_config() -> Non
     assert attack.log_candidate_filtering is True
     assert attack.use_qwen_fallback is False
     assert attack.paraphraser_detail_level == "detailed"
+    assert attack.paraphraser_max_tokens == 256
     assert attack.log_raw_paraphrases is True
     assert attack.use_llm_judge_fallback is True
     assert attack.llm_judge_threshold == 0.81
+    assert attack.judge_max_tokens == 32
     assert attack.log_llm_judge is False
 
 
@@ -319,3 +326,11 @@ def test_textfooler_uses_one_shared_client_for_paraphrasing_and_judging() -> Non
     assert score == 0.91
     assert len(client.calls) == 2
     assert all(call["image_path"] is None for call in client.calls)
+    assert client.calls[0]["options"] == {
+        "max_tokens": 384,
+        "reasoning_effort": "none",
+    }
+    assert client.calls[1]["options"] == {
+        "max_tokens": 64,
+        "reasoning_effort": "none",
+    }
