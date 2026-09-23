@@ -1,9 +1,0 @@
-python main.py \
-  --model diffusers \
-  --model-config configs/models/sdxl.yaml \
-  --attack groot \
-  --attack-config configs/attacks/groot.yaml \
-  --defense none \
-  --prompt-file data/tmp_synthetic_10.csv \
-  --max-candidates 5
-  

@@ -25,7 +25,7 @@ models = [
     "safetensors",
     "huggingface_hub",
 ]
-eval = ["sentence-transformers"]
+similarity = ["sentence-transformers"]
 dev = ["pytest", "ruff"]
 full = [
     "torch",

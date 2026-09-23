@@ -11,10 +11,6 @@ from t2i_framework.attacks.search_attack import SearchAttack
 from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
 from t2i_framework.defenses.base import Defense
 from t2i_framework.defenses.character_filter import CharacterFilterDefense
-from t2i_framework.defenses.clip_similarity import CLIPSimilarityDefense
-from t2i_framework.defenses.embedding_filter import EmbeddingFilterDefense
-from t2i_framework.defenses.filter_placeholder import FilterPlaceholderDefense
-from t2i_framework.defenses.image_clip_filter import ImageClipFilterDefense
 from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.models.base import ImageModel
@@ -39,10 +35,6 @@ ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
 DEFENSE_REGISTRY: dict[str, Callable[[], Defense]] = {
     "none": NoneDefense,
     "character_filter": CharacterFilterDefense,
-    "clip_similarity": CLIPSimilarityDefense,
-    "embedding_filter": EmbeddingFilterDefense,
-    "filter_placeholder": FilterPlaceholderDefense,
-    "image_clip_filter": ImageClipFilterDefense,
     "latent_guard_lite": LatentGuardLiteDefense,
 }
 

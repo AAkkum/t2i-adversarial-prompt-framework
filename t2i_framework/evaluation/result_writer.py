@@ -14,16 +14,18 @@ from t2i_framework.core.types import EvaluationResult
 
 
 class ResultWriter:
-    """Append JSONL rows and maintain a CSV copy of experiment results."""
+    """Write compact results plus a separate full debugging trace."""
 
     def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.jsonl_path = self.output_dir / "results.jsonl"
+        self.details_path = self.output_dir / "details.jsonl"
         self.csv_path = self.output_dir / "results.csv"
         self._rows: list[dict[str, Any]] = []
-        if self.jsonl_path.exists():
-            with self.jsonl_path.open("r", encoding="utf-8") as handle:
+        source_path = self.details_path if self.details_path.exists() else self.jsonl_path
+        if source_path.exists():
+            with source_path.open("r", encoding="utf-8") as handle:
                 self._rows = [_json_safe(json.loads(line)) for line in handle if line.strip()]
 
     def append(self, result: EvaluationResult) -> None:
@@ -41,19 +43,23 @@ class ResultWriter:
         raise KeyError(result.run_id)
 
     def _persist(self) -> None:
+        summaries = [_summary_row(row) for row in self._rows]
         with _atomic_text(self.jsonl_path) as handle:
+            for row in summaries:
+                handle.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
+        with _atomic_text(self.details_path) as handle:
             for row in self._rows:
                 handle.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
-        self._write_csv()
+        self._write_csv(summaries)
 
-    def _write_csv(self) -> None:
-        if not self._rows:
+    def _write_csv(self, rows: list[dict[str, Any]]) -> None:
+        if not rows:
             return
-        base_fieldnames = list(self._rows[0].keys())
+        base_fieldnames = list(rows[0].keys())
         score_fieldnames = sorted(
             {
                 f"score_{score_name}"
-                for row in self._rows
+                for row in rows
                 for score_name in (row.get("scores") or {})
             }
         )
@@ -61,11 +67,51 @@ class ResultWriter:
         with _atomic_text(self.csv_path) as handle:
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
-            for row in self._rows:
+            for row in rows:
                 csv_row = _csv_row(row)
                 for score_name, score_value in (row.get("scores") or {}).items():
                     csv_row[f"score_{score_name}"] = score_value
                 writer.writerow(csv_row)
+
+
+def _summary_row(row: dict[str, Any]) -> dict[str, Any]:
+    metadata = row.get("metadata") or {}
+    evaluation = metadata.get("evaluation") or {}
+    attack = metadata.get("attack_candidate") or {}
+    scores = {
+        key: value
+        for key, value in (row.get("scores") or {}).items()
+        if key not in {"candidate_score", "filter_pass_score", "text_similarity"}
+    }
+    status = "EVALUATION_ERROR" if metadata.get("evaluation_error") else metadata.get("status")
+    return {
+        "run_id": row.get("run_id"),
+        "case_id": row.get("case_id"),
+        "category": row.get("category"),
+        "model": row.get("model_name"),
+        "attack": row.get("attack_name"),
+        "defense": row.get("defense_name"),
+        "original_prompt": row.get("original_prompt"),
+        "attacked_prompt": row.get("attacked_prompt"),
+        "target": row.get("target_concept"),
+        "seed": row.get("seed"),
+        "candidate": metadata.get("candidate_index"),
+        "strategy": attack.get("strategy"),
+        "prompt_blocked": row.get("prompt_blocked"),
+        "image_blocked": row.get("image_blocked"),
+        "defense_bypassed": metadata.get("defense_bypassed", False),
+        "image": row.get("generated_image_path"),
+        "success": row.get("success"),
+        "success_rule": evaluation.get("success_rule", "pending"),
+        "evaluation": evaluation.get("llm_judge", {"status": "pending"}),
+        "scores": scores,
+        "queries": row.get("query_count"),
+        "runtime_seconds": round(float(row.get("runtime_seconds") or 0.0), 3),
+        "status": status,
+        "error": metadata.get("error") or metadata.get("evaluation_error"),
+        "selected_best": bool(metadata.get("selected_best", False)),
+        "final_image": metadata.get("final_image_path"),
+    }
 
 
 def _json_safe(value: Any) -> Any:

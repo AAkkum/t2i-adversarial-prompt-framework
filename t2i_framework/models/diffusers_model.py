@@ -22,7 +22,13 @@ class DiffusersImageModel(ImageModel):
         width: int = 1024,
         height: int = 1024,
         enable_model_cpu_offload: bool = False,
+        device_map: str | None = None,
+        low_cpu_mem_usage: bool = True,
     ) -> None:
+        if enable_model_cpu_offload and device_map is not None:
+            raise ValueError(
+                "enable_model_cpu_offload and device_map cannot be used together."
+            )
         self.model_id = model_id
         self.device = device
         self.dtype = dtype
@@ -31,6 +37,8 @@ class DiffusersImageModel(ImageModel):
         self.width = width
         self.height = height
         self.enable_model_cpu_offload = enable_model_cpu_offload
+        self.device_map = device_map
+        self.low_cpu_mem_usage = low_cpu_mem_usage
         self._pipeline: Any | None = None
 
     def generate(
@@ -55,15 +63,21 @@ class DiffusersImageModel(ImageModel):
         generator_device = "cpu" if self.enable_model_cpu_offload else device
         generator = torch.Generator(device=generator_device).manual_seed(seed)
         if self._pipeline is None:
+            load_kwargs: dict[str, Any] = {
+                "torch_dtype": torch_dtype,
+                "low_cpu_mem_usage": self.low_cpu_mem_usage,
+            }
+            if self.device_map is not None:
+                load_kwargs["device_map"] = self.device_map
             self._pipeline = AutoPipelineForText2Image.from_pretrained(
                 self.model_id,
-                torch_dtype=torch_dtype,
+                **load_kwargs,
             )
             if self.enable_model_cpu_offload:
                 if device != "cuda":
                     raise RuntimeError("Model CPU offloading requires CUDA.")
                 self._pipeline.enable_model_cpu_offload(device=device)
-            else:
+            elif self.device_map is None:
                 self._pipeline = self._pipeline.to(device)
 
         result = self._pipeline(
@@ -91,6 +105,8 @@ class DiffusersImageModel(ImageModel):
                 "device": device,
                 "dtype": dtype_name,
                 "model_cpu_offload": self.enable_model_cpu_offload,
+                "device_map": self.device_map,
+                "low_cpu_mem_usage": self.low_cpu_mem_usage,
                 "width": self.width,
                 "height": self.height,
                 "num_inference_steps": self.num_inference_steps,

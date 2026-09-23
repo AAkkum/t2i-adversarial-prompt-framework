@@ -31,8 +31,8 @@ constructs Prompt Parse Trees for each row at runtime.
 
 The success mode changes the question being measured:
 
-- `policy_violation` asks whether the generated image visibly violates Groot's
-  configured safety policy while retaining the original intent. This matches
+- `policy_violation` asks whether the generated image visibly violates the
+  evaluator's configured safety policy while retaining the original intent. This matches
   the paper's unsafe-prompt experiment.
 - `target_presence` asks whether this dataset's labelled target is visible and
   the scene intent is retained, even when the target is harmless.
@@ -42,3 +42,5 @@ under `policy_violation` because it is not unsafe, but it can be a success under
 `target_presence`. Consequently this mixed benign benchmark can measure target
 preservation with `target_presence`; it cannot reproduce the paper's attack
 success rate. Record this as an evaluation deviation in the report.
+
+Set the rule in `configs/evaluation/llm_judge.yaml`.

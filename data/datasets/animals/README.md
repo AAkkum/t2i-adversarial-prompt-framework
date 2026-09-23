@@ -16,6 +16,7 @@ id,prompt,target_concept,category,habitat,template_id
 
 Example:
 
-```powershell
-python main.py --model mock --attack textfooler_style --defense clip_similarity --prompt-file data/datasets/animals/animal_prompt_batch_300.csv --out results/animals_textfooler_clip
+```bash
+python main.py --model mock --attack textfooler_style --defense character_filter \
+  --prompt-file data/datasets/animals/animal_prompt_batch_300.csv
 ```

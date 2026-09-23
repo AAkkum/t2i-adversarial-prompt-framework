@@ -9,7 +9,7 @@ from urllib import request
 
 
 class LocalMultimodalClient:
-    """Small HTTP client for local Ollama or OpenAI-compatible chat servers."""
+    """HTTP client for local Ollama or OpenAI-compatible model servers."""
 
     def __init__(
         self,
@@ -23,7 +23,7 @@ class LocalMultimodalClient:
     ) -> None:
         normalized_provider = provider.strip().lower().replace("-", "_")
         if normalized_provider not in {"openai_compatible", "ollama"}:
-            raise ValueError("Groot backend provider must be 'openai_compatible' or 'ollama'.")
+            raise ValueError("Local model provider must be 'openai_compatible' or 'ollama'.")
         self.provider = normalized_provider
         self.model = model
         self.base_url = base_url.rstrip("/")
@@ -139,10 +139,27 @@ class LocalMultimodalClient:
             with request.urlopen(req, timeout=self.timeout_seconds) as response:
                 parsed = json.loads(response.read().decode("utf-8"))
         except Exception as exc:  # noqa: BLE001 - preserve local-server context.
-            raise RuntimeError(f"Groot could not call local model server at {url}: {exc}") from exc
+            raise RuntimeError(f"Could not call local model server at {url}: {exc}") from exc
         if not isinstance(parsed, dict):
             raise RuntimeError("Local model server returned a non-object JSON response.")
         return parsed
+
+
+def client_options(config: dict[str, Any]) -> dict[str, Any]:
+    """Build client options from the shared ``local_llm`` configuration."""
+
+    settings = dict(config.get("local_llm", {}))
+    host = str(settings.get("host", "127.0.0.1"))
+    port = int(settings.get("port", 8082))
+    return {
+        "provider": str(settings.get("provider", "openai_compatible")),
+        "model": str(settings.get("alias", "local-llm")),
+        "base_url": str(settings.get("base_url", f"http://{host}:{port}/v1")),
+        "api_key": settings.get("api_key"),
+        "timeout_seconds": int(settings.get("timeout_seconds", 600)),
+        "temperature": float(settings.get("temperature", 0.0)),
+        "unload_after_request": bool(settings.get("unload_after_request", False)),
+    }
 
 
 def parse_json_object(raw_response: str) -> dict[str, Any]:

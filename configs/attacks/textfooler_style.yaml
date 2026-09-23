@@ -10,9 +10,9 @@ attack:
 
   similarity:
     enabled: true
-    method: clip_text
-    model_id: openai/clip-vit-base-patch32
-    device: null
+    method: sentence_transformer
+    model_id: sentence-transformers/all-MiniLM-L6-v2
+    device: cpu
     threshold: 0.7
     log: true
 

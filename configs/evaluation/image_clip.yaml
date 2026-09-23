@@ -1,5 +1,0 @@
-evaluation:
-  image_clip:
-    enabled: true
-    model_id: openai/clip-vit-base-patch32
-    threshold: 0.25

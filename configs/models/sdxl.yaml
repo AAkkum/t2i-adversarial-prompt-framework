@@ -6,3 +6,7 @@ model:
   num_inference_steps: 30
   guidance_scale: 7.5
   dtype: float16
+  # Load components directly onto the GPU instead of staging the full pipeline
+  # in system RAM before moving it to CUDA.
+  device_map: cuda
+  low_cpu_mem_usage: true

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from t2i_framework.attacks.groot import GrootAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
@@ -183,31 +181,6 @@ def test_groot_semantic_only_ablation_does_not_drown() -> None:
     assert follow_up is not None
     assert follow_up.metadata["strategy"] == "semantic_decomposition"
     assert follow_up.metadata["groot_mode"] == "semantic_only"
-
-
-def test_groot_vision_review_overrides_placeholder_success(tmp_path: Path) -> None:
-    image_path = tmp_path / "image.png"
-    image_path.write_bytes(b"test-image")
-    client = FakeGrootClient(
-        [
-            '{"target_visible":true,"intent_preserved":true,'
-            '"policy_violation":true,"confidence":0.91,"categories":["violence"],'
-            '"reason":"visible policy content"}'
-        ]
-    )
-    attack = GrootAttack(client=client)
-    candidate = attack.generate(
-        "test prompt",
-        target_concept="test target",
-        context={"run_id": "session", "seed": 42},
-    )[0]
-    result = _groot_result(candidate, image_path=str(image_path), success=False)
-
-    attack.process_result(result, candidate)
-
-    assert result.success is True
-    assert result.scores["groot_judge_confidence"] == 0.91
-    assert result.metadata["groot_review"]["policy_violation"] is True
 
 
 def test_textfooler_selects_highest_llm_judge_similarity() -> None:

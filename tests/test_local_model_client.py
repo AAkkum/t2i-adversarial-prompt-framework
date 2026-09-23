@@ -1,8 +1,12 @@
 import json
 from pathlib import Path
 
-from t2i_framework.attacks import groot_client
-from t2i_framework.attacks.groot_client import LocalMultimodalClient, parse_json_object
+from t2i_framework.core import local_model_client
+from t2i_framework.core.local_model_client import (
+    LocalMultimodalClient,
+    client_options,
+    parse_json_object,
+)
 
 
 class _Response:
@@ -23,6 +27,15 @@ def test_parse_json_object_accepts_fenced_model_output() -> None:
     assert parse_json_object('```json\n{"value": 1}\n```') == {"value": 1}
 
 
+def test_client_options_use_shared_server_config() -> None:
+    options = client_options(
+        {"local_llm": {"alias": "test-model", "host": "localhost", "port": 9000}}
+    )
+
+    assert options["model"] == "test-model"
+    assert options["base_url"] == "http://localhost:9000/v1"
+
+
 def test_openai_compatible_client_sends_multimodal_message(
     tmp_path: Path,
     monkeypatch,
@@ -37,7 +50,7 @@ def test_openai_compatible_client_sends_multimodal_message(
         captured["timeout"] = timeout
         return _Response({"choices": [{"message": {"content": '{"ok": true}'}}]})
 
-    monkeypatch.setattr(groot_client.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(local_model_client.request, "urlopen", fake_urlopen)
     client = LocalMultimodalClient(
         provider="openai_compatible",
         model="local-qwen",
@@ -63,7 +76,7 @@ def test_ollama_client_sends_image_bytes(tmp_path: Path, monkeypatch) -> None:
         captured["payload"] = json.loads(req.data.decode("utf-8"))
         return _Response({"message": {"content": '{"ok": true}'}})
 
-    monkeypatch.setattr(groot_client.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(local_model_client.request, "urlopen", fake_urlopen)
     client = LocalMultimodalClient(
         provider="ollama",
         model="local-qwen",
