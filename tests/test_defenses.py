@@ -103,6 +103,7 @@ concepts:
                     "threshold": 2.0,
                     "include_aliases": False,
                     "use_target_concept": False,
+                    "fail_on_error": True,
                     "expose_score": True,
                     "log_score": False,
                 }
