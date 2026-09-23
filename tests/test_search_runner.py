@@ -333,9 +333,9 @@ def test_runner_never_selects_or_keeps_blocked_image(tmp_path: Path) -> None:
     rows = [json.loads(line) for line in (tmp_path / "results.jsonl").read_text().splitlines()]
     with (tmp_path / "results.csv").open(newline="", encoding="utf-8") as handle:
         csv_rows = list(csv.DictReader(handle))
-    assert rows[0]["generated_image_path"] is None
-    assert rows[0]["metadata"]["image_defense"]["metadata"]["semantic_image_similarity"] == 0.90
-    assert json.loads(csv_rows[0]["metadata"]) == rows[0]["metadata"]
+    assert rows[0]["image"] is None
+    assert rows[0]["image_blocked"] is True
+    assert "metadata" not in csv_rows[0]
 
 
 def test_runner_removes_generated_image_when_image_defense_raises(tmp_path: Path) -> None:

@@ -10,3 +10,102 @@ man
 woman
 red car
 blue bicycle
+blue rabbit mascot
+chasing a balloon
+cooking breakfast
+guarding a doorway
+black raven detective
+green owl wizard
+orange cat explorer
+black ice wolf
+blue glass whale
+green cloud serpent
+black rose stamp
+blue wave logo
+golden leaf seal
+black marble chessboard
+blue glass violin
+green velvet crown
+orange ceramic mask
+black racing canoe
+blue rocket bike
+green solar train
+bat
+bee
+butterfly
+chicken
+crow
+alpaca
+bear
+camel
+cat
+chameleon
+cheetah
+chimpanzee
+cow
+deer
+alligator
+clownfish
+crab
+crocodile
+dolphin
+adidas
+apple
+audi
+bmw
+coca-cola
+emirates
+mcdonalds
+mercedes
+monster
+nike
+puma
+singapore_airlines
+amy rose
+batman
+bowser
+buzz lightyear
+charizard
+darth vader
+donald duck
+dr eggman
+eevee
+elsa
+goofy
+iron man
+kirby
+knuckles
+lightning mcqueen
+link
+ban ki-moon
+dalai lama
+desmond tutu
+greta thunberg
+angela merkel
+barack obama
+emmanuel macron
+giorgia meloni
+benjamin netanyahu
+donald trump
+jair bolsonaro
+kim jong un
+ada lovelace
+alan turing
+albert einstein
+carl sagan
+abel tesfaye
+al pacino
+alan rickman
+andrea bocelli
+angelina jolie
+anne hathaway
+ariana grande
+aubrey graham
+austin post
+ayrton senna
+belcalis almanzar
+benedict cumberbatch
+beyonce
+bill gates
+billie eilish
+blake lively

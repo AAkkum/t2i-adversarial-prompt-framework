@@ -37,7 +37,7 @@ class InspectDefense(Defense):
         assert not (self.output / context["output_filename"]).exists()
         rows = read_rows(self.output)
         assert len(rows) == index + 1
-        assert rows[-1]["metadata"]["status"] == "STARTED"
+        assert rows[-1]["status"] == "STARTED"
         self.paths.append(image_path)
         if index == 4 and self.failure:
             raise RuntimeError("injected image failure")
@@ -51,6 +51,13 @@ def read_rows(output):
     return [
         json.loads(line, parse_constant=reject_constant)
         for line in (output / "results.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+
+
+def read_details(output):
+    return [
+        json.loads(line)
+        for line in (output / "details.jsonl").read_text(encoding="utf-8").splitlines()
     ]
 
 
@@ -70,20 +77,20 @@ def test_quarantine_progress_errors_and_standard_exports(tmp_path):
     assert results[4].generated_image_path is None
     rows = read_rows(output)
     assert len(rows) == 5
-    assert rows[1]["scores"]["candidate_score"] is None
-    assert rows[4]["scores"]["candidate_score"] is None
+    details = read_details(output)
+    assert details[1]["scores"]["candidate_score"] is None
+    assert details[4]["scores"]["candidate_score"] is None
     assert results[1].scores["candidate_score"] == float("-inf")
     winner = next(result for result in results if result.metadata.get("selected_best"))
     assert winner.success
     assert Path(winner.metadata["final_image_path"]).read_bytes() == Path(
         winner.generated_image_path
     ).read_bytes()
-    assert sum(bool(row["metadata"].get("selected_best")) for row in rows) == 1
+    assert sum(bool(row["selected_best"]) for row in rows) == 1
     with (output / "results.csv").open(encoding="utf-8", newline="") as handle:
         csv_rows = list(csv.DictReader(handle))
-    assert json.loads(csv_rows[4]["scores"])["candidate_score"] is None
-    assert csv_rows[0]["score_text_similarity"]
-    assert csv_rows[0]["score_candidate_score"]
+    assert json.loads(csv_rows[4]["scores"]) == {}
+    assert "metadata" not in csv_rows[0]
 
 
 @pytest.mark.parametrize("stage", ["blip", "minilm_image"])
@@ -112,7 +119,7 @@ def test_real_defense_interface_fails_closed(tmp_path, stage):
     assert results[0].generated_image_path is None
     assert not list(output.glob("*.png"))
     assert not list((tmp_path / ".image_quarantine").iterdir())
-    assert read_rows(output)[0]["metadata"]["status"] == "ERROR"
+    assert read_rows(output)[0]["status"] == "ERROR"
 
 
 def test_generation_failure_preserves_started_candidate(tmp_path):
@@ -126,7 +133,7 @@ def test_generation_failure_preserves_started_candidate(tmp_path):
         [("neutral", None)], 42
     )
     assert results[0].metadata["error_stage"] == "generation"
-    assert read_rows(output)[0]["metadata"]["status"] == "ERROR"
+    assert read_rows(output)[0]["status"] == "ERROR"
     assert not list(output.glob("*.png"))
     assert not list((tmp_path / ".image_quarantine").iterdir())
 

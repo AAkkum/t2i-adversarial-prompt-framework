@@ -10,30 +10,18 @@ attack:
 
   similarity:
     enabled: true
-    method: clip_text
-    model_id: openai/clip-vit-base-patch32
-    device: null
+    method: sentence_transformer
+    model_id: sentence-transformers/all-MiniLM-L6-v2
+    device: cpu
     threshold: 0.7
     log: true
 
   paraphraser:
     enabled: true
-    provider: ollama
-    model: qwen3:14B
-    device: cuda:0
-    dtype: bfloat16
-    max_new_tokens: 512
     detail_level: detailed
     log_raw: false
-    unload_after_attack: false
-    log_unload: true
 
   judge:
     enabled: true
-    provider: ollama
-    model: qwen3:14B
-    device: cuda:0
-    dtype: bfloat16
-    max_new_tokens: 128
     threshold: 0.70
     log: true

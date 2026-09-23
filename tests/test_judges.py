@@ -1,6 +1,6 @@
 import pytest
 
-from t2i_framework.judges.ollama_similarity import parse_score
+from t2i_framework.attacks.textfooler_llm import parse_score
 
 
 def test_parse_score_reads_json_score() -> None:

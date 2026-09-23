@@ -1,121 +1,36 @@
 # Data
 
-This folder contains prompt datasets and framework support data.
+Prompt files describe experiment inputs. Each row needs a `prompt` and may also
+contain `target_concept`, `id`, `category`, and additional metadata.
 
-## What Hans Added
+## Recommended Batches
 
-Hans added the larger prompt-case files used for batch evaluation. These files let you run many prompts in one command instead of launching the framework once per prompt.
+- `example_prompts.csv`: minimal smoke test
+- `tmp_synthetic_10.csv`: cheap real-model test
+- `datasets/representative/representative_prompt_batch_100.csv`: main compact benchmark
+- `all_prompt_cases.csv`: combined large collection
 
-The important idea is:
+The representative batch contains 100 prompts with 100 different targets from
+synthetic, animal, brand, fictional-character, political-figure, and celebrity
+categories.
 
-- each row is one prompt case;
-- `prompt` is the original prompt sent into the attack;
-- `target_concept` is the concept that should still appear after rewriting;
-- `id`/`case_id` and `category` make results easier to group later;
-- extra columns are kept as metadata in `results.jsonl`.
+## Attack And Defense Data
 
-This is separate from attack support data. Prompt-case CSVs define experiment inputs. Files such as `groot_decompositions.yaml`, `attack_terms.yaml`, and `data/search_attack/*.json` configure attacks or defenses.
+- `attack_terms.yaml`: TextFooler terms
+- `search_attack/`: Search Attack phrases, target descriptions, and test cases
+- `latent_guard/restricted_concepts.yaml`: example protected concepts and aliases
+- `latent_guard/restricted_concepts_representative_100.yaml`: fixed benchmark blacklist
+- `latent_guard/`: location for external LatentGuard weights and parity instructions
 
-## Main Batch Files
+Groot does not need decomposition files. It creates its prompt tree with the
+local LLM at runtime.
 
-- `all_prompt_cases.csv`
-  Combined framework-ready prompt CSV. Use this when you want one large batch across the available datasets.
+## Batch Example
 
-## Dataset Folders
-
-- `datasets/synthetic/synthetic_prompt_batch_300.csv`
-  Controlled synthetic prompts for debugging attacks, defenses, and evaluation metrics.
-
-- `datasets/unbranding/unbranding_sample_10_per_brand.csv`
-  Balanced 120-row sample from the public UNBRANDING dataset: 12 brands, 10 prompts per brand.
-
-- `datasets/celebcaption/celebcaption_sample_5_per_person.csv`
-  750-row sample from CelebCaption captions: 150 public figures, 5 prompts per person.
-
-- `datasets/copyrighted_characters/copyrighted_characters_sample_5_per_character.csv`
-  Manual 150-row prompt set for fictional character-name defense testing.
-
-- `datasets/political_figures/political_figures_sample_5_per_person.csv`
-  Manual 200-row prompt set for public-figure defense testing: 40 people, 5 prompts per person, balanced across 4 subcategories.
-
-- `datasets/animals/animal_prompt_batch_300.csv`
-  Manual 300-row prompt set for recognizable animal defense testing: 100 animals, 3 prompts per animal, covering land, water, flying, reptile/amphibian, and insect cases.
-
-- `datasets/representative/representative_prompt_batch_100.csv`
-  Compact 100-row benchmark batch with 100 unique targets, sampled across synthetic, animal, unbranding, copyrighted-character, political/public-figure, and celebcaption datasets.
-
-## Support Files
-
-- `restricted_concepts.yaml`
-  Restricted concepts and aliases used by defenses.
-
-- `groot_decompositions.yaml`
-  Safe synthetic decompositions used by the `groot_lite` attack.
-
-- `groot_decompositions_external_template.yaml`
-  Alternate/template decomposition file for `groot_lite`.
-
-- `groot_decompositions_representative_100_template.yaml`
-  Groot-lite decomposition template for the 100 unique targets in `datasets/representative/representative_prompt_batch_100.csv`.
-
-For a new prompt batch, use `scripts/build_groot_decomposition_template.py` to identify which `target_concept` values still need Groot-lite decompositions.
-
-- `attack_terms.yaml`
-  Shared word lists used by TextFooler-style attacks and paraphrasers.
-
-- `search_attack/`
-  Burak's search-attack support data:
-  - `blocked_terms.txt`: direct terms for character filtering
-  - `concept_targets.json`: protected concept descriptions
-  - `variant_phrases.json`: phrase fragments used to generate search variants
-  - `test_cases.json`: small search-attack examples
-
-- `latent_guard/`
-  Optional local folder for the LatentGuard pretrained `model_parameters.pth` file used by `latent_guard_lite`.
-
-- `example_prompts.csv`
-  Tiny smoke-test CSV.
-
-## Combined CSV Schema
-
-`all_prompt_cases.csv` keeps the framework-required columns first:
-
-```csv
-id,prompt,target_concept,category,dataset
+```bash
+python main.py \
+  --model mock \
+  --attack identity \
+  --defense none \
+  --prompt-file data/tmp_synthetic_10.csv
 ```
-
-Extra metadata columns are kept when available:
-
-```csv
-difficulty,template_id,prompt_set,seed,source_filename,caption_variant,image_file,source_file,franchise,rights_holder,subcategory,region,role,habitat
-```
-
-The runner uses `prompt`, `target_concept`, `id`, and `category`. Other columns are stored as prompt-case metadata in the result files.
-
-`--prompt-file` supports CSV, JSON, and JSONL:
-
-- CSV: rows with a required `prompt` column.
-- JSON: either a list of prompt objects or an object with `prompts`/`cases`.
-- JSONL: one prompt object or prompt string per line.
-
-## Example Commands
-
-Run every available prompt case:
-
-```powershell
-python main.py --model mock --attack textfooler_style --defense clip_similarity --prompt-file data/all_prompt_cases.csv --out results/all_textfooler_clip
-```
-
-Run only one dataset:
-
-```powershell
-python main.py --model mock --attack textfooler_style --defense clip_similarity --prompt-file data/datasets/unbranding/unbranding_sample_10_per_brand.csv --out results/unbranding_textfooler_clip
-```
-
-Run a batch with Groot-lite, image CLIP, and prompt-prompt similarity:
-
-```powershell
-python main.py --model diffusers --model-config configs/models/sdxl.yaml --attack groot_lite --config configs/evaluation/clip_and_prompt_similarity.yaml --defense none --prompt-file data/datasets/synthetic/synthetic_prompt_batch_300.csv --max-candidates 1 --out results/groot_sdxl_synthetic_batch
-```
-
-For large diffusion models, this keeps the same model adapter alive during the run. It does not start a new Python process per prompt.

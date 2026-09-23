@@ -3,73 +3,11 @@ from __future__ import annotations
 import json
 import re
 from typing import Any
-from urllib import request
 
 from t2i_framework.core.word_lists import load_term_set
 
 
-OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "qwen3:14b"
 ACTION_TERMS = load_term_set("action_terms")
-
-
-class QwenOllamaParaphraser:
-    """Ollama/Qwen provider for short visual concept paraphrase candidates."""
-
-    def __init__(
-        self,
-        model: str = DEFAULT_MODEL,
-        generate_url: str = OLLAMA_GENERATE_URL,
-        timeout_seconds: int = 120,
-        detail_level: str = "compact",
-    ) -> None:
-        self.model = model
-        self.generate_url = generate_url
-        self.timeout_seconds = timeout_seconds
-        self.detail_level = normalize_detail_level(detail_level)
-        self.last_raw_response: str | None = None
-        self.last_candidates: list[str] = []
-
-    def generate_candidates(
-        self,
-        concept: str,
-        context: str = "",
-        count: int = 5,
-    ) -> list[str]:
-        prompt = self._build_prompt(concept, context, count)
-        response = self._generate(prompt)
-        candidates = parse_candidate_list(response, limit=count)
-        self.last_raw_response = response
-        self.last_candidates = candidates
-        return candidates
-
-    def unload(self) -> None:
-        unload_ollama_model(
-            self.model,
-            generate_url=self.generate_url,
-            timeout_seconds=self.timeout_seconds,
-        )
-
-    def _generate(self, prompt: str) -> str:
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-            }
-        ).encode("utf-8")
-        req = request.Request(
-            self.generate_url,
-            data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with request.urlopen(req, timeout=self.timeout_seconds) as response:
-            data = json.loads(response.read().decode("utf-8"))
-        return str(data["response"])
-
-    def _build_prompt(self, concept: str, context: str, count: int) -> str:
-        return build_paraphrase_prompt(concept, context, count, self.detail_level)
 
 
 def build_paraphrase_prompt(
@@ -141,29 +79,6 @@ Return ONLY the JSON array.
 
 
         """
-
-
-def unload_ollama_model(
-    model: str,
-    generate_url: str = OLLAMA_GENERATE_URL,
-    timeout_seconds: int = 120,
-) -> None:
-    payload = json.dumps(
-        {
-            "model": model,
-            "prompt": "",
-            "stream": False,
-            "keep_alive": 0,
-        }
-    ).encode("utf-8")
-    req = request.Request(
-        generate_url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    with request.urlopen(req, timeout=timeout_seconds) as response:
-        response.read()
 
 
 def infer_phrase_role(phrase: str) -> str:
@@ -305,3 +220,72 @@ def parse_candidate_list(raw_response: str, limit: int) -> list[str]:
             break
 
     return unique_candidates
+
+
+def build_similarity_judge_prompt(source: str, candidate: str, context: str = "") -> str:
+    """Build the semantic-preservation instruction sent through the shared client."""
+    return f"""
+You are a strict semantic preservation judge for visual prompt paraphrases.
+
+Score how well the candidate preserves ONLY the selected source phrase.
+
+Source phrase:
+`{source}`
+
+Candidate phrase:
+`{candidate}`
+
+Full prompt context, used only for disambiguation:
+`{context or source}`
+
+Scoring guide:
+- 1.0 means the candidate preserves the same visual/action concept very well.
+- 0.7 means the candidate is mostly the same concept with acceptable wording changes.
+- 0.4 means it shares some attributes but changes the core concept.
+- 0.0 means it is unrelated or changes grammatical role.
+
+Rules:
+1. Judge only the selected source phrase and candidate phrase.
+2. Penalize candidates that borrow unrelated context details.
+3. Penalize candidates that add new objects, characters, scene events, or relationships.
+4. Penalize candidates that change a noun phrase into an action phrase or an
+   action phrase into a noun phrase.
+5. Do not judge whether the candidate bypasses any safety filter.
+6. Return only valid JSON with this shape: {{"score": 0.0}}
+
+Return only JSON.
+"""
+
+
+def parse_score(raw_response: str) -> float:
+    text = raw_response.strip()
+    parsed = None
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r"\{[\s\S]*\}", text)
+        if match is not None:
+            try:
+                parsed = json.loads(match.group(0))
+            except json.JSONDecodeError:
+                parsed = None
+
+    if isinstance(parsed, dict):
+        value = parsed.get("score")
+        if isinstance(value, (int, float)):
+            return _clamp(float(value))
+        if isinstance(value, str):
+            try:
+                return _clamp(float(value))
+            except ValueError:
+                pass
+
+    match = re.search(r"(?<!\d)(?:0(?:\.\d+)?|1(?:\.0+)?)(?!\d)", text)
+    if match is not None:
+        return _clamp(float(match.group(0)))
+
+    raise RuntimeError("Could not parse semantic judge score from local LLM response.")
+
+
+def _clamp(value: float) -> float:
+    return max(0.0, min(1.0, value))

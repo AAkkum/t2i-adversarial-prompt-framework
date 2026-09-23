@@ -4,9 +4,10 @@ from t2i_framework.core.registry import available_components
 def test_known_components_exist() -> None:
     components = available_components()
     assert {"mock", "diffusers"} <= set(components["models"])
-    assert {"identity", "char_perturb", "textfooler_style", "groot_lite", "search_attack"} <= set(
+    assert {"identity", "textfooler_style", "groot", "search_attack", "pgj"} <= set(
         components["attacks"]
     )
-    assert {"none", "normalize_keywords", "embedding_filter", "image_clip_filter", "composite"} <= set(
-        components["defenses"]
-    )
+    assert set(components["defenses"]) == {"none", "character_filter", "latent_guard_lite"}
+    assert "char_perturb" not in components["attacks"]
+    assert "normalize_keywords" not in components["defenses"]
+    assert "composite" not in components["defenses"]

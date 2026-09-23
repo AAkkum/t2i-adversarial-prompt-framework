@@ -6,5 +6,3 @@ model:
   num_inference_steps: 20
   guidance_scale: 4.5
   dtype: bfloat16
-  unload_after_generation: true
-  log_unload: true

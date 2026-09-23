@@ -1,46 +1,29 @@
-# How To Add A Defense
+# Add A Defense
 
-Defenses can run before generation on text prompts, after generation on images, or both.
+1. Create one class under `t2i_framework/defenses/` and subclass `Defense`.
+2. Implement `check_prompt`, `check_image`, or both.
+3. Return a `DefenseDecision` with `allowed`, `reason`, and optional metadata.
+4. Register the class in `t2i_framework/core/registry.py`.
+5. Add a YAML file under `configs/defenses/` only when the defense has settings.
+6. Add focused tests in `tests/test_defenses.py`.
+
+Minimal prompt defense:
 
 ```python
-from pathlib import Path
-from typing import Any
-
 from t2i_framework.core.types import DefenseDecision
 from t2i_framework.defenses.base import Defense
 
 
-class MyDefense(Defense):
-    name = "my_defense"
+class ExampleDefense(Defense):
+    name = "example"
 
-    def check_prompt(
-        self,
-        prompt: str,
-        target_concept: str | None = None,
-        context: dict[str, Any] | None = None,
-    ) -> DefenseDecision:
-        return DefenseDecision(allowed=True, reason="prompt allowed")
-
-    def check_image(
-        self,
-        image_path: Path,
-        target_concept: str | None = None,
-        context: dict[str, Any] | None = None,
-    ) -> DefenseDecision:
-        return DefenseDecision(allowed=True, reason="image allowed")
+    def check_prompt(self, prompt, target_concept=None, context=None):
+        blocked = bool(target_concept and target_concept.lower() in prompt.lower())
+        return DefenseDecision(
+            allowed=not blocked,
+            reason="target found" if blocked else "allowed",
+        )
 ```
 
-Register it in `t2i_framework/core/registry.py` under `DEFENSE_REGISTRY`.
-
-Pre-generation blocking prevents the model adapter from being called. Post-generation blocking marks the result as unsuccessful and prevents the blocked image from being published as a final output image.
-
-`image_clip_filter` is the built-in post-generation image defense. It compares the generated image with the `target_concept` using CLIP image-text similarity. If the score is above the threshold, the defense blocks the image because the restricted synthetic target concept still appears to be present.
-
-Defense-specific CLIP settings can be passed through the run config:
-
-```yaml
-defense:
-  image_clip:
-    model_id: openai/clip-vit-base-patch32
-    threshold: 0.25
-```
+The defense must not decide experiment success. It only blocks or allows. The
+shared LLM evaluator runs afterward.

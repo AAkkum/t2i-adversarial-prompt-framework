@@ -57,6 +57,6 @@ class SentenceTextSimilarityScorer:
                 raise RuntimeError(
                     "Sentence-transformer similarity could not load the model. "
                     "Run once with internet access so Hugging Face can cache "
-                    f"{self.model_id}, or disable it with "
-                    "evaluation.prompt_similarity.enabled: false."
+                    f"{self.model_id}, or disable semantic similarity in the "
+                    "component's config."
                 ) from local_exc
