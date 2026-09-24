@@ -87,6 +87,9 @@ def main(
         image_model = build_model(model_builder_name, **model_config)
         attack_module = build_attack(attack)
         defense_module = build_defense(defense)
+        validate_backend = getattr(defense_module, "validate_model", None)
+        if validate_backend is not None:
+            validate_backend(getattr(image_model, "model_id", None))
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     except TypeError as exc:

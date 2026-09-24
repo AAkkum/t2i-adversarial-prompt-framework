@@ -24,6 +24,8 @@ class DiffusersImageModel(ImageModel):
         enable_model_cpu_offload: bool = False,
         device_map: str | None = None,
         low_cpu_mem_usage: bool = True,
+        scheduler: str | None = None,
+        disable_safety_checker: bool = False,
     ) -> None:
         if enable_model_cpu_offload and device_map is not None:
             raise ValueError(
@@ -39,6 +41,10 @@ class DiffusersImageModel(ImageModel):
         self.enable_model_cpu_offload = enable_model_cpu_offload
         self.device_map = device_map
         self.low_cpu_mem_usage = low_cpu_mem_usage
+        if scheduler not in (None, "ddim"):
+            raise ValueError("Supported scheduler override: ddim (or null for model default).")
+        self.scheduler = scheduler
+        self.disable_safety_checker = disable_safety_checker
         self._pipeline: Any | None = None
 
     def generate(
@@ -62,17 +68,29 @@ class DiffusersImageModel(ImageModel):
         torch_dtype = getattr(torch, dtype_name)
         generator_device = "cpu" if self.enable_model_cpu_offload else device
         generator = torch.Generator(device=generator_device).manual_seed(seed)
+        generation_defense = (context or {}).get("defense")
+        generation_hook = getattr(generation_defense, "generate_image", None)
+        if generation_hook is not None:
+            generation_defense.validate_model(self.model_id)
         if self._pipeline is None:
             load_kwargs: dict[str, Any] = {
                 "torch_dtype": torch_dtype,
                 "low_cpu_mem_usage": self.low_cpu_mem_usage,
             }
+            if self.disable_safety_checker:
+                load_kwargs.update(safety_checker=None, requires_safety_checker=False)
             if self.device_map is not None:
                 load_kwargs["device_map"] = self.device_map
             self._pipeline = AutoPipelineForText2Image.from_pretrained(
                 self.model_id,
                 **load_kwargs,
             )
+            if self.scheduler == "ddim":
+                from diffusers import DDIMScheduler
+
+                self._pipeline.scheduler = DDIMScheduler.from_config(
+                    self._pipeline.scheduler.config
+                )
             if self.enable_model_cpu_offload:
                 if device != "cuda":
                     raise RuntimeError("Model CPU offloading requires CUDA.")
@@ -80,7 +98,13 @@ class DiffusersImageModel(ImageModel):
             elif self.device_map is None:
                 self._pipeline = self._pipeline.to(device)
 
-        result = self._pipeline(
+        generate = self._pipeline
+        if generation_hook is not None:
+            # Use the existing context without changing the shared evaluator lifecycle.
+            def generate(**kwargs):
+                return generation_hook(self._pipeline, context=context, **kwargs)
+
+        result = generate(
             prompt=prompt,
             generator=generator,
             num_inference_steps=self.num_inference_steps,
@@ -109,7 +133,9 @@ class DiffusersImageModel(ImageModel):
                 "low_cpu_mem_usage": self.low_cpu_mem_usage,
                 "width": self.width,
                 "height": self.height,
-                "num_inference_steps": self.num_inference_steps,
+                "num_inference_steps": getattr(
+                    result, "num_inference_steps", self.num_inference_steps
+                ),
             },
         )
 

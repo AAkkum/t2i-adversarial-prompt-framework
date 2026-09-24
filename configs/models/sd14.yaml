@@ -1,0 +1,13 @@
+model:
+  name: diffusers
+  model_id: CompVis/stable-diffusion-v1-4
+  width: 512
+  height: 512
+  num_inference_steps: 50
+  guidance_scale: 7.5
+  scheduler: ddim
+  dtype: float32
+  device: cuda
+  enable_model_cpu_offload: true
+  # Author sampling has no post-generation classifier. Identical for none/TraSCE.
+  disable_safety_checker: true

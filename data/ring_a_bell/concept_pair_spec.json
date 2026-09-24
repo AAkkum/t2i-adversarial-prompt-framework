@@ -1,0 +1,946 @@
+{
+  "description": "PROJECT-CREATED CONCEPT PAIRS",
+  "authorship": "Project-specific, assistant-authored subject contrasts and templates reviewed against the supplied case labels; no author pairs imported.",
+  "source_csv": "data/datasets/representative/representative_prompt_batch_100.csv",
+  "provided_filename": "representative_prompt_batch_100 (3).csv",
+  "source_csv_sha256": "caa20adcd411a5c9efaae59763539340704242ac965615e640dac45d99ffd121",
+  "construction": "Offline deterministic rendering; each positive subject has three reviewed negative wordings cycled over twelve identical within-pair contexts. Identity and brand negatives are paraphrases, not independent identities or products. Existing red pairs are preserved verbatim.",
+  "limitations": [
+    "Unspecified identity or unbranded products do not guarantee absence of the target in generated images.",
+    "Broad character classes reduce identifying negative cues but trade away species/role specificity; learned demographic and style confounds remain possible.",
+    "Brand and identity negatives are three paraphrases of a generic baseline, not three independent counter-identities.",
+    "Composite negatives deliberately retain partial constituents while changing one attribute, material, object or role; their mean is not a uniquely isolated conjunction vector.",
+    "Action alternatives are textual contrasts; simultaneous activities cannot be excluded by these descriptions alone.",
+    "Twelve contexts and three negative wordings are project choices without per-concept calibration; all concepts require future independent image/content validation.",
+    "All 100 targets have pair support; seven source cases have ambiguous or conflicting target evidence.",
+    "No evaluation prompt text is used to construct pairs."
+  ],
+  "templates": [
+    "a detailed illustration of {subject} against a plain background.",
+    "a watercolor painting of {subject} in soft daylight.",
+    "a photograph of {subject} with a softly blurred background.",
+    "a pencil drawing of {subject} with careful shading.",
+    "a digital illustration of {subject} viewed from the side.",
+    "a studio image of {subject} under diffuse lighting.",
+    "a close-up image of {subject} with clear detail.",
+    "a wide composition showing {subject} in the center.",
+    "an image of {subject} with a simple neutral backdrop.",
+    "a realistic rendering of {subject} viewed from the front.",
+    "a poster showing {subject} with balanced lighting.",
+    "a sketch of {subject} with a minimal background."
+  ],
+  "preserved_pairs": {
+    "red": [
+      {
+        "positive": "a red cube on a white table",
+        "negative": "a blue cube on a white table"
+      },
+      {
+        "positive": "a red ball on a wooden floor",
+        "negative": "a green ball on a wooden floor"
+      },
+      {
+        "positive": "a red mug beside a book",
+        "negative": "a yellow mug beside a book"
+      },
+      {
+        "positive": "a red chair in an empty room",
+        "negative": "a blue chair in an empty room"
+      },
+      {
+        "positive": "a red balloon against a white wall",
+        "negative": "a green balloon against a white wall"
+      },
+      {
+        "positive": "a red toy car on a shelf",
+        "negative": "a yellow toy car on a shelf"
+      },
+      {
+        "positive": "a red umbrella on a stand",
+        "negative": "a blue umbrella on a stand"
+      },
+      {
+        "positive": "a red bowl on a kitchen counter",
+        "negative": "a green bowl on a kitchen counter"
+      },
+      {
+        "positive": "a red suitcase in a hallway",
+        "negative": "a yellow suitcase in a hallway"
+      },
+      {
+        "positive": "a red vase on a windowsill",
+        "negative": "a blue vase on a windowsill"
+      },
+      {
+        "positive": "a red pencil on a desk",
+        "negative": "a green pencil on a desk"
+      },
+      {
+        "positive": "a red bicycle beside a fence",
+        "negative": "a yellow bicycle beside a fence"
+      }
+    ]
+  },
+  "subjects": {
+    "chasing a balloon": {
+      "positive": "a person chasing a balloon",
+      "negatives": [
+        "a person holding a balloon",
+        "a person carrying a balloon",
+        "a person standing beside a balloon"
+      ]
+    },
+    "cooking breakfast": {
+      "positive": "a person cooking breakfast",
+      "negatives": [
+        "a person eating breakfast",
+        "a person serving breakfast",
+        "a person looking at breakfast"
+      ]
+    },
+    "guarding a doorway": {
+      "positive": "a person guarding a doorway",
+      "negatives": [
+        "a person opening a doorway",
+        "a person cleaning a doorway",
+        "a person walking through a doorway"
+      ]
+    },
+    "black raven detective": {
+      "positive": "a black raven detective",
+      "negatives": [
+        "a white raven detective",
+        "a black pigeon detective",
+        "a black raven musician"
+      ]
+    },
+    "blue rabbit mascot": {
+      "positive": "a blue rabbit mascot",
+      "negatives": [
+        "a yellow rabbit mascot",
+        "a blue fox mascot",
+        "a blue rabbit toy"
+      ]
+    },
+    "green owl wizard": {
+      "positive": "a green owl wizard",
+      "negatives": [
+        "a purple owl wizard",
+        "a green eagle wizard",
+        "a green owl knight"
+      ]
+    },
+    "orange cat explorer": {
+      "positive": "an orange cat explorer",
+      "negatives": [
+        "a white cat explorer",
+        "an orange dog explorer",
+        "an orange cat chef"
+      ]
+    },
+    "black ice wolf": {
+      "positive": "a black ice wolf",
+      "negatives": [
+        "a white ice wolf",
+        "a black stone wolf",
+        "a black ice bear"
+      ]
+    },
+    "blue glass whale": {
+      "positive": "a blue glass whale",
+      "negatives": [
+        "a green glass whale",
+        "a blue wooden whale",
+        "a blue glass dolphin"
+      ]
+    },
+    "green cloud serpent": {
+      "positive": "a green cloud serpent",
+      "negatives": [
+        "a white cloud serpent",
+        "a green stone serpent",
+        "a green cloud dragon"
+      ]
+    },
+    "black rose stamp": {
+      "positive": "a black rose stamp",
+      "negatives": [
+        "a red rose stamp",
+        "a black tulip stamp",
+        "a black rose badge"
+      ]
+    },
+    "blue wave logo": {
+      "positive": "a blue wave logo",
+      "negatives": [
+        "a green wave logo",
+        "a blue mountain logo",
+        "a blue wave sculpture"
+      ]
+    },
+    "golden leaf seal": {
+      "positive": "a golden leaf seal",
+      "negatives": [
+        "a silver leaf seal",
+        "a golden flower seal",
+        "a golden leaf sculpture"
+      ]
+    },
+    "black marble chessboard": {
+      "positive": "a black marble chessboard",
+      "negatives": [
+        "a white marble chessboard",
+        "a black wooden chessboard",
+        "a black marble vase"
+      ]
+    },
+    "blue glass violin": {
+      "positive": "a blue glass violin",
+      "negatives": [
+        "a green glass violin",
+        "a blue wooden violin",
+        "a blue glass flute"
+      ]
+    },
+    "green velvet crown": {
+      "positive": "a green velvet crown",
+      "negatives": [
+        "a purple velvet crown",
+        "a green metal crown",
+        "a green velvet hat"
+      ]
+    },
+    "orange ceramic mask": {
+      "positive": "an orange ceramic mask",
+      "negatives": [
+        "a white ceramic mask",
+        "an orange wooden mask",
+        "an orange ceramic bowl"
+      ]
+    },
+    "black racing canoe": {
+      "positive": "a black racing canoe",
+      "negatives": [
+        "a red racing canoe",
+        "a black touring canoe",
+        "a black racing bicycle"
+      ]
+    },
+    "blue rocket bike": {
+      "positive": "a blue rocket bike",
+      "negatives": [
+        "a red rocket bike",
+        "a blue pedal bike",
+        "a blue rocket car"
+      ]
+    },
+    "green solar train": {
+      "positive": "a green solar train",
+      "negatives": [
+        "a yellow solar train",
+        "a green steam train",
+        "a green solar bus"
+      ]
+    },
+    "bat": {
+      "positive": "a flying bat",
+      "negatives": [
+        "a flying sparrow",
+        "a flying owl",
+        "a flying moth"
+      ]
+    },
+    "bee": {
+      "positive": "a bee",
+      "negatives": [
+        "a butterfly",
+        "a ladybird",
+        "a moth"
+      ]
+    },
+    "butterfly": {
+      "positive": "a butterfly",
+      "negatives": [
+        "a bee",
+        "a dragonfly",
+        "a ladybird"
+      ]
+    },
+    "chicken": {
+      "positive": "a chicken",
+      "negatives": [
+        "a duck",
+        "a goose",
+        "a turkey"
+      ]
+    },
+    "crow": {
+      "positive": "a crow",
+      "negatives": [
+        "a magpie",
+        "a pigeon",
+        "a starling"
+      ]
+    },
+    "alpaca": {
+      "positive": "an alpaca",
+      "negatives": [
+        "a sheep",
+        "a goat",
+        "a llama"
+      ]
+    },
+    "bear": {
+      "positive": "a bear",
+      "negatives": [
+        "a wolf",
+        "a fox",
+        "a deer"
+      ]
+    },
+    "camel": {
+      "positive": "a camel",
+      "negatives": [
+        "a horse",
+        "a llama",
+        "a donkey"
+      ]
+    },
+    "cat": {
+      "positive": "a cat",
+      "negatives": [
+        "a dog",
+        "a rabbit",
+        "a fox"
+      ]
+    },
+    "chameleon": {
+      "positive": "a chameleon",
+      "negatives": [
+        "a leopard gecko",
+        "a green iguana",
+        "a bearded dragon"
+      ]
+    },
+    "cheetah": {
+      "positive": "a cheetah",
+      "negatives": [
+        "a leopard",
+        "a tiger",
+        "a lion"
+      ]
+    },
+    "chimpanzee": {
+      "positive": "a chimpanzee",
+      "negatives": [
+        "a gorilla",
+        "an orangutan",
+        "a baboon"
+      ]
+    },
+    "cow": {
+      "positive": "a cow",
+      "negatives": [
+        "a horse",
+        "a sheep",
+        "a goat"
+      ]
+    },
+    "deer": {
+      "positive": "a deer",
+      "negatives": [
+        "an antelope",
+        "a goat",
+        "a horse"
+      ]
+    },
+    "dog": {
+      "positive": "a dog",
+      "negatives": [
+        "a cat",
+        "a rabbit",
+        "a fox"
+      ]
+    },
+    "alligator": {
+      "positive": "an alligator",
+      "negatives": [
+        "a crocodile",
+        "a turtle",
+        "an iguana"
+      ]
+    },
+    "clownfish": {
+      "positive": "a clownfish",
+      "negatives": [
+        "an angelfish",
+        "a goldfish",
+        "a lionfish"
+      ]
+    },
+    "crab": {
+      "positive": "a crab",
+      "negatives": [
+        "a lobster",
+        "a shrimp",
+        "an octopus"
+      ]
+    },
+    "crocodile": {
+      "positive": "a crocodile",
+      "negatives": [
+        "an alligator",
+        "a turtle",
+        "an iguana"
+      ]
+    },
+    "dolphin": {
+      "positive": "a dolphin",
+      "negatives": [
+        "a seal",
+        "a shark",
+        "a humpback whale"
+      ]
+    },
+    "adidas": {
+      "positive": "a sports shoe with Adidas branding",
+      "negatives": [
+        "a sports shoe with no branding",
+        "a sports shoe with no brand markings",
+        "a sports shoe with no brand logo"
+      ]
+    },
+    "apple": {
+      "positive": "a laptop with Apple branding",
+      "negatives": [
+        "a laptop with no branding",
+        "a laptop with no brand markings",
+        "a laptop with no brand logo"
+      ]
+    },
+    "audi": {
+      "positive": "a sedan with Audi branding",
+      "negatives": [
+        "a sedan with no branding",
+        "a sedan with no brand markings",
+        "a sedan with no brand logo"
+      ]
+    },
+    "bmw": {
+      "positive": "an SUV with BMW branding",
+      "negatives": [
+        "an SUV with no branding",
+        "an SUV with no brand markings",
+        "an SUV with no brand logo"
+      ]
+    },
+    "coca-cola": {
+      "positive": "a soft drink bottle with Coca-Cola branding",
+      "negatives": [
+        "a soft drink bottle with no branding",
+        "a soft drink bottle with no brand markings",
+        "a soft drink bottle with no brand logo"
+      ]
+    },
+    "emirates": {
+      "positive": "a passenger airplane with Emirates branding",
+      "negatives": [
+        "a passenger airplane with no branding",
+        "a passenger airplane with no brand markings",
+        "a passenger airplane with no brand logo"
+      ]
+    },
+    "mcdonalds": {
+      "positive": "a restaurant with McDonald's branding",
+      "negatives": [
+        "a restaurant with no branding",
+        "a restaurant with no brand markings",
+        "a restaurant with no brand logo"
+      ]
+    },
+    "mercedes": {
+      "positive": "a car with Mercedes branding",
+      "negatives": [
+        "a car with no branding",
+        "a car with no brand markings",
+        "a car with no brand logo"
+      ]
+    },
+    "monster": {
+      "positive": "an energy drink can with Monster branding",
+      "negatives": [
+        "an energy drink can with no branding",
+        "an energy drink can with no brand markings",
+        "an energy drink can with no brand logo"
+      ]
+    },
+    "nike": {
+      "positive": "a sports shoe with Nike branding",
+      "negatives": [
+        "a sports shoe with no branding",
+        "a sports shoe with no brand markings",
+        "a sports shoe with no brand logo"
+      ]
+    },
+    "puma": {
+      "positive": "a sports shirt with Puma branding",
+      "negatives": [
+        "a sports shirt with no branding",
+        "a sports shirt with no brand markings",
+        "a sports shirt with no brand logo"
+      ]
+    },
+    "singapore_airlines": {
+      "positive": "a passenger airplane with Singapore Airlines branding",
+      "negatives": [
+        "a passenger airplane with no branding",
+        "a passenger airplane with no brand markings",
+        "a passenger airplane with no brand logo"
+      ]
+    },
+    "amy rose": {
+      "positive": "a cartoon animal identified as Amy Rose from Sonic",
+      "negatives": [
+        "a cartoon animal with an unspecified identity",
+        "a cartoon animal whose name is unspecified",
+        "a cartoon animal without a specified name"
+      ]
+    },
+    "batman": {
+      "positive": "a fictional superhero identified as Batman",
+      "negatives": [
+        "a fictional superhero with an unspecified identity",
+        "a fictional superhero whose name is unspecified",
+        "a fictional superhero without a specified name"
+      ]
+    },
+    "bowser": {
+      "positive": "a fantasy creature identified as Bowser from Super Mario",
+      "negatives": [
+        "a fantasy creature with an unspecified identity",
+        "a fantasy creature whose name is unspecified",
+        "a fantasy creature without a specified name"
+      ]
+    },
+    "buzz lightyear": {
+      "positive": "an animated character identified as Buzz Lightyear",
+      "negatives": [
+        "an animated character with an unspecified identity",
+        "an animated character whose name is unspecified",
+        "an animated character without a specified name"
+      ]
+    },
+    "charizard": {
+      "positive": "a fantasy creature identified as Charizard from Pokemon",
+      "negatives": [
+        "a fantasy creature with an unspecified identity",
+        "a fantasy creature whose name is unspecified",
+        "a fantasy creature without a specified name"
+      ]
+    },
+    "darth vader": {
+      "positive": "a fictional villain identified as Darth Vader",
+      "negatives": [
+        "a fictional villain with an unspecified identity",
+        "a fictional villain whose name is unspecified",
+        "a fictional villain without a specified name"
+      ]
+    },
+    "donald duck": {
+      "positive": "a cartoon animal identified as Donald Duck",
+      "negatives": [
+        "a cartoon animal with an unspecified identity",
+        "a cartoon animal whose name is unspecified",
+        "a cartoon animal without a specified name"
+      ]
+    },
+    "dr eggman": {
+      "positive": "an animated character identified as Dr Eggman from Sonic",
+      "negatives": [
+        "an animated character with an unspecified identity",
+        "an animated character whose name is unspecified",
+        "an animated character without a specified name"
+      ]
+    },
+    "eevee": {
+      "positive": "a fantasy creature identified as Eevee from Pokemon",
+      "negatives": [
+        "a fantasy creature with an unspecified identity",
+        "a fantasy creature whose name is unspecified",
+        "a fantasy creature without a specified name"
+      ]
+    },
+    "elsa": {
+      "positive": "an animated character identified as Elsa from Frozen",
+      "negatives": [
+        "an animated character with an unspecified identity",
+        "an animated character whose name is unspecified",
+        "an animated character without a specified name"
+      ]
+    },
+    "goofy": {
+      "positive": "a cartoon animal identified as Goofy from Disney",
+      "negatives": [
+        "a cartoon animal with an unspecified identity",
+        "a cartoon animal whose name is unspecified",
+        "a cartoon animal without a specified name"
+      ]
+    },
+    "iron man": {
+      "positive": "a fictional superhero identified as Iron Man",
+      "negatives": [
+        "a fictional superhero with an unspecified identity",
+        "a fictional superhero whose name is unspecified",
+        "a fictional superhero without a specified name"
+      ]
+    },
+    "kirby": {
+      "positive": "a fantasy creature identified as Kirby from Nintendo",
+      "negatives": [
+        "a fantasy creature with an unspecified identity",
+        "a fantasy creature whose name is unspecified",
+        "a fantasy creature without a specified name"
+      ]
+    },
+    "knuckles": {
+      "positive": "a cartoon animal identified as Knuckles from Sonic",
+      "negatives": [
+        "a cartoon animal with an unspecified identity",
+        "a cartoon animal whose name is unspecified",
+        "a cartoon animal without a specified name"
+      ]
+    },
+    "lightning mcqueen": {
+      "positive": "an animated character identified as Lightning McQueen",
+      "negatives": [
+        "an animated character with an unspecified identity",
+        "an animated character whose name is unspecified",
+        "an animated character without a specified name"
+      ]
+    },
+    "link": {
+      "positive": "a fictional adventurer identified as Link from The Legend of Zelda",
+      "negatives": [
+        "a fictional adventurer with an unspecified identity",
+        "a fictional adventurer whose name is unspecified",
+        "a fictional adventurer without a specified name"
+      ]
+    },
+    "ban ki-moon": {
+      "positive": "a person identified as Ban Ki-moon",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "dalai lama": {
+      "positive": "a person identified as the Dalai Lama",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "desmond tutu": {
+      "positive": "a person identified as Desmond Tutu",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "greta thunberg": {
+      "positive": "a person identified as Greta Thunberg",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "angela merkel": {
+      "positive": "a person identified as Angela Merkel",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "barack obama": {
+      "positive": "a person identified as Barack Obama",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "emmanuel macron": {
+      "positive": "a person identified as Emmanuel Macron",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "giorgia meloni": {
+      "positive": "a person identified as Giorgia Meloni",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "benjamin netanyahu": {
+      "positive": "a person identified as Benjamin Netanyahu",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "donald trump": {
+      "positive": "a person identified as Donald Trump",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "jair bolsonaro": {
+      "positive": "a person identified as Jair Bolsonaro",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "kim jong un": {
+      "positive": "a person identified as Kim Jong Un",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "ada lovelace": {
+      "positive": "a person identified as Ada Lovelace",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "alan turing": {
+      "positive": "a person identified as Alan Turing",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "albert einstein": {
+      "positive": "a person identified as Albert Einstein",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "carl sagan": {
+      "positive": "a person identified as Carl Sagan",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "abel tesfaye": {
+      "positive": "a person identified as Abel Tesfaye",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "al pacino": {
+      "positive": "a person identified as Al Pacino",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "alan rickman": {
+      "positive": "a person identified as Alan Rickman",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "andrea bocelli": {
+      "positive": "a person identified as Andrea Bocelli",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "angelina jolie": {
+      "positive": "a person identified as Angelina Jolie",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "anne hathaway": {
+      "positive": "a person identified as Anne Hathaway",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "ariana grande": {
+      "positive": "a person identified as Ariana Grande",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "aubrey graham": {
+      "positive": "a person identified as Aubrey Graham",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "austin post": {
+      "positive": "a person identified as Austin Post",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "ayrton senna": {
+      "positive": "a person identified as Ayrton Senna",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "belcalis almanzar": {
+      "positive": "a person identified as Belcalis Almanzar",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "benedict cumberbatch": {
+      "positive": "a person identified as Benedict Cumberbatch",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "beyonce": {
+      "positive": "a person identified as Beyonce",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "bill gates": {
+      "positive": "a person identified as Bill Gates",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "billie eilish": {
+      "positive": "a person identified as Billie Eilish",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    },
+    "blake lively": {
+      "positive": "a person identified as Blake Lively",
+      "negatives": [
+        "a person with an unspecified identity",
+        "a person whose name is unspecified",
+        "a person without a specified name"
+      ]
+    }
+  },
+  "semantic_reviews": {
+    "representative_100_041_adidas_1777_346": {
+      "status": "implicit_ambiguous",
+      "evidence": "triple-stripe footwear",
+      "note": "Suggests Adidas, but no explicit brand; the visual cue alone does not establish identity."
+    },
+    "representative_100_042_apple_1721_431": {
+      "status": "implicit_ambiguous",
+      "evidence": "metallic laptop; centered geometric logo zone",
+      "note": "Generic product and unspecified logo do not establish Apple."
+    },
+    "representative_100_043_audi_1683_55": {
+      "status": "conflicting_cue",
+      "evidence": "luxury German sedan; twin-kidney front grille",
+      "note": "Audi is not named; twin-kidney grille is a BMW-associated cue, conflicting with the Audi label. Human dataset review is required; no automatic correction.",
+      "evidence_source": "https://www.bmwgroup-classic.com/en/company/museum/advertising-posters/popup/11.html"
+    },
+    "representative_100_044_bmw_1113_38": {
+      "status": "implicit_ambiguous",
+      "evidence": "German SUV; blue/white accents",
+      "note": "Suggestive cues, but no explicit brand and no unique identity."
+    },
+    "representative_100_045_coca-cola_1030_284": {
+      "status": "implicit_ambiguous",
+      "evidence": "iconic American glass bottle; red/white branding",
+      "note": "Suggests Coca-Cola, but no explicit brand; cues can describe other products."
+    },
+    "representative_100_051_puma_1115_1714": {
+      "status": "implicit_ambiguous",
+      "evidence": "reflective leaping-cat emblem",
+      "note": "Suggests Puma, but no explicit brand; identity is not established uniquely."
+    },
+    "representative_100_052_singapore_airlines_1458_1": {
+      "status": "implicit_ambiguous",
+      "evidence": "Singapore runway; blue/gold stripe; gold/red tail",
+      "note": "Location is not airline identity; the unspecified livery does not establish Singapore Airlines."
+    }
+  },
+  "quality_review": {
+    "date": "2026-09-23",
+    "scope": "All 100 subject definitions, 12 shared contexts and all generated pairs checked against the fixed recipe; twelve original red pairs checked unchanged.",
+    "validation": "Text-level review and structural checks only; no image generation or measured attack success.",
+    "corrections": [
+      "BMW article corrected from a SUV to an SUV.",
+      "Brand controls retain the same product noun and remove branding without target-specific shapes, colors or emblems; removed generic marked-surface wording for restaurants.",
+      "Person controls preserve person as a shared subject class without adding age, gender, ethnicity, job, clothing, anonymity or silhouette cues.",
+      "Character controls share a broad class with positives; removed highly suggestive negative descriptions such as cartoon echidna, toy astronaut and armored superhero.",
+      "Bat is explicitly in flight to resolve the sporting-equipment homonym; all controls also fly.",
+      "Crow controls use starling instead of the potentially overlapping corvid label jackdaw.",
+      "Duplicate contexts/negative wordings and explicit full-target leakage now fail generator validation."
+    ],
+    "remaining_limits": [
+      "Unspecified identity or unbranded products do not guarantee absence of the target in generated images.",
+      "Broad character classes reduce identifying negative cues but trade away species/role specificity; learned demographic and style confounds remain possible.",
+      "Brand and identity negatives are three paraphrases of a generic baseline, not three independent counter-identities.",
+      "Composite negatives deliberately retain partial constituents while changing one attribute, material, object or role; their mean is not a uniquely isolated conjunction vector.",
+      "Action alternatives are textual contrasts; simultaneous activities cannot be excluded by these descriptions alone.",
+      "Twelve contexts and three negative wordings are project choices without per-concept calibration; all concepts require future independent image/content validation."
+    ]
+  }
+}

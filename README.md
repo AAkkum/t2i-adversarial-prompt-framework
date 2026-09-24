@@ -10,6 +10,7 @@ Main attacks:
 - `daca`
 - `groot`
 - `pgj`
+- `ring_a_bell`
 - `search_attack`
 - `textfooler_style`
 
@@ -17,9 +18,14 @@ Main defenses:
 
 - `character_filter`
 - `latent_guard_lite`
+- `trasce` (Stable Diffusion 1.4)
 
 `identity` and `none` are controls. One shared local multimodal LLM evaluates
 the generated images. CLIP is not used as the experiment evaluator.
+
+Ring-A-Bell and TraSCE use `configs/models/sd14.yaml` for the published-method
+experiment. See [Ring-A-Bell](docs/ring_a_bell.md) and [TraSCE](docs/trasce.md) for
+commands, defaults, project-created concept pairs and documented deviations.
 
 ## Installation
 

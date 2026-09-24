@@ -1,0 +1,14 @@
+defense:
+  name: trasce
+  # Published README object-erasure command; category is never inferred from target.
+  category: object
+  concept_erasure: null  # null uses the unchanged experiment target
+  negative_prompt: null  # null uses concept_erasure, or target if both are null
+  # null selects the category-specific published experiment values, see docs/trasce.md.
+  guidance_loss_scale: null
+  discriminator_guidance_scale: null
+  sigma: null
+  guidance_scale: 7.5
+  num_inference_steps: 50
+  # Engineering only: recompute UNet activations during latent backward.
+  gradient_checkpointing: true
