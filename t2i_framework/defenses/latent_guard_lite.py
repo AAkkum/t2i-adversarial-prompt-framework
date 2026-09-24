@@ -297,6 +297,58 @@ class _LatentGuardLiteScorer:
                 scores.extend(self._forward_contrastive(output).detach().cpu().tolist())
         return [float(score) for score in scores]
 
+    def max_scores(
+        self,
+        prompts: list[str],
+        terms: list[str],
+        prompt_batch_size: int = 8,
+    ) -> list[float]:
+        """Return each prompt's maximum score while batching prompt/concept pairs."""
+        self._load()
+        if not prompts:
+            return []
+        if not terms:
+            raise ValueError("LatentGuard max_scores requires at least one concept.")
+
+        prompt_batch_size = max(1, int(prompt_batch_size))
+        maximums: list[float] = []
+        with self._torch.inference_mode():
+            for prompt_start in range(0, len(prompts), prompt_batch_size):
+                prompt_batch = prompts[prompt_start : prompt_start + prompt_batch_size]
+                prompt_emb = self._embed_texts(prompt_batch)
+                batch_max = self._torch.full(
+                    (len(prompt_batch),),
+                    float("-inf"),
+                    device=self._device,
+                )
+
+                for concept_start in range(0, len(terms), self.batch_size):
+                    batch_terms = terms[concept_start : concept_start + self.batch_size]
+                    concept_emb = self._concept_embeddings(batch_terms)
+                    prompt_count = len(prompt_batch)
+                    concept_count = len(batch_terms)
+                    repeated_prompt = (
+                        prompt_emb[:, None, :, :]
+                        .expand(-1, concept_count, -1, -1)
+                        .reshape(
+                            prompt_count * concept_count,
+                            prompt_emb.shape[1],
+                            prompt_emb.shape[2],
+                        )
+                    )
+                    repeated_concepts = (
+                        concept_emb[None, :, :]
+                        .expand(prompt_count, -1, -1)
+                        .reshape(prompt_count * concept_count, concept_emb.shape[1])
+                    )
+                    scores = self._forward_contrastive(
+                        self._model(repeated_prompt, repeated_concepts)
+                    ).reshape(prompt_count, concept_count)
+                    batch_max = self._torch.maximum(batch_max, scores.max(dim=1).values)
+
+                maximums.extend(batch_max.detach().cpu().tolist())
+        return [float(score) for score in maximums]
+
     def _concept_embeddings(self, terms: list[str]):
         missing_terms = list(
             dict.fromkeys(

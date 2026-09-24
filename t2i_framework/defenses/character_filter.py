@@ -6,6 +6,7 @@ import unicodedata
 from pathlib import Path
 from typing import Any
 
+from t2i_framework.core.logging_utils import console
 from t2i_framework.core.types import DefenseDecision
 from t2i_framework.defenses.base import Defense
 from t2i_framework.defenses.blip_caption import BlipCaptioner
@@ -68,6 +69,8 @@ class CharacterFilterDefense(Defense):
         semantic_prompt_threshold: float = SEMANTIC_PROMPT_THRESHOLD,
         semantic_image_threshold: float = SEMANTIC_IMAGE_THRESHOLD,
         use_target_concept: bool = True,
+        log: bool = True,
+        log_captions: bool = True,
         semantic_matcher: MiniLMConceptMatcher | None = None,
         captioner: BlipCaptioner | None = None,
     ) -> None:
@@ -86,6 +89,8 @@ class CharacterFilterDefense(Defense):
             semantic_image_threshold, "semantic_image_threshold"
         )
         self.use_target_concept = use_target_concept
+        self.log = log
+        self.log_captions = log_captions
         self.semantic_matcher = semantic_matcher or MiniLMConceptMatcher()
         self.captioner = captioner or BlipCaptioner()
 
@@ -173,7 +178,7 @@ class CharacterFilterDefense(Defense):
         protected_concepts = self._runtime_protected_concepts(target_concept)
         target_metadata = self._target_concept_metadata(target_concept)
         if not self.enable_image_semantic:
-            return DefenseDecision(
+            decision = DefenseDecision(
                 allowed=True,
                 reason="BLIP/MiniLM image defense disabled",
                 metadata={
@@ -182,6 +187,8 @@ class CharacterFilterDefense(Defense):
                     **target_metadata,
                 },
             )
+            self._print_image(context, Path(image_path), decision)
+            return decision
 
         if context is not None:
             context["image_error_stage"] = "blip"
@@ -189,8 +196,7 @@ class CharacterFilterDefense(Defense):
         if context is not None:
             context["blip_caption"] = caption
             context["image_error_stage"] = "minilm_image"
-        print("BLIP executed: YES")
-        print(f"BLIP Caption: {caption}")
+        self._print_caption(context, Path(image_path), caption)
         match = self.semantic_matcher.match(caption, protected_concepts)
         blocked = match.similarity >= self.semantic_image_threshold
         metadata = {
@@ -247,6 +253,10 @@ class CharacterFilterDefense(Defense):
             )
         if "use_target_concept" in defense_config:
             self.use_target_concept = bool(defense_config["use_target_concept"])
+        if "log" in defense_config:
+            self.log = bool(defense_config["log"])
+        if "log_captions" in defense_config:
+            self.log_captions = bool(defense_config["log_captions"])
 
     def _find_keyword(self, prompt: str, target_concept: str | None = None) -> str | None:
         normalized_prompt = normalize_character_text(prompt)
@@ -296,45 +306,106 @@ class CharacterFilterDefense(Defense):
             "final_defense": "BLOCKED" if blocked else "ALLOWED",
         }
 
-    @staticmethod
     def _print_prompt(
-        context: dict[str, Any] | None, prompt: str, decision: DefenseDecision
+        self,
+        context: dict[str, Any] | None,
+        prompt: str,
+        decision: DefenseDecision,
     ) -> None:
+        if not self.log:
+            return
         data = decision.metadata
         candidate = (context or {}).get("candidate_index", "?")
-        print(f"\nDefense result for Candidate {candidate}")
-        print(f"Prompt: {prompt}")
-        print(f"Direct blocked term: {data.get('direct_blocked_term') or 'NONE'}")
-        print(f"Matched keyword block: {data.get('matched_keyword_block') or 'NONE'}")
-        print(f"Closest protected concept: {data.get('closest_protected_concept') or 'NONE'}")
-        print(f"Keyword result: {data['keyword_result']}")
         similarity = data.get("semantic_prompt_similarity")
-        print(
-            "MiniLM prompt similarity: NOT RUN"
-            if similarity is None
-            else f"MiniLM prompt similarity: {similarity:.4f}"
+        matched_term = (
+            data.get("matched_keyword_block")
+            or data.get("closest_blocked_term")
+            or "NONE"
         )
-        print(f"MiniLM threshold: {data['semantic_prompt_threshold']:.4f}")
-        print(f"MiniLM result: {data['semantic_prompt_result']}")
-        print(f"Blocked By: {data['blocked_by']}")
-        print(f"Final Defense: {data['final_defense']}")
+        matched_concept = data.get("closest_protected_concept") or "NONE"
+        if data.get("matched_keyword_block"):
+            method = "keyword"
+            score_fields = ""
+        elif similarity is None:
+            method = "keyword_only"
+            score_fields = " semantic=DISABLED"
+        else:
+            method = "minilm"
+            score_fields = (
+                f" score={float(similarity):.3f}"
+                f" threshold={float(data['semantic_prompt_threshold']):.3f}"
+            )
+        console.print(
+            "[character_filter] "
+            f"stage=prompt candidate={candidate} method={method} "
+            f"prompt={_quote_log_value(prompt)} "
+            f"matched={_quote_log_value(str(matched_term))} "
+            f"concept={_quote_log_value(str(matched_concept))}"
+            f"{score_fields} allowed={decision.allowed} "
+            f"blocked_by={data['blocked_by']}",
+            markup=False,
+            soft_wrap=True,
+        )
 
-    @staticmethod
-    def _print_image(
-        context: dict[str, Any] | None, image_path: Path, decision: DefenseDecision
+    def _print_caption(
+        self,
+        context: dict[str, Any] | None,
+        image_path: Path,
+        caption: str,
     ) -> None:
+        if not self.log or not self.log_captions:
+            return
+        candidate = (context or {}).get("candidate_index", "?")
+        console.print(
+            "[character_filter] "
+            f"stage=image_caption candidate={candidate} "
+            f"image={_quote_log_value(str(image_path))} "
+            f"caption={_quote_log_value(caption)}",
+            markup=False,
+            soft_wrap=True,
+        )
+
+    def _print_image(
+        self,
+        context: dict[str, Any] | None,
+        image_path: Path,
+        decision: DefenseDecision,
+    ) -> None:
+        if not self.log:
+            return
         data = decision.metadata
         candidate = (context or {}).get("candidate_index", "?")
-        print(f"\nImage defense for Candidate {candidate}")
-        print(f"Closest image protected concept: {data['closest_image_protected_concept']}")
-        print(f"MiniLM image similarity: {data['semantic_image_similarity']:.4f}")
-        print(f"MiniLM image threshold: {data['semantic_image_threshold']:.4f}")
-        print(f"MiniLM image result: {data['image_result']}")
-        print(f"Blocked By: {data['blocked_by']}")
-        print(f"Final Defense: {data['final_defense']}")
+        similarity = data.get("semantic_image_similarity")
+        if similarity is None:
+            console.print(
+                "[character_filter] "
+                f"stage=image candidate={candidate} method=disabled "
+                f"image={_quote_log_value(str(image_path))} allowed={decision.allowed}",
+                markup=False,
+                soft_wrap=True,
+            )
+            return
+        console.print(
+            "[character_filter] "
+            f"stage=image candidate={candidate} method=blip_minilm "
+            f"image={_quote_log_value(str(image_path))} "
+            f"matched={_quote_log_value(str(data['closest_image_blocked_term']))} "
+            f"concept={_quote_log_value(str(data['closest_image_protected_concept']))} "
+            f"score={float(similarity):.3f} "
+            f"threshold={float(data['semantic_image_threshold']):.3f} "
+            f"allowed={decision.allowed} blocked_by={data['blocked_by']}",
+            markup=False,
+            soft_wrap=True,
+        )
 
 
 def _validate_threshold(value: float, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1:
         raise ValueError(f"{name} must be a number between 0 and 1.")
     return float(value)
+
+
+def _quote_log_value(value: str) -> str:
+    """Return a compact JSON-style string safe for one-line logs."""
+
+    return json.dumps(re.sub(r"\s+", " ", value).strip(), ensure_ascii=False)

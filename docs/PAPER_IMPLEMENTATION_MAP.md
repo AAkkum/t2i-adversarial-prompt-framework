@@ -4,6 +4,7 @@
 
 | Component | Owner | Basis | Important deviation |
 |---|---|---|---|
+| `daca` | Hans | DACA, arXiv:2312.07130v4 | Exact released helper-prompt assets; selectable paper-algorithm and official-release orchestration; shared local LLM and local target models remain experimental substitutions |
 | `groot` | Atabey | Groot/TREANT, arXiv:2402.12100 | Local LLM, local Diffusers models, automated evaluator, project datasets |
 | `pgj` | Abdel | PGJ, AAAI 2026 | Local Hugging Face backend and framework-specific prompts |
 | `search_attack` | Burak | Project-specific method | No direct paper reproduction |
@@ -24,6 +25,8 @@ attack so that success has one definition within an experiment.
 
 ## References
 
+- DACA: https://arxiv.org/abs/2312.07130
+- DACA code: https://github.com/researchcode001/daca
 - Groot: https://arxiv.org/abs/2402.12100
 - TREANT code: https://github.com/llm-jailbreaker/Treant
 - PGJ: https://ojs.aaai.org/index.php/AAAI/article/view/34821

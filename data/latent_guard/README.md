@@ -50,3 +50,35 @@ python scripts/check_latent_guard_parity.py
 The command compares each score within configured floating-point tolerances and
 also requires the final threshold decision to match. It defaults to eight
 concepts to keep the check quick; pass `--max-concepts 0` to compare all 100.
+
+## Official CoPro evaluation
+
+Download the official `CoPro_v1.0.json` into this directory, then extract the
+paper's 578 ID and 145 OOD concepts:
+
+```bash
+python scripts/prepare_latent_guard_copro.py
+```
+
+The generated `restricted_concepts_copro_id.yaml` and
+`restricted_concepts_copro_ood.yaml` files can be selected through the matching
+configs in `configs/defenses/`. They preserve the paper protocol by disabling
+aliases and runtime target concepts.
+
+Run a small end-to-end smoke evaluation before starting the complete protocol:
+
+```bash
+python scripts/evaluate_latent_guard_copro.py --limit 10 --output results/latent_guard_copro/smoke
+```
+
+Run all ID/OOD Explicit, Synonym, and Adversarial conditions with:
+
+```bash
+python scripts/evaluate_latent_guard_copro.py --device cuda:0 --output results/latent_guard_copro/full
+```
+
+The evaluator writes resumable scores, per-example predictions, and a summary
+containing AUC, threshold accuracy, unsafe recall, safe recall, and the AUC
+difference from Table 1b. This is a prompt-classification evaluation and does
+not load an image generator or local LLM. Re-run the same command with the same
+output directory to continue from the latest score checkpoint.

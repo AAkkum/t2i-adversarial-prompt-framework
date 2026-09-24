@@ -5,3 +5,6 @@ defense:
   enable_image_semantic: true
   semantic_prompt_threshold: 0.5
   semantic_image_threshold: 0.5
+  # Compact one-line logs, matching the TextFooler/similarity log style.
+  log: true
+  log_captions: true

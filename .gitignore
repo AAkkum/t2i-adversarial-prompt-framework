@@ -8,3 +8,4 @@ results/
 *.egg-info/
 .DS_Store
 data/latent_guard/*.pth
+data/latent_guard/CoPro_v1.0.json

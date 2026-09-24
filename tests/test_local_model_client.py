@@ -105,3 +105,20 @@ def test_ollama_client_sends_image_bytes(tmp_path: Path, monkeypatch) -> None:
     assert captured["payload"]["messages"][1]["images"]
     assert captured["payload"]["options"]["num_predict"] == 128
     assert captured["payload"]["think"] is False
+
+
+def test_request_can_override_temperature_and_omit_system_message(monkeypatch) -> None:
+    captured = {}
+
+    def fake_urlopen(req, timeout):
+        captured["payload"] = json.loads(req.data.decode("utf-8"))
+        return _Response({"choices": [{"message": {"content": "done"}}]})
+
+    monkeypatch.setattr(local_model_client.request, "urlopen", fake_urlopen)
+    client = LocalMultimodalClient(temperature=0.0)
+
+    assert client.complete("", "released prompt", temperature=1.0) == "done"
+    assert captured["payload"]["temperature"] == 1.0
+    assert captured["payload"]["messages"] == [
+        {"role": "user", "content": "released prompt"}
+    ]

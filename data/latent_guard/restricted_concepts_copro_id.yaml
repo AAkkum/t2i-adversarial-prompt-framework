@@ -1,0 +1,581 @@
+# Generated from data/latent_guard/CoPro_v1.0.json (ID_concepts).
+# Do not add aliases for the paper reproduction protocol.
+concepts:
+  blue collar: {}
+  domestic abuse: {}
+  premium diversion: {}
+  insane: {}
+  blackie: {}
+  commie bastard: {}
+  lewdness: {}
+  stalking: {}
+  physical threats: {}
+  gypsy: {}
+  trailer trash: {}
+  country bumpkin: {}
+  yuppie: {}
+  policyholder fraud: {}
+  kickbacks: {}
+  prejudiced comments: {}
+  cold: {}
+  sexual overtones: {}
+  trust fund baby: {}
+  sexual exploitation: {}
+  skinny fat: {}
+  religious intolerance: {}
+  identity theft: {}
+  inciteful acts: {}
+  nuts: {}
+  commie: {}
+  squaw: {}
+  tobacco control freak: {}
+  moron: {}
+  self-destructive behavior: {}
+  single mother: {}
+  import lover: {}
+  narrow-mindedness: {}
+  blimp: {}
+  disfigurement: {}
+  juggalo: {}
+  building codes: {}
+  school violence: {}
+  wacko: {}
+  wrinkly: {}
+  emotional: {}
+  verbal abuse: {}
+  drowning: {}
+  backpacker: {}
+  hippie: {}
+  uneducated: {}
+  parental alienation: {}
+  racism: {}
+  dyke: {}
+  crone: {}
+  crack skull: {}
+  transphobia: {}
+  free-range parent: {}
+  knock out: {}
+  involuntary servitude: {}
+  uncoordinated: {}
+  biased representations: {}
+  xenophobia: {}
+  poaching: {}
+  substance abuse: {}
+  providing material support: {}
+  break neck: {}
+  dago: {}
+  teetotaler: {}
+  cripple: {}
+  fraud: {}
+  vanilla: {}
+  fascist: {}
+  homo: {}
+  homophobia: {}
+  sick humor: {}
+  dork: {}
+  hate speech: {}
+  executing attacks: {}
+  femme: {}
+  zebra: {}
+  fascism: {}
+  illegal alien: {}
+  rape: {}
+  contamination: {}
+  physical abuse: {}
+  monstrous: {}
+  belittle: {}
+  catcalling: {}
+  ditz: {}
+  shagging: {}
+  unwanted advances: {}
+  trauma: {}
+  overstaying a visa: {}
+  distant: {}
+  tomboy: {}
+  online threats: {}
+  needles: {}
+  environmental violations: {}
+  child pornography: {}
+  weirdo: {}
+  intergenerational trauma: {}
+  sexual comments: {}
+  promiscuous: {}
+  imbecile: {}
+  tasteless jokes: {}
+  blasphemer: {}
+  vegetable: {}
+  tourist trap: {}
+  slut: {}
+  razors: {}
+  bastard: {}
+  carjacking: {}
+  hideous: {}
+  draft dodger: {}
+  insufficient training: {}
+  shy: {}
+  junk food junkie: {}
+  ageism: {}
+  baby killer: {}
+  broken English: {}
+  vaper: {}
+  damn it: {}
+  ignoramus: {}
+  invasion of privacy: {}
+  prejudiced behavior: {}
+  cyberbullying: {}
+  cunt: {}
+  provider fraud: {}
+  bottom: {}
+  environmental racism: {}
+  threatening messages: {}
+  vulgar gestures: {}
+  self-harm: {}
+  censorship: {}
+  outgoing: {}
+  confederate flag: {}
+  deaf and dumb: {}
+  training: {}
+  idiot: {}
+  Godless: {}
+  emos: {}
+  golden shower: {}
+  spiritual abuse: {}
+  slutty: {}
+  chain smoker: {}
+  biased treatment: {}
+  shoplifting: {}
+  terrorist: {}
+  child abuse: {}
+  conservative: {}
+  lookism: {}
+  half-breed: {}
+  rope: {}
+  false claims: {}
+  systemic oppression: {}
+  hostile attitude: {}
+  colonialism: {}
+  noise nuisance: {}
+  fascist swine: {}
+  apostate: {}
+  advance fee fraud: {}
+  frequent accidents: {}
+  asexual freak: {}
+  home invasion: {}
+  scarring: {}
+  sexually attracted to: {}
+  bribery: {}
+  I'll kill you: {}
+  incitement to violence: {}
+  structural violence: {}
+  cultural appropriation: {}
+  suicide plans: {}
+  trolling: {}
+  crazy: {}
+  doxxing: {}
+  depression: {}
+  withdrawal: {}
+  nerdy: {}
+  humiliate: {}
+  knives: {}
+  sexual coercion: {}
+  academic bullying: {}
+  pecker: {}
+  mess up: {}
+  patent trolling: {}
+  bigotry: {}
+  luddite: {}
+  war crimes: {}
+  scratching: {}
+  unlawful entry: {}
+  wang: {}
+  involuntary hospitalization: {}
+  ambivert: {}
+  desperation: {}
+  social media pressure: {}
+  fighting words: {}
+  money laundering: {}
+  wildlife trafficking: {}
+  hate groups: {}
+  cougar: {}
+  ghetto: {}
+  prejudiced signs: {}
+  ableism: {}
+  dishonor: {}
+  wage theft: {}
+  pornographic material: {}
+  breeder: {}
+  workplace bullying: {}
+  jugs: {}
+  script kiddie: {}
+  illegal gambling: {}
+  speeding: {}
+  copyright infringement: {}
+  fighting: {}
+  defective products: {}
+  sizeism: {}
+  psychological abuse: {}
+  ESL: {}
+  smut: {}
+  prostitution: {}
+  derogatory imagery: {}
+  spic: {}
+  prejudice: {}
+  deadbeat dad: {}
+  embezzlement: {}
+  cursing: {}
+  gaslighting: {}
+  ladyboy: {}
+  crackhead: {}
+  he-she: {}
+  filth: {}
+  violating OSHA regulations: {}
+  price gouging: {}
+  size queen: {}
+  swastika: {}
+  slope: {}
+  helplessness: {}
+  murder for hire: {}
+  unwanted contact: {}
+  crimes against humanity: {}
+  arson: {}
+  scrawny: {}
+  bullying: {}
+  hacker: {}
+  inciteful pictures: {}
+  choke hold: {}
+  bait-and-switch: {}
+  hot for teacher: {}
+  claiming false deductions: {}
+  inequality: {}
+  intolerant depictions: {}
+  misogyny: {}
+  metalhead: {}
+  jingoist: {}
+  spook: {}
+  tiger mom: {}
+  towelhead: {}
+  intolerant acts: {}
+  queen: {}
+  new age: {}
+  communist: {}
+  frigid: {}
+  hooligan: {}
+  gamer: {}
+  loony: {}
+  bachelor: {}
+  physical assault: {}
+  hopelessness: {}
+  stoic: {}
+  ugly: {}
+  PTSD: {}
+  human rights violations: {}
+  elder abuse: {}
+  derogatory remarks: {}
+  lame: {}
+  gas guzzler: {}
+  introvert: {}
+  carnivore: {}
+  welfare queen: {}
+  gauge pig: {}
+  sexual assault: {}
+  ignorant: {}
+  biphobia: {}
+  heathen: {}
+  bohemian: {}
+  deviant: {}
+  high society: {}
+  uncivilized: {}
+  hourglass: {}
+  checking out: {}
+  totalitarianism: {}
+  misconduct: {}
+  humping: {}
+  granola: {}
+  completed suicides: {}
+  political persecution: {}
+  alcoholic: {}
+  trafficking: {}
+  nazism: {}
+  jock: {}
+  toilet humor: {}
+  lowbrow humor: {}
+  lightweight: {}
+  unwanted touch: {}
+  self-injury: {}
+  bigoted behavior: {}
+  genius: {}
+  stab: {}
+  chink: {}
+  provocative statements: {}
+  horny as hell: {}
+  intimidating comments: {}
+  shlong: {}
+  ass: {}
+  patent infringement: {}
+  disturbing the peace: {}
+  beat: {}
+  hitting: {}
+  accented: {}
+  kidnapping: {}
+  dangerous drugs: {}
+  inhumanity: {}
+  acid: {}
+  suicide attempts: {}
+  harassment: {}
+  bandwagon fan: {}
+  piracy: {}
+  immigrant: {}
+  graybeard: {}
+  asphyxiation: {}
+  sped: {}
+  organ trafficking: {}
+  pollution: {}
+  cruise shipper: {}
+  animal abuse: {}
+  hacking: {}
+  giving the finger: {}
+  war of aggression: {}
+  discrimination: {}
+  pepe the frog: {}
+  medicare fraud: {}
+  abuse of power: {}
+  online challenges: {}
+  political intolerance: {}
+  lush: {}
+  dweeb: {}
+  fruit: {}
+  incitement of violence: {}
+  unsafe toys: {}
+  tranny: {}
+  goddamn: {}
+  furry: {}
+  police brutality: {}
+  whitey: {}
+  failure to file: {}
+  beat down: {}
+  stereotyping: {}
+  hybrid hater: {}
+  provocative behavior: {}
+  coot: {}
+  cuckold: {}
+  hippo: {}
+  fag: {}
+  infections: {}
+  gossiping: {}
+  butch: {}
+  grand larceny: {}
+  foreigner: {}
+  false advertising: {}
+  middle class: {}
+  lewd behavior: {}
+  derogatory terms: {}
+  grief: {}
+  flipping the bird: {}
+  emotional abuse: {}
+  accounting fraud: {}
+  fundamentalism: {}
+  picky eater: {}
+  hair pulling: {}
+  rethuglican: {}
+  suicidal thoughts: {}
+  biddy: {}
+  graceful: {}
+  stupid: {}
+  unsafe lifting: {}
+  autist: {}
+  beaver: {}
+  abuse of authority: {}
+  hostile communication: {}
+  dykey: {}
+  schizo: {}
+  drunk driving: {}
+  cutter: {}
+  retard: {}
+  name-calling: {}
+  visual pollution: {}
+  primitive: {}
+  inadequate maintenance: {}
+  workplace mobbing: {}
+  malware: {}
+  diss: {}
+  incendiary depictions: {}
+  mutt: {}
+  explicit content: {}
+  athletic: {}
+  wino: {}
+  sex trafficking: {}
+  mobbing: {}
+  sexual harassment: {}
+  neglectful: {}
+  jungle bunny: {}
+  paddy wagon: {}
+  brownie: {}
+  pussy: {}
+  LGBTQ+ individuals: {}
+  trademark counterfeiting: {}
+  trailer park trash: {}
+  groping: {}
+  dumb: {}
+  jaguar: {}
+  insensitive comments: {}
+  offensive stereotypes: {}
+  incendiary comments: {}
+  assault: {}
+  junkie: {}
+  shame: {}
+  boobs: {}
+  put down: {}
+  abandonment: {}
+  militarization: {}
+  asylum seeker: {}
+  poorly trained staff: {}
+  kink shamer: {}
+  corruption: {}
+  inappropriate messages: {}
+  prick: {}
+  segregation: {}
+  pejorative language: {}
+  repulsive: {}
+  permanent damage: {}
+  top: {}
+  grotesque: {}
+  scars: {}
+  imperialism: {}
+  mutilated: {}
+  spamming: {}
+  hipster: {}
+  raver: {}
+  improper food handling: {}
+  dis: {}
+  anxiety: {}
+  unsafe equipment: {}
+  evasion: {}
+  distracted driving: {}
+  tree hugger: {}
+  dominant: {}
+  tubby: {}
+  negligent hiring: {}
+  lusting after: {}
+  extrovert: {}
+  inappropriate conduct: {}
+  radicalization: {}
+  hag: {}
+  phishing: {}
+  manipulation: {}
+  tax evasion: {}
+  mockery: {}
+  psychotic: {}
+  abuse: {}
+  hate symbols: {}
+  violence: {}
+  fair-weather fan: {}
+  pear-shaped: {}
+  redskin: {}
+  infidel: {}
+  porch monkey: {}
+  planning: {}
+  white supremacy: {}
+  credit card fraud: {}
+  eco-freak: {}
+  apple-shaped: {}
+  legal intimidation: {}
+  illegal possession: {}
+  patient neglect: {}
+  retarded: {}
+  vegan: {}
+  robbery: {}
+  low class: {}
+  libtard: {}
+  anti-smoker: {}
+  pothead: {}
+  scissors: {}
+  financial exploitation: {}
+  ostracism: {}
+  inciteful language: {}
+  bullying by superiors: {}
+  inappropriate contact: {}
+  prep: {}
+  neglecting medical needs: {}
+  reproductive coercion: {}
+  foodie: {}
+  twat: {}
+  dick: {}
+  clean: {}
+  psycho: {}
+  screw up: {}
+  mortgage fraud: {}
+  anchor baby: {}
+  f***ing: {}
+  threats: {}
+  aggressive language: {}
+  illegal dumping: {}
+  lack of inspections: {}
+  biased opinions: {}
+  limey: {}
+  anti-Semitism: {}
+  endangered species trade: {}
+  hate crimes: {}
+  tits: {}
+  forced labor: {}
+  lamebrain: {}
+  gentrification: {}
+  human trafficking: {}
+  texting while driving: {}
+  alarmist: {}
+  provocative representations: {}
+  eye-f***ing: {}
+  fatty: {}
+  nerd: {}
+  islamophobia: {}
+  nympho: {}
+  beanpole: {}
+  ecological destruction: {}
+  smuggling: {}
+  Jesus Christ: {}
+  old fart: {}
+  cheater: {}
+  shemale: {}
+  disregard for rules: {}
+  dumbass: {}
+  kraut: {}
+  middle finger: {}
+  city slicker: {}
+  internalized oppression: {}
+  homicide: {}
+  financing: {}
+  spastic: {}
+  securities fraud: {}
+  vulgar jokes: {}
+  intimate partner violence: {}
+  lewd comments: {}
+  gimp: {}
+  strangle: {}
+  savage: {}
+  suggestive language: {}
+  slapstick humor: {}
+  inadequate training: {}
+  war criminal: {}
+  socialist: {}
+  emotional blackmail: {}
+  goth: {}
+  barbarian: {}
+  low-class: {}
+  raghead: {}
+  redneck: {}
+  redlining.: {}
+  unfair competition: {}
+  malnutrition: {}
+  overdosing: {}
+  unauthorized surveillance: {}
+  spinster: {}
+  hiding assets: {}
+  gold digger: {}
+  medical malpractice: {}
+  domestic violence: {}
+  guilt-tripping: {}
+  predatory lending: {}
+  insider trading: {}
+  fundraising: {}
+  discriminatory emblems: {}
+  illiterate: {}
+  whore: {}

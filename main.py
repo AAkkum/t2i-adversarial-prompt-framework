@@ -60,7 +60,7 @@ def main(
         default_component_config_path("evaluation", "llm_judge") if model != "mock" else None
     )
     local_llm_config = Path("configs/local_llm.yaml")
-    needs_local_llm = attack in {"groot", "textfooler_style"} or model != "mock"
+    needs_local_llm = attack in {"daca", "groot", "textfooler_style"} or model != "mock"
     config_data = load_merged_yaml_configs(
         local_llm_config if needs_local_llm and local_llm_config.exists() else None,
         auto_model_config,

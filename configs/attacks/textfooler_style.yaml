@@ -5,23 +5,25 @@ attack:
     candidate_count: 5
     max_rounds: 2
     max_candidate_batches: 2
-    filter_context_leaks: false
+    filter_context_leaks: true
     log_candidate_filtering: true
 
   similarity:
     enabled: true
-    method: sentence_transformer
-    model_id: sentence-transformers/all-MiniLM-L6-v2
-    device: cpu
+    method: clip_text
+    model_id: openai/clip-vit-base-patch32
+    device: cuda:0
     threshold: 0.7
     log: true
 
   paraphraser:
     enabled: true
-    detail_level: detailed
+    detail_level: medium
+    max_tokens: 384
     log_raw: false
 
   judge:
     enabled: true
+    max_tokens: 64
     threshold: 0.70
     log: true

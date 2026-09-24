@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from t2i_framework.attacks.base import Attack
+from t2i_framework.attacks.daca import DACAAttack
 from t2i_framework.attacks.groot import GrootAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.pgj import PGJAttack
@@ -25,6 +26,7 @@ MODEL_REGISTRY: dict[str, Callable[..., ImageModel]] = {
 }
 
 ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
+    "daca": DACAAttack,
     "identity": IdentityAttack,
     "textfooler_style": TextFoolerStyleAttack,
     "groot": GrootAttack,

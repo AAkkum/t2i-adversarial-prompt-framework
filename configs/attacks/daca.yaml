@@ -1,0 +1,31 @@
+attack:
+  name: daca
+
+  # paper_algorithm retains every ontology edge as specified by Algorithm 1.
+  # Use official_release to reproduce the authors' released demo, including
+  # its destination-key overwrite behavior.
+  implementation_mode: official_release
+
+  # The paper generated 10 adversarial prompts per original prompt and LLM.
+  # Pass --max-candidates 10 when running the experiment; the CLI defaults to 1.
+  candidate_count: 10
+  temperature: 1.0
+  # The released backbones returned answer text directly. Disable hidden
+  # reasoning so thinking-capable local models do not consume the full output
+  # budget before producing their answer.
+  reasoning_effort: none
+  use_system_prompt: false
+  clean_outputs: false
+
+  # The released GPT request used max_tokens=2048 for every agent call.
+  max_tokens:
+    decomposer: 2048
+    polisher: 2048
+    assembler: 2048
+    finalizer: 2048
+
+  # Show every request as it starts and finishes, including its elapsed time.
+  # Outputs can be long, but they make each transformation directly visible.
+  logging:
+    progress: true
+    outputs: true

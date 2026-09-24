@@ -40,16 +40,27 @@ class LocalMultimodalClient:
         *,
         max_tokens: int | None = None,
         reasoning_effort: str | None = None,
+        temperature: float | None = None,
     ) -> str:
         if self.provider == "ollama":
             result = self._complete_ollama(
-                system_prompt, user_prompt, image_path, max_tokens, reasoning_effort
+                system_prompt,
+                user_prompt,
+                image_path,
+                max_tokens,
+                reasoning_effort,
+                temperature,
             )
             if self.unload_after_request:
                 self.unload()
             return result
         return self._complete_openai_compatible(
-            system_prompt, user_prompt, image_path, max_tokens, reasoning_effort
+            system_prompt,
+            user_prompt,
+            image_path,
+            max_tokens,
+            reasoning_effort,
+            temperature,
         )
 
     def unload(self) -> None:
@@ -75,6 +86,7 @@ class LocalMultimodalClient:
         image_path: Path | None,
         max_tokens: int | None,
         reasoning_effort: str | None,
+        temperature: float | None,
     ) -> str:
         user_content: str | list[dict[str, Any]] = user_prompt
         if image_path is not None:
@@ -85,13 +97,14 @@ class LocalMultimodalClient:
                     "image_url": {"url": _image_data_url(image_path)},
                 },
             ]
+        messages: list[dict[str, Any]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": user_content})
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
-            "temperature": self.temperature,
+            "messages": messages,
+            "temperature": self.temperature if temperature is None else float(temperature),
             "stream": False,
         }
         if max_tokens is not None:
@@ -119,19 +132,23 @@ class LocalMultimodalClient:
         image_path: Path | None,
         max_tokens: int | None,
         reasoning_effort: str | None,
+        temperature: float | None,
     ) -> str:
         user_message: dict[str, Any] = {"role": "user", "content": user_prompt}
         if image_path is not None:
             user_message["images"] = [base64.b64encode(image_path.read_bytes()).decode("ascii")]
+        messages: list[dict[str, Any]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append(user_message)
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                user_message,
-            ],
+            "messages": messages,
             "stream": False,
             "format": "json",
-            "options": {"temperature": self.temperature},
+            "options": {
+                "temperature": self.temperature if temperature is None else float(temperature)
+            },
         }
         if max_tokens is not None:
             payload["options"]["num_predict"] = int(max_tokens)

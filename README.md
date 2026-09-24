@@ -7,6 +7,7 @@ text-to-image models.
 
 Main attacks:
 
+- `daca`
 - `groot`
 - `pgj`
 - `search_attack`
@@ -36,8 +37,8 @@ huggingface-cli login
 
 ## Local LLM
 
-Groot uses a local LLM to rewrite prompts. The same server evaluates generated
-images for every real-model run.
+Groot, DACA, and TextFooler use a local LLM to rewrite prompts. The same server
+evaluates generated images for every real-model run.
 
 ```bash
 scripts/start-local-llm.sh

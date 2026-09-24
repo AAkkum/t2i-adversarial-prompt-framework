@@ -2,6 +2,14 @@
 
 ## Attacks
 
+### `daca`
+
+Uses the paper's ontology-guided Decomposer, Polisher, and Assembler agents to
+rewrite a scene as benign descriptions of individual visual components. All
+agents use the shared local LLM. It provides a paper-algorithm mode that retains
+all edge results and an official-release mode that reproduces the authors'
+released orchestration. See `docs/DACA.md`.
+
 ### `groot`
 
 Adaptive tree-based attack. It first tests the original prompt, then uses a
