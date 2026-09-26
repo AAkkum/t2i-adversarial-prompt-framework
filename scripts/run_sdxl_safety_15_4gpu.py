@@ -257,6 +257,12 @@ def _start_server_group(
                 section,
                 "--port",
                 str(port),
+                "--device",
+                f"CUDA{gpu_id}",
+                "--split-mode",
+                "none",
+                "--main-gpu",
+                "0",
             ]
             process = subprocess.Popen(
                 command,

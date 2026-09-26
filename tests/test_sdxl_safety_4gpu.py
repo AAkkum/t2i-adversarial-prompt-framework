@@ -11,6 +11,7 @@ from scripts.run_sdxl_safety_15_4gpu import (
     _write_shards,
     _write_worker_configs,
 )
+from t2i_framework.core.local_llm_server import _append_device_options
 
 
 def test_matrix_matches_the_fifteen_case_runner() -> None:
@@ -130,6 +131,21 @@ def test_worker_configs_route_each_process_to_its_local_servers(tmp_path: Path) 
     assert fourth["daca_llm"]["port"] == 8090
     assert fourth["attack"]["llm_device"] == "cuda:0"
     assert fourth["attack"]["cache_path"].endswith("pgj_worker_04.json")
+
+
+def test_llama_server_accepts_explicit_physical_device_options() -> None:
+    command = ["llama-server"]
+    _append_device_options(command, "CUDA3", "none", 0)
+
+    assert command == [
+        "llama-server",
+        "--device",
+        "CUDA3",
+        "--split-mode",
+        "none",
+        "--main-gpu",
+        "0",
+    ]
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:

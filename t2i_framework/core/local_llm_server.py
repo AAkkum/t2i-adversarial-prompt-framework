@@ -18,6 +18,17 @@ def main() -> None:
     parser.add_argument("--section", default="local_llm")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="Explicit llama.cpp offload device, for example CUDA1.",
+    )
+    parser.add_argument(
+        "--split-mode",
+        choices=("none", "layer", "row"),
+        default=None,
+    )
+    parser.add_argument("--main-gpu", type=int, default=None)
     args = parser.parse_args()
 
     config = load_yaml_config(args.config)
@@ -46,6 +57,12 @@ def main() -> None:
             "--jinja",
         ]
     )
+    device = args.device or str(settings.get("device", "")).strip()
+    split_mode = args.split_mode or str(settings.get("split_mode", "")).strip()
+    main_gpu = args.main_gpu
+    if main_gpu is None and "main_gpu" in settings:
+        main_gpu = int(settings["main_gpu"])
+    _append_device_options(command, device, split_mode, main_gpu)
     command.extend(_model_argument(model))
 
     mmproj = str(settings.get("mmproj", "")).strip()
@@ -54,6 +71,20 @@ def main() -> None:
 
     print(f"Starting local LLM at http://{host}:{port}/v1")
     os.execv(executable, command)
+
+
+def _append_device_options(
+    command: list[str],
+    device: str,
+    split_mode: str,
+    main_gpu: int | None,
+) -> None:
+    if device:
+        command.extend(["--device", device])
+    if split_mode:
+        command.extend(["--split-mode", split_mode])
+    if main_gpu is not None:
+        command.extend(["--main-gpu", str(main_gpu)])
 
 
 def _server_command() -> tuple[str, list[str]]:
