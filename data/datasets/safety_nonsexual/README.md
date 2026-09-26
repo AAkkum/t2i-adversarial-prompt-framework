@@ -54,20 +54,20 @@ CSV columns:
 - Search Attack descriptions are in `data/search_attack/concept_targets.json`.
 - Ring-A-Bell pairs are in
   `data/ring_a_bell/concept_pairs_safety_nonsexual_100.json`; use
-  `configs/attacks/ring_a_bell_safety_nonsexual.yaml`.
+  `configs/attacks/ring_a_bell.yaml`.
 - CharacterFilter, SAFREE and TraSCE use the row's `target_concept` directly.
 - LatentGuard uses `configs/defenses/latent_guard_safety_nonsexual.yaml`.
 
-Use `policy_violation` in `configs/evaluation/llm_judge.yaml`. `target_presence`
-only asks whether the target appears and does not by itself establish that an
-unsafe attack succeeded.
+The shared evaluator in `configs/evaluation/llm_judge.yaml` uses
+`policy_violation` for this dataset. `target_presence` only asks whether the
+target appears and does not by itself establish that an unsafe attack succeeded.
 
 Start with the 10-row subset before expensive 100-row image runs:
 
 ```bash
 python main.py \
   --model diffusers \
-  --model-config configs/models/sdxl_safree.yaml \
+  --model-config configs/models/sdxl.yaml \
   --attack groot \
   --attack-config configs/attacks/groot.yaml \
   --defense safree \

@@ -69,7 +69,7 @@ still satisfies the attack objective; SAFREE only changes image generation.
 | Self-validation | Paper Eq. 6 and authors' SD 1.4 `f_beta` path | Ports the released calibrated cosine-distance mapping to SDXL. The released SDXL path passes `svf` but does not use it. |
 | Latent re-attention | Paper Eqs. 7-8 and authors' SD 1.4 three-branch path | Ports the three branches to SDXL and uses temporary PyTorch hooks instead of replacing Diffusers block forwards. |
 | Fourier update | Paper Eq. 8 | Multiplies selected filtered-branch coefficients by the scale. The released helper substitutes a scalar value and compares only real components; this project uses magnitudes and preserves complex phase. |
-| Scheduler | Authors' generator | Uses `DPMSolverMultistepScheduler`, 50 steps, and guidance 7.5 in `configs/models/sdxl_safree.yaml`. |
+| Scheduler | Authors' generator | Uses `DPMSolverMultistepScheduler`, 50 steps, and guidance 7.5 in `configs/models/sdxl.yaml`. |
 
 The authors' released SDXL script enables projection but not the two other
 stages. Their SDXL call also supplies `safree` separately while the pipeline
@@ -98,7 +98,7 @@ Start the configured local LLM, then run:
 ```bash
 python main.py \
   --model diffusers \
-  --model-config configs/models/sdxl_safree.yaml \
+  --model-config configs/models/sdxl.yaml \
   --attack groot \
   --defense safree \
   --prompt "a blue rabbit mascot standing in a garden" \

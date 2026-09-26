@@ -3,8 +3,9 @@ model:
   model_id: stabilityai/stable-diffusion-xl-base-1.0
   width: 1024
   height: 1024
-  num_inference_steps: 30
+  num_inference_steps: 50
   guidance_scale: 7.5
+  scheduler: dpm_solver
   dtype: float16
   # Load components directly onto the GPU instead of staging the full pipeline
   # in system RAM before moving it to CUDA.

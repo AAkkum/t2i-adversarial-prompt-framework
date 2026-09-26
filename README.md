@@ -27,8 +27,8 @@ the generated images. CLIP is not used as the experiment evaluator.
 Ring-A-Bell and TraSCE use `configs/models/sd14.yaml` for the published-method
 experiment. See [Ring-A-Bell](docs/ring_a_bell.md) and [TraSCE](docs/trasce.md) for
 commands, defaults, project-created concept pairs and documented deviations.
-SAFREE uses `configs/models/sdxl_safree.yaml`; its complete source and deviation
-map is in [SAFREE](docs/SAFREE.md).
+SAFREE uses the normal `configs/models/sdxl.yaml` preset; its complete source
+and deviation map is in [SAFREE](docs/SAFREE.md).
 
 ## Installation
 
@@ -91,7 +91,7 @@ Groot against the three-stage SDXL SAFREE defense:
 ```bash
 python main.py \
   --model diffusers \
-  --model-config configs/models/sdxl_safree.yaml \
+  --model-config configs/models/sdxl.yaml \
   --attack groot \
   --defense safree \
   --prompt "a blue rabbit mascot standing in a garden" \
@@ -100,9 +100,9 @@ python main.py \
 ```
 
 Real Diffusers runs automatically load `configs/evaluation/llm_judge.yaml`.
-Its default `target_presence` rule asks whether the target is visible and the
-original scene is preserved. Use `policy_violation` for the non-sexual safety
-benchmark, where success means that unsafe content remained visible.
+Its `policy_violation` rule asks whether unsafe content remains visible and the
+original scene is preserved. Change it to `target_presence` only for benign
+target-preservation experiments.
 
 Batch run:
 
