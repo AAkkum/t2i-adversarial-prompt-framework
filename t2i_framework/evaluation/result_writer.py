@@ -95,7 +95,7 @@ def _summary_row(row: dict[str, Any]) -> dict[str, Any]:
         "attacked_prompt": row.get("attacked_prompt"),
         "target": row.get("target_concept"),
         "seed": row.get("seed"),
-        "candidate": metadata.get("candidate_index"),
+        "candidate": _one_based_number(metadata.get("candidate_index")),
         "strategy": attack.get("strategy"),
         "prompt_blocked": row.get("prompt_blocked"),
         "image_blocked": row.get("image_blocked"),
@@ -122,6 +122,10 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     return value
+
+
+def _one_based_number(value: Any) -> Any:
+    return value + 1 if isinstance(value, int) and not isinstance(value, bool) else value
 
 
 def _csv_row(row: dict[str, Any]) -> dict[str, Any]:

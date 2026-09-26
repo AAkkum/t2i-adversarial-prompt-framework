@@ -96,7 +96,7 @@ class ExperimentRunner:
         start = time.perf_counter()
         prompt = prompt_case.prompt
         target_concept = prompt_case.target_concept
-        base_run_id = f"run_{index:04d}_{uuid.uuid4().hex[:8]}"
+        base_run_id = f"run_{index + 1:04d}_{uuid.uuid4().hex[:8]}"
         attack_context = {
             "seed": seed,
             "run_id": base_run_id,
@@ -123,12 +123,12 @@ class ExperimentRunner:
 
         results: list[EvaluationResult] = []
         for candidate_index, candidate in enumerate(candidates):
-            run_id = f"{base_run_id}_candidate_{candidate_index:02d}"
+            run_id = f"{base_run_id}_candidate_{candidate_index + 1:02d}"
             context = {
                 "seed": seed,
                 "run_id": run_id,
                 "candidate_index": candidate_index,
-                "output_filename": self._candidate_filename(candidate_index, seed),
+                "output_filename": self._candidate_filename(index, candidate_index, seed),
                 "config": config,
                 "defense": self.defense,
                 "max_candidates": self.max_candidates,
@@ -373,7 +373,10 @@ class ExperimentRunner:
         if eligible and self.attack.name == "search_attack":
             best = max(eligible, key=lambda item: item.scores["candidate_score"])
             source = Path(best.generated_image_path or "")
-            final_path = _publish_image(source, self.output_dir / f"final_best_candidate_seed{seed}.png")
+            final_path = _publish_image(
+                source,
+                self.output_dir / f"case_{index + 1:04d}_best_candidate_seed{seed}.png",
+            )
             best.metadata["selected_best"] = True
             best.metadata["final_image_path"] = str(final_path)
             self.writer.update(best)
@@ -386,10 +389,10 @@ class ExperimentRunner:
 
         return results
 
-    def _candidate_filename(self, candidate_index: int, seed: int) -> str:
+    def _candidate_filename(self, case_index: int, candidate_index: int, seed: int) -> str:
         if self.max_candidates == 1:
-            return f"run_seed{seed}.png"
-        return f"candidate_{candidate_index:02d}_seed{seed}.png"
+            return f"case_{case_index + 1:04d}_seed{seed}.png"
+        return f"case_{case_index + 1:04d}_candidate_{candidate_index + 1:02d}_seed{seed}.png"
 
 
 def _coerce_prompt_case(prompt_case: PromptCase | tuple[str, str | None]) -> PromptCase:
