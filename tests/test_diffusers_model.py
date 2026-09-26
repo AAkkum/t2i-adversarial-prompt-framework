@@ -78,3 +78,28 @@ def test_device_map_loads_pipeline_without_followup_move(tmp_path, monkeypatch) 
 def test_device_map_cannot_be_combined_with_cpu_offload() -> None:
     with pytest.raises(ValueError, match="cannot be used together"):
         DiffusersImageModel(device_map="cuda", enable_model_cpu_offload=True)
+
+
+def test_dpm_solver_scheduler_override(tmp_path, monkeypatch) -> None:
+    captured, pipeline, _torch = _install_fake_model_modules(monkeypatch)
+    native_scheduler = SimpleNamespace(config={"name": "native"})
+    pipeline.scheduler = native_scheduler
+    diffusers = __import__("sys").modules["diffusers"]
+
+    class _DPMSolver:
+        @classmethod
+        def from_config(cls, config):
+            captured["scheduler_config"] = config
+            return cls()
+
+    diffusers.DPMSolverMultistepScheduler = _DPMSolver
+    model = DiffusersImageModel(
+        model_id="example/sdxl",
+        dtype="float16",
+        device_map="cuda",
+        scheduler="dpm_solver",
+    )
+    model.generate("test prompt", tmp_path, seed=17)
+
+    assert captured["scheduler_config"] == native_scheduler.config
+    assert isinstance(pipeline.scheduler, _DPMSolver)

@@ -1,0 +1,15 @@
+defense:
+  name: safree
+
+  # target: suppress each prompt row's target_concept.
+  # configured: suppress the phrases listed under concepts for every prompt.
+  # Selected phrases define both the concept subspace and SDXL negative prompt.
+  concept_source: target
+  concepts: []
+
+  # Paper/author-code defaults.
+  alpha: 0.01
+  max_filtered_step: 10
+  low_frequency_radius: 1
+  stage_1280_scale: 0.9
+  stage_640_scale: 0.2

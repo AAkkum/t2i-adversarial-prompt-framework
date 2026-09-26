@@ -27,13 +27,16 @@ rule converts those values into the final `success` field.
 - `t2i_framework/evaluation/runner.py`: executes the pipeline
 - `t2i_framework/evaluation/llm_image_judge.py`: shared evaluator
 - `t2i_framework/evaluation/result_writer.py`: compact and detailed output
-- `t2i_framework/attacks/`: four attacks plus the identity control
-- `t2i_framework/defenses/`: two defenses plus the none control
+- `t2i_framework/attacks/`: attack implementations plus the identity control
+- `t2i_framework/defenses/`: defense implementations plus the none control
 - `t2i_framework/models/`: mock and Diffusers adapters
 
 Groot is adaptive. After each unsuccessful candidate, the runner gives it the
 result and Groot may create another prompt. Other attacks generate their
 candidates before evaluation.
+
+TraSCE and SAFREE are generation-time defenses. Their prompt checks prepare a
+request, and the Diffusers adapter calls their generation hook while denoising.
 
 ## Configuration
 

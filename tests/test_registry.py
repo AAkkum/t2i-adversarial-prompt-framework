@@ -11,6 +11,7 @@ def test_known_components_exist() -> None:
         "none",
         "character_filter",
         "latent_guard_lite",
+        "safree",
         "trasce",
     }
     assert "ring_a_bell" in components["attacks"]

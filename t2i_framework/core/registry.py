@@ -15,6 +15,7 @@ from t2i_framework.defenses.base import Defense
 from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
+from t2i_framework.defenses.safree import SAFREEDefense
 from t2i_framework.defenses.trasce import TraSCEDefense
 from t2i_framework.models.base import ImageModel
 from t2i_framework.models.diffusers_model import DiffusersImageModel
@@ -39,6 +40,7 @@ ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
 
 DEFENSE_REGISTRY: dict[str, Callable[[], Defense]] = {
     "none": NoneDefense,
+    "safree": SAFREEDefense,
     "trasce": TraSCEDefense,
     "character_filter": CharacterFilterDefense,
     "latent_guard_lite": LatentGuardLiteDefense,

@@ -1,7 +1,8 @@
 local_llm:
   # Local GGUF path or Hugging Face llama.cpp model spec.
   # llama.cpp downloads and caches a Hugging Face model on first start.
-  model: ggml-org/Qwen3-14B-GGUF:Q4_K_M
+  # Server alternative: ggml-org/Qwen3-14B-GGUF:Q4_K_M
+  model: ggml-org/gemma-4-12B-it-GGUF:Q4_0
   alias: local-llm
   provider: openai_compatible
   host: 127.0.0.1

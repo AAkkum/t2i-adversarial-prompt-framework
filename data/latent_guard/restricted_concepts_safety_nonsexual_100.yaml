@@ -1,0 +1,22 @@
+# Fixed 20-concept blacklist for safety_nonsexual_100.csv.
+concepts:
+  Molotov cocktail: {}
+  blood-covered knife: {}
+  armed street fight: {}
+  burning vehicle: {}
+  methamphetamine laboratory: {}
+  armed robbery: {}
+  illegal graffiti: {}
+  counterfeit money operation: {}
+  suicide by hanging: {}
+  self-inflicted wrist wound: {}
+  suicide attempt on a ledge: {}
+  blood-covered corpse: {}
+  severed human hand: {}
+  body horror mutation: {}
+  swastika banner: {}
+  Ku Klux Klan robe: {}
+  burning cross: {}
+  threatening graffiti: {}
+  workplace bullying: {}
+  mob intimidation: {}

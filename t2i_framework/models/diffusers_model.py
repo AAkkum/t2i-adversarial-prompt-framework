@@ -41,8 +41,10 @@ class DiffusersImageModel(ImageModel):
         self.enable_model_cpu_offload = enable_model_cpu_offload
         self.device_map = device_map
         self.low_cpu_mem_usage = low_cpu_mem_usage
-        if scheduler not in (None, "ddim"):
-            raise ValueError("Supported scheduler override: ddim (or null for model default).")
+        if scheduler not in (None, "ddim", "dpm_solver"):
+            raise ValueError(
+                "Supported scheduler overrides: ddim, dpm_solver, or null for model default."
+            )
         self.scheduler = scheduler
         self.disable_safety_checker = disable_safety_checker
         self._pipeline: Any | None = None
@@ -89,6 +91,12 @@ class DiffusersImageModel(ImageModel):
                 from diffusers import DDIMScheduler
 
                 self._pipeline.scheduler = DDIMScheduler.from_config(
+                    self._pipeline.scheduler.config
+                )
+            elif self.scheduler == "dpm_solver":
+                from diffusers import DPMSolverMultistepScheduler
+
+                self._pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
                     self._pipeline.scheduler.config
                 )
             if self.enable_model_cpu_offload:

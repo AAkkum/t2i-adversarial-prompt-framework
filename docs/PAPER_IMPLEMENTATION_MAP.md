@@ -16,6 +16,7 @@
 |---|---|---|---|
 | `character_filter` | Burak | Project-specific keyword, MiniLM, and BLIP filter | No direct paper reproduction |
 | `latent_guard_lite` | Hans | Latent Guard, ECCV 2024 | Adapter around released architecture/weights, not full training reproduction |
+| `safree` | Atabey | SAFREE, ICLR 2025 | Full three-stage SDXL port. Projection follows released SDXL behavior; self-validation and latent re-attention are ported from the paper and released SD 1.4 path because they are not wired into the released SDXL path. |
 
 ## Shared Evaluator
 
@@ -32,4 +33,6 @@ attack so that success has one definition within an experiment.
 - PGJ: https://ojs.aaai.org/index.php/AAAI/article/view/34821
 - TextFooler: https://ojs.aaai.org/index.php/AAAI/article/view/6311
 - Latent Guard: https://github.com/rt219/LatentGuard
+- SAFREE: https://openreview.net/forum?id=hgTFotBRKl
+- SAFREE code: https://github.com/jaehong31/SAFREE
 - BLIP: https://proceedings.mlr.press/v162/li22n.html

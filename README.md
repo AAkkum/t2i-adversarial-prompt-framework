@@ -18,6 +18,7 @@ Main defenses:
 
 - `character_filter`
 - `latent_guard_lite`
+- `safree` (Stable Diffusion XL)
 - `trasce` (Stable Diffusion 1.4)
 
 `identity` and `none` are controls. One shared local multimodal LLM evaluates
@@ -26,6 +27,8 @@ the generated images. CLIP is not used as the experiment evaluator.
 Ring-A-Bell and TraSCE use `configs/models/sd14.yaml` for the published-method
 experiment. See [Ring-A-Bell](docs/ring_a_bell.md) and [TraSCE](docs/trasce.md) for
 commands, defaults, project-created concept pairs and documented deviations.
+SAFREE uses `configs/models/sdxl_safree.yaml`; its complete source and deviation
+map is in [SAFREE](docs/SAFREE.md).
 
 ## Installation
 
@@ -53,7 +56,8 @@ scripts/start-local-llm.sh
 The model and server settings are in `configs/local_llm.yaml`. If its `model`
 value is a Hugging Face llama.cpp model spec, the start command downloads and
 caches it automatically when needed. The default server is
-`http://127.0.0.1:8082/v1` with API alias `local-llm`.
+the host and port configured in `configs/local_llm.yaml`, with API alias
+`local-llm`.
 
 ## Quick Checks
 
@@ -82,10 +86,23 @@ python main.py \
   --max-candidates 5
 ```
 
+Groot against the three-stage SDXL SAFREE defense:
+
+```bash
+python main.py \
+  --model diffusers \
+  --model-config configs/models/sdxl_safree.yaml \
+  --attack groot \
+  --defense safree \
+  --prompt "a blue rabbit mascot standing in a garden" \
+  --target "blue rabbit mascot" \
+  --max-candidates 3
+```
+
 Real Diffusers runs automatically load `configs/evaluation/llm_judge.yaml`.
 Its default `target_presence` rule asks whether the target is visible and the
-original scene is preserved. Change it to `policy_violation` only for a
-policy-labelled benchmark intended to follow Groot's paper evaluation.
+original scene is preserved. Use `policy_violation` for the non-sexual safety
+benchmark, where success means that unsafe content remained visible.
 
 Batch run:
 
@@ -95,11 +112,14 @@ python main.py \
   --model-config configs/models/sdxl.yaml \
   --attack groot \
   --defense character_filter \
-  --prompt-file data/datasets/representative/representative_prompt_batch_100.csv \
+  --prompt-file data/datasets/safety_nonsexual/safety_nonsexual_100.csv \
   --max-candidates 3
 ```
 
-Start with `data/tmp_synthetic_10.csv` before an expensive 100-row run.
+Start with `data/datasets/safety_nonsexual/safety_nonsexual_10.csv` before an
+expensive 100-row run. The separate
+`data/datasets/representative/representative_prompt_batch_100.csv` remains the
+benign target-preservation benchmark and should use `target_presence`.
 
 ## Results
 
@@ -119,8 +139,8 @@ separately as `prompt_blocked`, `image_blocked`, and `defense_bypassed`.
 - `docs/COMPONENTS.md`: current attacks, defenses, and evaluator
 - `docs/ARCHITECTURE.md`: short pipeline description
 - `docs/GROOT.md`: Groot behavior and local server setup
+- `docs/SAFREE.md`: SDXL SAFREE stages, source map, deviations, and command
 - `docs/search_attack.md`: Search Attack behavior
 - `docs/PAPER_IMPLEMENTATION_MAP.md`: owners, papers, and deviations
-- `docs/DEFENSE_PAPER_SELECTION.md`: candidate paper for the next defense
 - `docs/HOW_TO_ADD_DEFENSE.md`: minimal defense implementation steps
 - `docs/SAFETY_SCOPE.md`: project safety boundary

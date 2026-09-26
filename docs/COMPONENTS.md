@@ -56,6 +56,18 @@ Hans's lightweight LatentGuard adapter. It compares prompt embeddings with
 protected concepts through the released embedding-mapping architecture. It is
 not a complete retraining of LatentGuard.
 
+### `safree`
+
+Atabey's full three-stage SDXL port of SAFREE. It detects concept-driving prompt
+tokens, projects their second SDXL text-encoder features, chooses the filtering
+duration from the prompt itself, and applies Fourier-domain latent re-attention
+during generation. See `docs/SAFREE.md` for the exact source/deviation map.
+
+### `trasce`
+
+Generation-time Stable Diffusion 1.4 defense based on the authors' released
+TraSCE loss and denoising procedure. See `docs/trasce.md`.
+
 ### `none`
 
 Control that allows every prompt and image.
