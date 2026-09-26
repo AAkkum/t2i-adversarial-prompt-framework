@@ -11,7 +11,11 @@ from scripts.run_sdxl_safety_15_4gpu import (
     _write_shards,
     _write_worker_configs,
 )
-from t2i_framework.core.local_llm_server import _append_device_options
+from t2i_framework.core.local_llm_server import (
+    _append_device_options,
+    _parse_device_names,
+    _select_device_name,
+)
 
 
 def test_matrix_matches_the_fifteen_case_runner() -> None:
@@ -146,6 +150,18 @@ def test_llama_server_accepts_explicit_physical_device_options() -> None:
         "--main-gpu",
         "0",
     ]
+
+
+def test_llama_device_parser_supports_cuda_and_vulkan_backends() -> None:
+    output = """
+Available devices:
+  CUDA0: NVIDIA RTX A6000
+  Vulkan0: NVIDIA RTX A6000
+  Vulkan1: NVIDIA RTX A6000
+"""
+    assert _parse_device_names(output) == ["CUDA0", "Vulkan0", "Vulkan1"]
+    assert _select_device_name(["Vulkan0", "Vulkan1", "Vulkan2"], 2) == "Vulkan2"
+    assert _select_device_name(["CUDA0"], 3) == "CUDA0"
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
