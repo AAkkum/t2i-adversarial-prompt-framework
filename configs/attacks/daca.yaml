@@ -55,7 +55,8 @@ daca_llm:
   provider: openai_compatible
   host: 127.0.0.1
   port: 8084
-  context_size: 8192
+  # Four slots need enough room for a long prompt plus max_tokens=2048 output.
+  context_size: 32768
   gpu_layers: auto
   parallel_slots: 4
   mmproj: ""

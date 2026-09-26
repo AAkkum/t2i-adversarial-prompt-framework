@@ -8,6 +8,8 @@ from scripts.run_sdxl_safety_15_4gpu import (
     MATRIX_CASES,
     ORDER_COLUMN,
     _aggregate_case_outputs,
+    _archive_incomplete_worker,
+    _worker_is_complete,
     _write_shards,
     _write_worker_configs,
 )
@@ -162,6 +164,45 @@ Available devices:
     assert _parse_device_names(output) == ["CUDA0", "Vulkan0", "Vulkan1"]
     assert _select_device_name(["Vulkan0", "Vulkan1", "Vulkan2"], 2) == "Vulkan2"
     assert _select_device_name(["CUDA0"], 3) == "CUDA0"
+
+
+def test_resume_recognizes_complete_workers_and_archives_partial_ones(
+    tmp_path: Path,
+) -> None:
+    dataset = tmp_path / "prompts.csv"
+    with dataset.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["prompt", ORDER_COLUMN])
+        writer.writeheader()
+        writer.writerow({"prompt": "first", ORDER_COLUMN: "0"})
+        writer.writerow({"prompt": "second", ORDER_COLUMN: "1"})
+
+    complete = tmp_path / "complete"
+    complete.mkdir()
+    complete_rows = [
+        {
+            "run_id": f"run-{source}-{candidate}",
+            "metadata": {
+                "status": "ALLOWED",
+                "candidate_index": candidate,
+                "prompt_case": {ORDER_COLUMN: str(source)},
+            },
+        }
+        for source in range(2)
+        for candidate in range(2)
+    ]
+    _write_jsonl(complete / "details.jsonl", complete_rows)
+    _write_jsonl(complete / "results.jsonl", complete_rows)
+    assert _worker_is_complete(complete, dataset, 2)
+
+    partial = tmp_path / "case" / "workers" / "worker_04_gpu3"
+    partial.mkdir(parents=True)
+    _write_jsonl(partial / "details.jsonl", complete_rows[:2])
+    _write_jsonl(partial / "results.jsonl", complete_rows[:2])
+    assert not _worker_is_complete(partial, dataset, 2)
+
+    archived = _archive_incomplete_worker(tmp_path / "case", partial)
+    assert archived.is_dir()
+    assert not partial.exists()
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:

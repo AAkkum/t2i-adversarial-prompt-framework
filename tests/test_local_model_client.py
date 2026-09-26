@@ -1,5 +1,7 @@
 import json
+from io import BytesIO
 from pathlib import Path
+from urllib.error import HTTPError
 
 from t2i_framework.core import local_model_client
 from t2i_framework.core.local_model_client import (
@@ -135,3 +137,27 @@ def test_request_can_override_temperature_and_omit_system_message(monkeypatch) -
     assert captured["payload"]["messages"] == [
         {"role": "user", "content": "released prompt"}
     ]
+
+
+def test_http_error_includes_server_response_body(monkeypatch) -> None:
+    def fake_urlopen(req, timeout):
+        raise HTTPError(
+            req.full_url,
+            400,
+            "Bad Request",
+            {},
+            BytesIO(b'{"error":{"message":"request exceeds slot context"}}'),
+        )
+
+    monkeypatch.setattr(local_model_client.request, "urlopen", fake_urlopen)
+    client = LocalMultimodalClient(base_url="http://127.0.0.1:8080/v1")
+
+    try:
+        client.complete("", "long request")
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("Expected an HTTP failure.")
+
+    assert "HTTP 400 Bad Request" in message
+    assert "request exceeds slot context" in message

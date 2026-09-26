@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -98,15 +99,36 @@ def main() -> None:
     parser.add_argument("--daca-base-port", type=int, default=8087)
     parser.add_argument("--startup-timeout", type=int, default=600)
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help="Resume an existing matrix directory, skipping complete workers.",
+    )
     args = parser.parse_args()
 
-    dataset = _resolve(args.dataset)
-    gpu_ids = [item.strip() for item in args.gpus.split(",") if item.strip()]
-    output = _resolve(
-        args.output
-        or Path("results/matrices")
-        / f"{time.strftime('%Y%m%d_%H%M%S')}_sdxl_safety_15_4gpu"
-    )
+    if args.output is not None and args.resume is not None:
+        raise SystemExit("Use either --output or --resume, not both.")
+    resume = args.resume is not None
+    if resume:
+        output = _resolve(args.resume)
+        manifest = _read_manifest(output)
+        dataset = Path(str(manifest["dataset"]))
+        gpu_ids = [str(item) for item in manifest["gpus"]]
+        evaluator_ports = [int(item) for item in manifest["evaluator_ports"]]
+        daca_ports = [int(item) for item in manifest["daca_ports"]]
+    else:
+        dataset = _resolve(args.dataset)
+        gpu_ids = [item.strip() for item in args.gpus.split(",") if item.strip()]
+        output = _resolve(
+            args.output
+            or Path("results/matrices")
+            / f"{time.strftime('%Y%m%d_%H%M%S')}_sdxl_safety_15_4gpu"
+        )
+        evaluator_ports = [
+            args.evaluator_base_port + index for index in range(len(gpu_ids))
+        ]
+        daca_ports = [args.daca_base_port + index for index in range(len(gpu_ids))]
 
     if not dataset.is_file():
         raise SystemExit(f"Dataset not found: {dataset}")
@@ -115,8 +137,6 @@ def main() -> None:
     if len(set(gpu_ids)) != len(gpu_ids):
         raise SystemExit("Each GPU in --gpus must be unique.")
 
-    evaluator_ports = [args.evaluator_base_port + index for index in range(len(gpu_ids))]
-    daca_ports = [args.daca_base_port + index for index in range(len(gpu_ids))]
     overlapping = sorted(set(evaluator_ports) & set(daca_ports))
     if overlapping:
         raise SystemExit(f"Evaluator and DACA port ranges overlap: {overlapping}")
@@ -133,22 +153,39 @@ def main() -> None:
     for directory in (shard_dir, config_dir, log_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
-    shards = _write_shards(dataset, shard_dir, len(gpu_ids))
+    if resume:
+        shards = [
+            shard_dir / f"shard_{index:02d}.csv"
+            for index in range(1, len(gpu_ids) + 1)
+        ]
+        missing_shards = [str(path) for path in shards if not path.is_file()]
+        if missing_shards:
+            raise SystemExit("Resume shards are missing: " + ", ".join(missing_shards))
+    else:
+        shards = _write_shards(dataset, shard_dir, len(gpu_ids))
     overrides = _write_worker_configs(
         config_dir,
         output,
         evaluator_ports,
         daca_ports,
     )
-    manifest: dict[str, Any] = {
-        "dataset": str(dataset),
-        "output": str(output),
-        "gpus": gpu_ids,
-        "evaluator_ports": evaluator_ports,
-        "daca_ports": daca_ports,
-        "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "cases": [],
-    }
+    if resume:
+        manifest.setdefault("resumed_at", []).append(
+            time.strftime("%Y-%m-%dT%H:%M:%S%z")
+        )
+        manifest.pop("error", None)
+        manifest["status"] = "running"
+    else:
+        manifest = {
+            "dataset": str(dataset),
+            "output": str(output),
+            "gpus": gpu_ids,
+            "evaluator_ports": evaluator_ports,
+            "daca_ports": daca_ports,
+            "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "cases": [],
+            "status": "running",
+        }
     _write_manifest(output, manifest)
 
     evaluator_servers: list[ManagedProcess] = []
@@ -165,6 +202,23 @@ def main() -> None:
         )
 
         for case_index, case in enumerate(MATRIX_CASES, start=1):
+            case_output = output / case.name
+            case_output.mkdir(parents=True, exist_ok=True)
+            if _case_is_complete(case, case_output, gpu_ids, shards):
+                print(f"[{case_index}/15] {case.name} already complete; skipping")
+                _record_case_manifest(
+                    manifest,
+                    case,
+                    case_output,
+                    runtime_seconds=0.0,
+                    status="complete",
+                    resumed_skip=True,
+                )
+                _write_manifest(output, manifest)
+                if case.number == "09" and daca_servers:
+                    _stop_processes(daca_servers)
+                    daca_servers = []
+                continue
             if case.attack == "daca" and not daca_servers:
                 daca_servers = _start_server_group(
                     label="daca",
@@ -181,8 +235,6 @@ def main() -> None:
                 f"max_candidates={case.max_candidates} on {len(gpu_ids)} GPUs"
             )
             started = time.monotonic()
-            case_output = output / case.name
-            case_output.mkdir(parents=True, exist_ok=True)
             worker_logs = _run_case_workers(
                 case=case,
                 case_output=case_output,
@@ -193,14 +245,13 @@ def main() -> None:
             )
             _aggregate_case_outputs(case_output)
             elapsed = time.monotonic() - started
-            manifest["cases"].append(
-                {
-                    **asdict(case),
-                    "output": str(case_output),
-                    "worker_logs": [str(path) for path in worker_logs],
-                    "runtime_seconds": round(elapsed, 3),
-                    "status": "complete",
-                }
+            _record_case_manifest(
+                manifest,
+                case,
+                case_output,
+                runtime_seconds=elapsed,
+                status="complete",
+                worker_logs=worker_logs,
             )
             _write_manifest(output, manifest)
             print(f"[{case_index}/15] complete in {elapsed / 60:.1f} minutes")
@@ -290,14 +341,29 @@ def _run_case_workers(
     overrides: list[Path],
     log_dir: Path,
 ) -> list[Path]:
-    workers: list[ManagedProcess] = []
+    workers: list[tuple[int, ManagedProcess, Path]] = []
+    worker_logs: list[Path] = []
     try:
         for index, (gpu_id, shard, override) in enumerate(
             zip(gpu_ids, shards, overrides), start=1
         ):
             worker_output = case_output / "workers" / f"worker_{index:02d}_gpu{gpu_id}"
             log_path = log_dir / f"{case.name}_worker_{index:02d}_gpu{gpu_id}.log"
-            log_handle = log_path.open("wb")
+            worker_logs.append(log_path)
+            if _worker_is_complete(worker_output, shard, case.max_candidates):
+                print(
+                    f"  [worker {index}/{len(gpu_ids)}] "
+                    f"GPU {gpu_id}, already complete"
+                )
+                continue
+            if worker_output.exists():
+                archived = _archive_incomplete_worker(case_output, worker_output)
+                print(f"  [worker {index}/{len(gpu_ids)}] archived incomplete output: {archived}")
+            log_handle = log_path.open("ab")
+            log_handle.write(
+                f"\n--- retry {time.strftime('%Y-%m-%dT%H:%M:%S%z')} ---\n".encode("utf-8")
+            )
+            log_handle.flush()
             command = [
                 sys.executable,
                 "main.py",
@@ -327,28 +393,126 @@ def _run_case_workers(
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
             )
-            workers.append(ManagedProcess(process, log_handle, log_path))
+            workers.append(
+                (index, ManagedProcess(process, log_handle, log_path), worker_output)
+            )
             print(
                 f"  [worker {index}/{len(gpu_ids)}] GPU {gpu_id}, "
                 f"{_row_count(shard)} prompts"
             )
 
         failures: list[Path] = []
-        for index, managed in enumerate(workers, start=1):
+        for index, managed, worker_output in workers:
             return_code = managed.process.wait()
             managed.log_handle.close()
             status = "complete" if return_code == 0 else f"failed ({return_code})"
             print(f"  [worker {index}/{len(gpu_ids)}] {status}")
             if return_code != 0:
                 failures.append(managed.log_path)
+            else:
+                (worker_output / ".complete").write_text("complete\n", encoding="utf-8")
         if failures:
             raise RuntimeError(
                 f"Case {case.name} failed; inspect: "
                 + ", ".join(str(path) for path in failures)
             )
     finally:
-        _stop_processes(workers)
-    return [worker.log_path for worker in workers]
+        _stop_processes([managed for _, managed, _ in workers])
+    return worker_logs
+
+
+def _case_is_complete(
+    case: MatrixCase,
+    case_output: Path,
+    gpu_ids: list[str],
+    shards: list[Path],
+) -> bool:
+    return all(
+        _worker_is_complete(
+            case_output / "workers" / f"worker_{index:02d}_gpu{gpu_id}",
+            shard,
+            case.max_candidates,
+        )
+        for index, (gpu_id, shard) in enumerate(zip(gpu_ids, shards), start=1)
+    )
+
+
+def _worker_is_complete(
+    worker_output: Path,
+    shard: Path,
+    max_candidates: int,
+) -> bool:
+    details_path = worker_output / "details.jsonl"
+    results_path = worker_output / "results.jsonl"
+    if not details_path.is_file() or not results_path.is_file():
+        return False
+    if (worker_output / ".complete").is_file():
+        return True
+
+    expected = _shard_source_indexes(shard)
+    completed: Counter[int] = Counter()
+    try:
+        with details_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                metadata = row.get("metadata") or {}
+                if metadata.get("status") == "STARTED":
+                    continue
+                prompt_case = metadata.get("prompt_case") or {}
+                if ORDER_COLUMN in prompt_case:
+                    completed[int(prompt_case[ORDER_COLUMN])] += 1
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return False
+    return bool(expected) and all(completed[index] >= max_candidates for index in expected)
+
+
+def _shard_source_indexes(shard: Path) -> set[int]:
+    with shard.open("r", encoding="utf-8", newline="") as handle:
+        rows = csv.DictReader(handle)
+        return {int(row[ORDER_COLUMN]) for row in rows}
+
+
+def _archive_incomplete_worker(case_output: Path, worker_output: Path) -> Path:
+    archive_dir = case_output / "attempts"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    for suffix in range(1000):
+        extra = "" if suffix == 0 else f"_{suffix:02d}"
+        destination = archive_dir / f"{worker_output.name}_{stamp}{extra}"
+        if not destination.exists():
+            worker_output.replace(destination)
+            return destination
+    raise RuntimeError(f"Could not archive incomplete worker output: {worker_output}")
+
+
+def _record_case_manifest(
+    manifest: dict[str, Any],
+    case: MatrixCase,
+    case_output: Path,
+    *,
+    runtime_seconds: float,
+    status: str,
+    worker_logs: list[Path] | None = None,
+    resumed_skip: bool = False,
+) -> None:
+    cases = list(manifest.get("cases") or [])
+    existing = next((item for item in cases if item.get("number") == case.number), None)
+    if existing is not None and resumed_skip:
+        existing["status"] = status
+        existing["resumed_skip"] = True
+        return
+    entry = {
+        **asdict(case),
+        "output": str(case_output),
+        "worker_logs": [str(path) for path in (worker_logs or [])],
+        "runtime_seconds": round(runtime_seconds, 3),
+        "status": status,
+    }
+    manifest["cases"] = [item for item in cases if item.get("number") != case.number]
+    manifest["cases"].append(entry)
+    manifest["cases"].sort(key=lambda item: str(item.get("number", "")))
 
 
 def _write_shards(dataset: Path, output: Path, count: int) -> list[Path]:
@@ -541,6 +705,16 @@ def _write_manifest(output: Path, manifest: dict[str, Any]) -> None:
         json.dumps(manifest, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+
+
+def _read_manifest(output: Path) -> dict[str, Any]:
+    path = output / "manifest.json"
+    if not path.is_file():
+        raise SystemExit(f"Cannot resume without manifest: {path}")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise SystemExit(f"Invalid matrix manifest: {path}")
+    return value
 
 
 def _resolve(path: Path) -> Path:

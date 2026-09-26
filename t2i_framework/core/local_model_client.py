@@ -5,7 +5,7 @@ import json
 import mimetypes
 from pathlib import Path
 from typing import Any
-from urllib import request
+from urllib import error, request
 
 
 class LocalMultimodalClient:
@@ -176,6 +176,14 @@ class LocalMultimodalClient:
         try:
             with request.urlopen(req, timeout=self.timeout_seconds) as response:
                 parsed = json.loads(response.read().decode("utf-8"))
+        except error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            detail = " ".join(body.split())[:1000]
+            suffix = f": {detail}" if detail else ""
+            raise RuntimeError(
+                f"Could not call local model server at {url}: "
+                f"HTTP {exc.code} {exc.reason}{suffix}"
+            ) from exc
         except Exception as exc:  # noqa: BLE001 - preserve local-server context.
             raise RuntimeError(f"Could not call local model server at {url}: {exc}") from exc
         if not isinstance(parsed, dict):

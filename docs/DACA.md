@@ -121,6 +121,14 @@ for cases 7-9, and runs four 25-prompt workers for each matrix case. Aggregated
 case directory; worker outputs and logs are retained for provenance. Ports
 8083-8090 must be free before starting the run.
 
+If a worker fails during a long run, stop the old runner, update the code, and
+resume its matrix directory. Complete cases and complete GPU shards are skipped;
+an incomplete worker directory is archived before that shard is retried:
+
+```bash
+scripts/run_sdxl_safety_15_4gpu.sh --resume results/matrices/<run-directory>
+```
+
 Quick one-candidate test:
 
 ```bash
