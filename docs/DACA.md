@@ -60,10 +60,20 @@ The experiment runner defaults to one candidate. Pass `--max-candidates 10`
 to activate the paper's candidate budget; DACA caps generation at the runner's
 limit so unused candidates are not generated.
 
-The attack uses the shared server in `configs/local_llm.yaml`. For the closest
-available backbone reproduction, serve the original `Qwen/Qwen-14B-Chat`
-weights in BF16. Gemma and quantized GGUF models are supported framework
-substitutions, but their results are not numerically comparable to the paper.
+The configured candidate cache stores attack outputs by prompt, attack settings,
+and local LLM model. This lets the `none`, SAFREE, and LatentGuard runs evaluate
+the exact same adversarial prompts without paying for DACA generation again.
+Delete `outputs/cache/daca` to force fresh candidates. Independent candidate
+pipelines may run concurrently, but the decomposer, polisher, assembler, and
+finalizer order inside each candidate is unchanged.
+
+The attack uses its dedicated `daca_llm` server configured in
+`configs/attacks/daca.yaml`. This keeps the text-only attack model independent
+from the multimodal evaluator in `configs/local_llm.yaml`. Start both servers
+before a real-model run. For the closest available backbone reproduction, serve
+the original `Qwen/Qwen-14B-Chat` weights in BF16. Gemma and quantized GGUF
+models are supported framework substitutions, but their results are not
+numerically comparable to the paper.
 
 ## Logged Provenance
 
@@ -73,6 +83,43 @@ overwrite compatibility was enabled. DACA processes the complete input prompt
 and does not use `target_concept` to construct its result.
 
 ## Run
+
+Start the evaluator and DACA servers in separate terminals:
+
+```bash
+scripts/start-local-llm.sh
+scripts/start-daca-llm.sh
+```
+
+### Four-GPU cache precomputation
+
+The attack candidates can be generated before image evaluation using all four
+GPUs. The precomputation script creates four balanced CSV shards, starts one
+DACA server per GPU, runs four workers, and stops its servers afterward:
+
+```bash
+python scripts/precompute_daca_cache.py --dataset data/datasets/safety_nonsexual/safety_nonsexual_100.csv --gpus 0,1,2,3
+```
+
+This stage uses the mock image model because it is only populating
+`outputs/cache/daca`. Run the real SDXL defense matrix afterward; every DACA
+case will restore the same cached candidates. Stop other GPU jobs first because
+the precomputation reserves all listed GPUs. Server and worker logs are written
+under a timestamped directory in `results/daca_cache_precompute`.
+
+To run the complete 15-case SDXL matrix in parallel, including every attack and
+defense from `run_sdxl_safety_15.sh`, distribute the prompt dataset over four
+GPUs instead:
+
+```bash
+scripts/run_sdxl_safety_15_4gpu.sh
+```
+
+This runner starts one evaluator server per GPU, starts one DACA server per GPU
+for cases 7-9, and runs four 25-prompt workers for each matrix case. Aggregated
+`results.jsonl`, `details.jsonl`, and `results.csv` files are written in each
+case directory; worker outputs and logs are retained for provenance. Ports
+8083-8090 must be free before starting the run.
 
 Quick one-candidate test:
 

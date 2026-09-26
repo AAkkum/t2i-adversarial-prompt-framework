@@ -183,10 +183,12 @@ class LocalMultimodalClient:
         return parsed
 
 
-def client_options(config: dict[str, Any]) -> dict[str, Any]:
-    """Build client options from the shared ``local_llm`` configuration."""
+def client_options(
+    config: dict[str, Any], section: str = "local_llm"
+) -> dict[str, Any]:
+    """Build client options from a named local model server configuration."""
 
-    settings = dict(config.get("local_llm", {}))
+    settings = dict(config.get(section, {}))
     host = str(settings.get("host", "127.0.0.1"))
     port = int(settings.get("port", 8082))
     return {

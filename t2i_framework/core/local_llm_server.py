@@ -15,27 +15,34 @@ DEFAULT_CONFIG = REPO_ROOT / "configs" / "local_llm.yaml"
 def main() -> None:
     parser = argparse.ArgumentParser(description="Start the configured local llama.cpp server.")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--section", default="local_llm")
+    parser.add_argument("--host", default=None)
+    parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
 
     config = load_yaml_config(args.config)
-    settings = dict(config.get("local_llm", {}))
+    settings = dict(config.get(args.section, {}))
     model = str(settings.get("model", "")).strip()
     if not model:
-        raise SystemExit(f"Set local_llm.model in {args.config}.")
+        raise SystemExit(f"Set {args.section}.model in {args.config}.")
+    host = args.host or str(settings.get("host", "127.0.0.1"))
+    port = args.port if args.port is not None else int(settings.get("port", 8082))
 
     executable, command = _server_command()
     command.extend(
         [
             "--host",
-            str(settings.get("host", "127.0.0.1")),
+            host,
             "--port",
-            str(settings.get("port", 8082)),
+            str(port),
             "--alias",
             str(settings.get("alias", "local-llm")),
             "--ctx-size",
             str(settings.get("context_size", 8192)),
             "--n-gpu-layers",
             str(settings.get("gpu_layers", "auto")),
+            "--parallel",
+            str(settings.get("parallel_slots", 4)),
             "--jinja",
         ]
     )
@@ -45,8 +52,6 @@ def main() -> None:
     if mmproj:
         command.extend(["--mmproj", str(_existing_path(mmproj, "Multimodal projector"))])
 
-    host = settings.get("host", "127.0.0.1")
-    port = settings.get("port", 8082)
     print(f"Starting local LLM at http://{host}:{port}/v1")
     os.execv(executable, command)
 

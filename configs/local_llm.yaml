@@ -9,6 +9,7 @@ local_llm:
   port: 8083
   context_size: 8192
   gpu_layers: auto
+  parallel_slots: 4
   mmproj: ""
   timeout_seconds: 600
   temperature: 0.0

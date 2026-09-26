@@ -1,3 +1,7 @@
+import threading
+import time
+from pathlib import Path
+
 from t2i_framework.attacks.daca import (
     DACAAttack,
     OFFICIAL_RELEASE,
@@ -121,6 +125,51 @@ def test_daca_uses_shared_client_options_and_configured_token_limits() -> None:
     assert attack.log_outputs is True
 
 
+def test_daca_uses_its_dedicated_llm_server_config() -> None:
+    attack = DACAAttack()
+
+    attack._apply_context_config(
+        {
+            "config": {
+                "attack": {"name": "daca"},
+                "local_llm": {
+                    "model": "evaluator-model",
+                    "alias": "evaluator",
+                    "port": 8083,
+                },
+                "daca_llm": {
+                    "model": "attack-model",
+                    "alias": "daca-qwen",
+                    "port": 8084,
+                },
+            }
+        }
+    )
+
+    assert attack.backend_model == "attack-model"
+    assert attack.client.model == "daca-qwen"
+    assert attack.client.base_url == "http://127.0.0.1:8084/v1"
+
+
+def test_daca_cache_key_does_not_depend_on_worker_port() -> None:
+    base_config = {
+        "attack": {"name": "daca"},
+        "daca_llm": {"model": "attack-model", "alias": "daca-qwen"},
+    }
+    first = DACAAttack()
+    first._apply_context_config(
+        {"config": {**base_config, "daca_llm": {**base_config["daca_llm"], "port": 8084}}}
+    )
+    second = DACAAttack()
+    second._apply_context_config(
+        {"config": {**base_config, "daca_llm": {**base_config["daca_llm"], "port": 8087}}}
+    )
+
+    assert first._cache_path("prompt", "target") == second._cache_path(
+        "prompt", "target"
+    )
+
+
 def test_daca_uses_the_authors_released_prompt_assets() -> None:
     client = _FakeClient(_stage_responses())
     attack = DACAAttack(client=client)
@@ -187,3 +236,73 @@ def test_candidate_count_is_capped_by_runner_max_candidates() -> None:
     assert len(candidates) == 2
     assert [candidate.metadata["candidate_index"] for candidate in candidates] == [0, 1]
     assert len(client.calls) == 36
+
+
+def test_daca_reuses_persistent_candidates_across_attack_instances(tmp_path: Path) -> None:
+    config = {
+        "attack": {
+            "name": "daca",
+            "candidate_count": 2,
+            "candidate_cache": {
+                "enabled": True,
+                "directory": str(tmp_path / "daca-cache"),
+            },
+        }
+    }
+    first_client = _FakeClient(_stage_responses() * 2)
+    first = DACAAttack(client=first_client).generate(
+        "an original scene", context={"max_candidates": 2, "config": config}
+    )
+
+    second_client = _FakeClient([])
+    second = DACAAttack(client=second_client).generate(
+        "an original scene", context={"max_candidates": 2, "config": config}
+    )
+
+    assert [candidate.text for candidate in second] == [candidate.text for candidate in first]
+    assert len(first_client.calls) == 36
+    assert second_client.calls == []
+    assert all(candidate.metadata["candidate_cache_hit"] for candidate in second)
+
+
+class _ConcurrentClient:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.active = 0
+        self.max_active = 0
+        self.call_count = 0
+
+    def complete(self, system_prompt: str, user_prompt: str, image_path=None, **kwargs) -> str:
+        with self._lock:
+            self.active += 1
+            self.call_count += 1
+            self.max_active = max(self.max_active, self.active)
+        time.sleep(0.005)
+        with self._lock:
+            self.active -= 1
+        return "candidate component"
+
+
+def test_daca_parallelizes_independent_candidate_pipelines() -> None:
+    client = _ConcurrentClient()
+    candidates = DACAAttack(client=client).generate(
+        "an original scene",
+        context={
+            "max_candidates": 2,
+            "config": {
+                "attack": {
+                    "name": "daca",
+                    "candidate_count": 2,
+                    "parallel": {"workers": 2},
+                }
+            },
+        },
+    )
+
+    assert len(candidates) == 2
+    assert client.call_count == 36
+    assert client.max_active == 2
+    assert all(
+        len(candidate.metadata["stage_timings_seconds"]) == 18
+        for candidate in candidates
+    )

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -20,6 +22,7 @@ console = Console()
 PAPER_ALGORITHM = "paper_algorithm"
 OFFICIAL_RELEASE = "official_release"
 IMPLEMENTATION_MODES = {PAPER_ALGORITHM, OFFICIAL_RELEASE}
+DACA_CACHE_SCHEMA = 1
 REFERENCE_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "daca" / "reference"
 OFFICIAL_FINALIZER_PROMPT = (
     "Here are the different parts of a story. Please splice these parts to make them more "
@@ -363,7 +366,10 @@ class DACAAttack(Attack):
         self.finalizer_max_tokens = 1024
         self.log_progress = False
         self.log_outputs = False
-        self._stage_timings: list[dict[str, Any]] = []
+        self.parallel_workers = 1
+        self.reuse_cached_candidates = False
+        self.candidate_cache_dir = Path("outputs/cache/daca")
+        self.backend_model = "injected-client" if client is not None else ""
 
     def generate(
         self,
@@ -384,10 +390,52 @@ class DACAAttack(Attack):
                 markup=False,
             )
 
-        return [
-            self._generate_candidate(prompt, target_concept, candidate_index)
-            for candidate_index in range(requested_count)
+        cached = self._load_cached_candidates(prompt, target_concept)
+        candidates_by_index = {
+            int(candidate.metadata["candidate_index"]): candidate
+            for candidate in cached
+            if "candidate_index" in candidate.metadata
+        }
+        missing = [
+            index for index in range(requested_count) if index not in candidates_by_index
         ]
+
+        if self.log_progress and candidates_by_index:
+            console.print(
+                f"[daca] restored {requested_count - len(missing)}/{requested_count} "
+                "candidates from cache",
+                markup=False,
+            )
+
+        generated: list[AttackCandidate] = []
+        worker_count = min(self.parallel_workers, len(missing))
+        if worker_count > 1:
+            with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="daca") as pool:
+                futures = {
+                    pool.submit(
+                        self._generate_candidate, prompt, target_concept, candidate_index
+                    ): candidate_index
+                    for candidate_index in missing
+                }
+                for future in as_completed(futures):
+                    generated.append(future.result())
+        else:
+            generated = [
+                self._generate_candidate(prompt, target_concept, candidate_index)
+                for candidate_index in missing
+            ]
+
+        for candidate in generated:
+            candidates_by_index[int(candidate.metadata["candidate_index"])] = candidate
+        if generated:
+            self._save_cached_candidates(prompt, target_concept, candidates_by_index.values())
+
+        selected = [candidates_by_index[index] for index in range(requested_count)]
+        for candidate in selected:
+            candidate.metadata["candidate_cache_hit"] = int(
+                candidate.metadata["candidate_index"]
+            ) not in missing
+        return selected
 
     def _generate_candidate(
         self,
@@ -395,7 +443,7 @@ class DACAAttack(Attack):
         target_concept: str | None,
         candidate_index: int,
     ) -> AttackCandidate:
-        self._stage_timings = []
+        stage_timings: list[dict[str, Any]] = []
         attack_started = time.perf_counter()
 
         if self.log_progress:
@@ -414,6 +462,7 @@ class DACAAttack(Attack):
                 _format_released(f"decomposer_{node}", input_prompt=prompt),
                 self.decomposer_max_tokens,
                 node,
+                stage_timings,
             )
             llm_call_count += 1
 
@@ -428,16 +477,17 @@ class DACAAttack(Attack):
                 ),
                 self.polisher_max_tokens,
                 node,
+                stage_timings,
             )
             llm_call_count += 1
 
         if self.implementation_mode == OFFICIAL_RELEASE:
             assembled, assembly_calls = self._assemble_official_release(
-                decomposed, polished
+                decomposed, polished, stage_timings
             )
         else:
             assembled, assembly_calls = self._assemble_paper_algorithm(
-                decomposed, polished
+                decomposed, polished, stage_timings
             )
         llm_call_count += assembly_calls
 
@@ -448,6 +498,7 @@ class DACAAttack(Attack):
             OFFICIAL_FINALIZER_PROMPT + final_separator + concatenated,
             self.finalizer_max_tokens,
             "final",
+            stage_timings,
         )
         llm_call_count += 1
         total_seconds = time.perf_counter() - attack_started
@@ -479,7 +530,7 @@ class DACAAttack(Attack):
                 "decomposer_outputs": decomposed,
                 "polisher_outputs": polished,
                 "assembler_outputs": assembled,
-                "stage_timings_seconds": list(self._stage_timings),
+                "stage_timings_seconds": stage_timings,
                 "attack_llm_runtime_seconds": total_seconds,
                 "target_concept_used_by_attack": False,
                 "target_concept_received": target_concept,
@@ -490,6 +541,7 @@ class DACAAttack(Attack):
         self,
         decomposed: dict[str, str],
         polished: dict[str, str],
+        stage_timings: list[dict[str, Any]],
     ) -> tuple[dict[str, str], int]:
         """Retain one assembled result per ontology edge, as Algorithm 1 specifies."""
 
@@ -510,6 +562,7 @@ class DACAAttack(Attack):
                 ),
                 self.assembler_max_tokens,
                 edge_name,
+                stage_timings,
             )
 
         isolated_nodes = _isolated_nodes(ONTOLOGY_NODES, ONTOLOGY_EDGES)
@@ -523,6 +576,7 @@ class DACAAttack(Attack):
                 ),
                 self.assembler_max_tokens,
                 node,
+                stage_timings,
             )
         return assembled, len(ONTOLOGY_EDGES) + len(isolated_nodes)
 
@@ -530,6 +584,7 @@ class DACAAttack(Attack):
         self,
         decomposed: dict[str, str],
         polished: dict[str, str],
+        stage_timings: list[dict[str, Any]],
     ) -> tuple[dict[str, str], int]:
         """Reproduce the released edge-input and destination-overwrite behavior."""
 
@@ -543,12 +598,20 @@ class DACAAttack(Attack):
                 ),
                 self.assembler_max_tokens,
                 f"{source_node}->{target_node}",
+                stage_timings,
             )
         for node in _isolated_nodes(ONTOLOGY_NODES, ONTOLOGY_EDGES):
             assembled[node] = decomposed.get(node, "")
         return assembled, len(ONTOLOGY_EDGES)
 
-    def _complete(self, stage: str, prompt: str, max_tokens: int, label: str) -> str:
+    def _complete(
+        self,
+        stage: str,
+        prompt: str,
+        max_tokens: int,
+        label: str,
+        stage_timings: list[dict[str, Any]],
+    ) -> str:
         if self.log_progress:
             console.print(
                 f"[daca] starting {stage} for {label} (max_tokens={max_tokens})",
@@ -572,7 +635,7 @@ class DACAAttack(Attack):
         )
         output = _clean_output(response) if self.clean_outputs else response.strip()
         elapsed = time.perf_counter() - started
-        self._stage_timings.append(
+        stage_timings.append(
             {"stage": stage, "label": label, "seconds": elapsed}
         )
         if not output:
@@ -586,8 +649,96 @@ class DACAAttack(Attack):
             console.print(f"[daca] output {stage} {label}: {output}", markup=False)
         return output
 
+    def _cache_signature(self, prompt: str, target_concept: str | None) -> dict[str, Any]:
+        return {
+            "schema": DACA_CACHE_SCHEMA,
+            "prompt": prompt,
+            "target_concept": target_concept,
+            "implementation_mode": self.implementation_mode,
+            "temperature": self.temperature,
+            "reasoning_effort": self.reasoning_effort,
+            "use_system_prompt": self.use_system_prompt,
+            "clean_outputs": self.clean_outputs,
+            "max_tokens": {
+                "decomposer": self.decomposer_max_tokens,
+                "polisher": self.polisher_max_tokens,
+                "assembler": self.assembler_max_tokens,
+                "finalizer": self.finalizer_max_tokens,
+            },
+            "backend_model": self.backend_model,
+            "backend_options": {
+                key: value
+                for key, value in dict(self._backend_signature or ()).items()
+                if key in {"provider", "model", "temperature"}
+            },
+        }
+
+    def _cache_path(self, prompt: str, target_concept: str | None) -> Path:
+        payload = json.dumps(
+            self._cache_signature(prompt, target_concept),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        return self.candidate_cache_dir / f"{digest}.json"
+
+    def _load_cached_candidates(
+        self, prompt: str, target_concept: str | None
+    ) -> list[AttackCandidate]:
+        if not self.reuse_cached_candidates:
+            return []
+        path = self._cache_path(prompt, target_concept)
+        if not path.is_file():
+            return []
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if payload.get("signature") != self._cache_signature(prompt, target_concept):
+                return []
+            records = payload.get("candidates", [])
+            return [
+                AttackCandidate(
+                    text=str(record["text"]), metadata=dict(record["metadata"])
+                )
+                for record in records
+                if isinstance(record, dict)
+                and isinstance(record.get("text"), str)
+                and isinstance(record.get("metadata"), dict)
+            ]
+        except (OSError, ValueError, TypeError) as exc:
+            if self.log_progress:
+                console.print(f"[daca] ignoring invalid candidate cache {path}: {exc}")
+            return []
+
+    def _save_cached_candidates(
+        self,
+        prompt: str,
+        target_concept: str | None,
+        candidates: Any,
+    ) -> None:
+        if not self.reuse_cached_candidates:
+            return
+        path = self._cache_path(prompt, target_concept)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        ordered = sorted(
+            candidates, key=lambda item: int(item.metadata.get("candidate_index", 0))
+        )
+        payload = {
+            "signature": self._cache_signature(prompt, target_concept),
+            "candidates": [
+                {"text": candidate.text, "metadata": candidate.metadata}
+                for candidate in ordered
+            ],
+        }
+        temporary = path.with_suffix(f".tmp-{time.time_ns()}")
+        temporary.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        temporary.replace(path)
+
     def _apply_context_config(self, context: dict[str, Any]) -> None:
-        attack_config = dict((context.get("config") or {}).get("attack", {}))
+        full_config = context.get("config") or {}
+        attack_config = dict(full_config.get("attack", {}))
         nested = attack_config.get(self.name)
         if isinstance(nested, dict):
             attack_config.update(nested)
@@ -650,9 +801,31 @@ class DACAAttack(Attack):
             self.log_progress = legacy_logging
             self.log_outputs = legacy_logging
 
+        parallel_config = attack_config.get("parallel", {})
+        if not isinstance(parallel_config, dict):
+            raise ValueError("DACA parallel must be a mapping.")
+        self.parallel_workers = max(
+            1, int(parallel_config.get("workers", self.parallel_workers))
+        )
+        cache_config = attack_config.get("candidate_cache", {})
+        if not isinstance(cache_config, dict):
+            raise ValueError("DACA candidate_cache must be a mapping.")
+        self.reuse_cached_candidates = bool(
+            cache_config.get("enabled", self.reuse_cached_candidates)
+        )
+        self.candidate_cache_dir = Path(
+            cache_config.get("directory", self.candidate_cache_dir)
+        )
+
         if self._client_injected:
             return
-        options = client_options(context.get("config") or {})
+        daca_llm_config = dict(full_config.get("daca_llm", {}))
+        if not daca_llm_config:
+            raise ValueError(
+                "DACA requires a daca_llm configuration with its own model server."
+            )
+        self.backend_model = str(daca_llm_config.get("model", "")).strip()
+        options = client_options(full_config, section="daca_llm")
         signature = tuple(options.items())
         if signature != self._backend_signature:
             self.client = LocalMultimodalClient(**options)

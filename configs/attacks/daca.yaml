@@ -10,6 +10,17 @@ attack:
   # Pass --max-candidates 10 when running the experiment; the CLI defaults to 1.
   candidate_count: 10
   temperature: 1.0
+
+  # Candidate pipelines are independent. Match this to llama.cpp's parallel
+  # slots so four candidates can advance without changing their internal order.
+  parallel:
+    workers: 4
+
+  # Reuse identical attack outputs across defense runs. The cache key includes
+  # the prompt, LLM model, implementation mode, sampling, and token settings.
+  candidate_cache:
+    enabled: true
+    directory: outputs/cache/daca
   # The released backbones returned answer text directly. Disable hidden
   # reasoning so thinking-capable local models do not consume the full output
   # budget before producing their answer.
@@ -29,3 +40,24 @@ attack:
   logging:
     progress: true
     outputs: true
+
+# Dedicated text-only server for DACA. This is intentionally separate from
+# configs/local_llm.yaml, whose multimodal model is used by the image evaluator.
+daca_llm:
+  # Attack-model options (keep exactly one uncommented):
+  # Qwen3 14B, Apache 2.0:
+  model: ggml-org/Qwen3-14B-GGUF:Q4_K_M
+  # Gemma 4 12B:
+  # model: ggml-org/gemma-4-12B-it-GGUF:Q4_K_M
+  # Mistral Nemo Instruct 12B, Apache 2.0:
+  # model: bartowski/Mistral-Nemo-Instruct-2407-GGUF:Q4_K_M
+  alias: daca-llm
+  provider: openai_compatible
+  host: 127.0.0.1
+  port: 8084
+  context_size: 8192
+  gpu_layers: auto
+  parallel_slots: 4
+  mmproj: ""
+  timeout_seconds: 600
+  temperature: 0.0

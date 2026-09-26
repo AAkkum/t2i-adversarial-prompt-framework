@@ -38,3 +38,9 @@ It does not select or start the local model.
 `scripts/start-local-llm.sh` reads the server launch settings from
 `configs/local_llm.yaml`. A Hugging Face model spec is downloaded and cached by
 llama.cpp on first use, so there is no separate download script.
+`parallel_slots` controls how many independent requests llama.cpp can process at
+once; DACA's `parallel.workers` should normally use the same value.
+
+DACA has a separate `daca_llm` section in `configs/attacks/daca.yaml`, launched
+with `scripts/start-daca-llm.sh` or `scripts/start-daca-llm.ps1`. Its endpoint is
+independent of the shared multimodal evaluator server.

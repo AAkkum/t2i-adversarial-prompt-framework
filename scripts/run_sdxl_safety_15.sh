@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # SDXL safety matrix. CharacterFilter and TraSCE are intentionally excluded.
+# For a prompt-sharded multi-GPU run, use run_sdxl_safety_15_4gpu.sh.
 
 DATASET="${1:-data/datasets/safety_nonsexual/safety_nonsexual_100.csv}"
 RUN_GROUP="${RUN_GROUP:-$(date +%Y%m%d_%H%M%S)_sdxl_safety_15}"

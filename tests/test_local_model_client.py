@@ -36,6 +36,19 @@ def test_client_options_use_shared_server_config() -> None:
     assert options["base_url"] == "http://localhost:9000/v1"
 
 
+def test_client_options_support_dedicated_server_section() -> None:
+    options = client_options(
+        {
+            "local_llm": {"alias": "evaluator", "port": 8083},
+            "daca_llm": {"alias": "daca-qwen", "host": "localhost", "port": 8084},
+        },
+        section="daca_llm",
+    )
+
+    assert options["model"] == "daca-qwen"
+    assert options["base_url"] == "http://localhost:8084/v1"
+
+
 def test_openai_compatible_client_sends_multimodal_message(
     tmp_path: Path,
     monkeypatch,

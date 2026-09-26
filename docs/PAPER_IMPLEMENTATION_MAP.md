@@ -32,7 +32,8 @@ attack so that success has one definition within an experiment.
 - TREANT code: https://github.com/llm-jailbreaker/Treant
 - PGJ: https://ojs.aaai.org/index.php/AAAI/article/view/34821
 - TextFooler: https://ojs.aaai.org/index.php/AAAI/article/view/6311
-- Latent Guard: https://github.com/rt219/LatentGuard
+- Latent Guard: https://arxiv.org/abs/2404.08031
+- Latent Guard code: https://github.com/rt219/LatentGuard
 - SAFREE: https://openreview.net/forum?id=hgTFotBRKl
 - SAFREE code: https://github.com/jaehong31/SAFREE
 - BLIP: https://proceedings.mlr.press/v162/li22n.html
