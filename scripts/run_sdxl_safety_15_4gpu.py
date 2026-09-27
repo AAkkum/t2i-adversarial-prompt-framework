@@ -163,7 +163,7 @@ def main() -> None:
             raise SystemExit("Resume shards are missing: " + ", ".join(missing_shards))
     else:
         shards = _write_shards(dataset, shard_dir, len(gpu_ids))
-    overrides = _write_worker_configs(
+    overrides_by_attack = _write_worker_configs(
         config_dir,
         output,
         evaluator_ports,
@@ -240,7 +240,9 @@ def main() -> None:
                 case_output=case_output,
                 gpu_ids=gpu_ids,
                 shards=shards,
-                overrides=overrides,
+                overrides=overrides_by_attack.get(
+                    case.attack, overrides_by_attack["default"]
+                ),
                 log_dir=log_dir,
             )
             _aggregate_case_outputs(case_output)
@@ -554,9 +556,9 @@ def _write_worker_configs(
     output: Path,
     evaluator_ports: list[int],
     daca_ports: list[int],
-) -> list[Path]:
+) -> dict[str, list[Path]]:
     config_dir.mkdir(parents=True, exist_ok=True)
-    paths: list[Path] = []
+    paths: dict[str, list[Path]] = {"default": [], "pgj": []}
     for index, (evaluator_port, daca_port) in enumerate(
         zip(evaluator_ports, daca_ports), start=1
     ):
@@ -564,6 +566,13 @@ def _write_worker_configs(
         data = {
             "local_llm": {"port": evaluator_port},
             "daca_llm": {"port": daca_port},
+        }
+        path.write_text(yaml.safe_dump(data, sort_keys=True), encoding="utf-8")
+        paths["default"].append(path)
+
+        pgj_path = config_dir / f"worker_{index:02d}_pgj.yaml"
+        pgj_data = {
+            **data,
             "attack": {
                 # CUDA_VISIBLE_DEVICES exposes one physical GPU as local cuda:0.
                 "llm_device": "cuda:0",
@@ -571,8 +580,10 @@ def _write_worker_configs(
                 "cache_path": str(output / "cache" / f"pgj_worker_{index:02d}.json"),
             },
         }
-        path.write_text(yaml.safe_dump(data, sort_keys=True), encoding="utf-8")
-        paths.append(path)
+        pgj_path.write_text(
+            yaml.safe_dump(pgj_data, sort_keys=True), encoding="utf-8"
+        )
+        paths["pgj"].append(pgj_path)
     return paths
 
 

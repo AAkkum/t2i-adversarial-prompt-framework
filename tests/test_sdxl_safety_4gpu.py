@@ -125,18 +125,25 @@ def test_aggregate_case_outputs_restores_dataset_order(tmp_path: Path) -> None:
 
 
 def test_worker_configs_route_each_process_to_its_local_servers(tmp_path: Path) -> None:
-    paths = _write_worker_configs(
+    paths_by_attack = _write_worker_configs(
         tmp_path / "configs",
         tmp_path / "output",
         [8083, 8084, 8085, 8086],
         [8087, 8088, 8089, 8090],
     )
 
-    fourth = yaml.safe_load(paths[3].read_text(encoding="utf-8"))
+    fourth = yaml.safe_load(paths_by_attack["default"][3].read_text(encoding="utf-8"))
     assert fourth["local_llm"]["port"] == 8086
     assert fourth["daca_llm"]["port"] == 8090
-    assert fourth["attack"]["llm_device"] == "cuda:0"
-    assert fourth["attack"]["cache_path"].endswith("pgj_worker_04.json")
+    assert "attack" not in fourth
+
+    fourth_pgj = yaml.safe_load(
+        paths_by_attack["pgj"][3].read_text(encoding="utf-8")
+    )
+    assert fourth_pgj["local_llm"]["port"] == 8086
+    assert fourth_pgj["daca_llm"]["port"] == 8090
+    assert fourth_pgj["attack"]["llm_device"] == "cuda:0"
+    assert fourth_pgj["attack"]["cache_path"].endswith("pgj_worker_04.json")
 
 
 def test_llama_server_accepts_explicit_physical_device_options() -> None:
