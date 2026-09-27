@@ -31,6 +31,7 @@ class MatrixCase:
     defense: str
     max_candidates: int
     defense_config: str | None = None
+    model_config: str = "configs/models/sdxl.yaml"
 
     @property
     def name(self) -> str:
@@ -83,14 +84,85 @@ MATRIX_CASES = (
         1,
         "configs/defenses/latent_guard_safety_nonsexual.yaml",
     ),
+    MatrixCase(
+        "16",
+        "identity",
+        "none",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "17",
+        "identity",
+        "trasce",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "18",
+        "pgj",
+        "none",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "19",
+        "pgj",
+        "trasce",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "20",
+        "daca",
+        "none",
+        10,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "21",
+        "daca",
+        "trasce",
+        10,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "22",
+        "groot",
+        "none",
+        3,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "23",
+        "groot",
+        "trasce",
+        3,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "24",
+        "ring_a_bell",
+        "none",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
+    MatrixCase(
+        "25",
+        "ring_a_bell",
+        "trasce",
+        1,
+        model_config="configs/models/sd14.yaml",
+    ),
 )
+MATRIX_TOTAL = len(MATRIX_CASES)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Run the complete 15-case SDXL safety matrix with prompt shards "
-            "distributed across multiple GPUs."
+            "Run the SDXL prompt-defense matrix and the matched paper-near "
+            "SD 1.4 none/TraSCE comparison, sharded across multiple GPUs."
         )
     )
     parser.add_argument("dataset", nargs="?", type=Path, default=DEFAULT_DATASET)
@@ -123,7 +195,7 @@ def main() -> None:
         output = _resolve(
             args.output
             or Path("results/matrices")
-            / f"{time.strftime('%Y%m%d_%H%M%S')}_sdxl_safety_15_4gpu"
+            / f"{time.strftime('%Y%m%d_%H%M%S')}_safety_{MATRIX_TOTAL}_4gpu"
         )
         evaluator_ports = [
             args.evaluator_base_port + index for index in range(len(gpu_ids))
@@ -205,7 +277,10 @@ def main() -> None:
             case_output = output / case.name
             case_output.mkdir(parents=True, exist_ok=True)
             if _case_is_complete(case, case_output, gpu_ids, shards):
-                print(f"[{case_index}/15] {case.name} already complete; skipping")
+                print(
+                    f"[{case_index}/{MATRIX_TOTAL}] "
+                    f"{case.name} already complete; skipping"
+                )
                 _record_case_manifest(
                     manifest,
                     case,
@@ -215,7 +290,7 @@ def main() -> None:
                     resumed_skip=True,
                 )
                 _write_manifest(output, manifest)
-                if case.number == "09" and daca_servers:
+                if _ends_attack_block(case_index, "daca") and daca_servers:
                     _stop_processes(daca_servers)
                     daca_servers = []
                 continue
@@ -231,7 +306,9 @@ def main() -> None:
                 )
 
             print(
-                f"[{case_index}/15] attack={case.attack} defense={case.defense} "
+                f"[{case_index}/{MATRIX_TOTAL}] "
+                f"attack={case.attack} defense={case.defense} "
+                f"model_config={case.model_config} "
                 f"max_candidates={case.max_candidates} on {len(gpu_ids)} GPUs"
             )
             started = time.monotonic()
@@ -256,9 +333,12 @@ def main() -> None:
                 worker_logs=worker_logs,
             )
             _write_manifest(output, manifest)
-            print(f"[{case_index}/15] complete in {elapsed / 60:.1f} minutes")
+            print(
+                f"[{case_index}/{MATRIX_TOTAL}] "
+                f"complete in {elapsed / 60:.1f} minutes"
+            )
 
-            if case.number == "09":
+            if _ends_attack_block(case_index, "daca"):
                 _stop_processes(daca_servers)
                 daca_servers = []
     except Exception as exc:
@@ -273,7 +353,7 @@ def main() -> None:
     manifest["status"] = "complete"
     manifest["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     _write_manifest(output, manifest)
-    print(f"Completed 15 four-GPU runs in {output}")
+    print(f"Completed {MATRIX_TOTAL} four-GPU runs in {output}")
 
 
 @dataclass
@@ -372,7 +452,7 @@ def _run_case_workers(
                 "--model",
                 "diffusers",
                 "--model-config",
-                "configs/models/sdxl.yaml",
+                case.model_config,
                 "--attack",
                 case.attack,
                 "--defense",
@@ -421,6 +501,14 @@ def _run_case_workers(
     finally:
         _stop_processes([managed for _, managed, _ in workers])
     return worker_logs
+
+
+def _ends_attack_block(case_index: int, attack_name: str) -> bool:
+    current = MATRIX_CASES[case_index - 1]
+    next_attack = (
+        MATRIX_CASES[case_index].attack if case_index < MATRIX_TOTAL else None
+    )
+    return current.attack == attack_name and next_attack != attack_name
 
 
 def _case_is_complete(

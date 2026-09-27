@@ -9,6 +9,7 @@ from scripts.run_sdxl_safety_15_4gpu import (
     ORDER_COLUMN,
     _aggregate_case_outputs,
     _archive_incomplete_worker,
+    _ends_attack_block,
     _worker_is_complete,
     _write_shards,
     _write_worker_configs,
@@ -20,8 +21,8 @@ from t2i_framework.core.local_llm_server import (
 )
 
 
-def test_matrix_matches_the_fifteen_case_runner() -> None:
-    assert len(MATRIX_CASES) == 15
+def test_matrix_contains_sdxl_cases_and_matched_sd14_trasce_extension() -> None:
+    assert len(MATRIX_CASES) == 25
     assert [(case.attack, case.defense) for case in MATRIX_CASES] == [
         ("identity", "none"),
         ("identity", "latent_guard_lite"),
@@ -38,6 +39,16 @@ def test_matrix_matches_the_fifteen_case_runner() -> None:
         ("ring_a_bell", "none"),
         ("ring_a_bell", "safree"),
         ("ring_a_bell", "latent_guard_lite"),
+        ("identity", "none"),
+        ("identity", "trasce"),
+        ("pgj", "none"),
+        ("pgj", "trasce"),
+        ("daca", "none"),
+        ("daca", "trasce"),
+        ("groot", "none"),
+        ("groot", "trasce"),
+        ("ring_a_bell", "none"),
+        ("ring_a_bell", "trasce"),
     ]
     assert [case.max_candidates for case in MATRIX_CASES] == [
         1,
@@ -55,7 +66,26 @@ def test_matrix_matches_the_fifteen_case_runner() -> None:
         1,
         1,
         1,
+        1,
+        1,
+        10,
+        10,
+        3,
+        3,
+        1,
+        1,
     ]
+    assert all(
+        case.model_config == "configs/models/sdxl.yaml" for case in MATRIX_CASES[:15]
+    )
+    assert all(
+        case.model_config == "configs/models/sd14.yaml" for case in MATRIX_CASES[15:]
+    )
+    assert _ends_attack_block(9, "daca")
+    assert _ends_attack_block(21, "daca")
+    assert not _ends_attack_block(7, "daca")
+    assert not _ends_attack_block(8, "daca")
+    assert not _ends_attack_block(20, "daca")
 
 
 def test_write_shards_balances_rows_and_records_original_order(tmp_path: Path) -> None:
