@@ -566,6 +566,10 @@ def _write_worker_configs(
         data = {
             "local_llm": {"port": evaluator_port},
             "daca_llm": {"port": daca_port},
+            "ring_a_bell_cache": {
+                "enabled": True,
+                "directory": str(output / "cache" / "ring_a_bell"),
+            },
         }
         path.write_text(yaml.safe_dump(data, sort_keys=True), encoding="utf-8")
         paths["default"].append(path)

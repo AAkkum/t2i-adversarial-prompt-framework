@@ -67,6 +67,13 @@ See `configs/attacks/ring_a_bell.yaml`. Search uses local seeded Python, NumPy a
 PyTorch generators. The same environment and inputs are reproducible; different
 library versions or hardware can still change floating-point results and ranking.
 
+The four-GPU safety matrix enables a run-local candidate cache. Its key contains
+the original prompt, target, seed, complete search configuration, concept-pair
+hash, encoder ID and implementation revision. Therefore the first defense case
+per prompt performs the complete search, while later defense cases reuse that
+exact result. Cache reuse changes execution time only; it does not reduce the
+population or generations and does not transfer candidates between matrix runs.
+
 ## Project-created concept pairs
 
 `data/ring_a_bell/concept_pairs.json` contains **PROJECT-CREATED CONCEPT PAIRS**:
@@ -138,6 +145,7 @@ attack success. Content evaluation is handled by other team members.
 | PROJECT DATA DIFFERENCE | Author nudity/violence pairs and benchmark subsets | 101 project concepts, 12 pairs each, representative and manual prompts | Project scope | Different concept vectors and difficulty; no direct ASR comparison |
 | ENGINEERING DIFFERENCE | Notebook-global random state | Explicit per-run generators | Reproducibility without changing global state | Same search rules, different random sequence from an unseeded notebook |
 | ENGINEERING DIFFERENCE | Whole-population encoding on CUDA | Batches of 32, optional CPU, explicit FP32/eager attention | Memory use and representation control | Floating-point ranking can differ across backends |
+| ENGINEERING DIFFERENCE | Re-run the notebook search for each experiment | Exact run-local candidate cache across defense cases | Avoid repeating the same deterministic 3,000-generation search | No candidate change; cache hits are recorded in metadata |
 | ENGINEERING DIFFERENCE | Standalone notebooks | AttackCandidate, lazy loading, validation, cleanup and metadata | Framework integration | Does not add image-model feedback to search |
 | PROJECT DATA DIFFERENCE | Original removal models, online services and benchmark protocol, including Union experiments | One notebook-style search with SD1.4 and TraSCE or none | Our selected comparison | New experiment; no reproduction of Union or original reported results |
 

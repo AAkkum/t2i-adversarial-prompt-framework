@@ -378,6 +378,44 @@ def test_attack_target_formula_metadata_and_cleanup(fake_encoder, small_config, 
     assert fake_encoder.closed
 
 
+def test_candidate_cache_reuses_exact_completed_search(
+    tmp_path, fake_encoder, small_config, monkeypatch
+):
+    from t2i_framework.attacks import ring_a_bell_search
+
+    calls = 0
+    original = ring_a_bell_search.discover
+
+    def counted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(ring_a_bell_search, "discover", counted)
+    config = {
+        **small_config,
+        "ring_a_bell_cache": {
+            "enabled": True,
+            "directory": str(tmp_path / "cache"),
+        },
+    }
+
+    first = RingABellAttack().generate(
+        "a red cube on a table", "red", {"seed": 42, "config": config}
+    )[0]
+    second_attack = RingABellAttack()
+    second = second_attack.generate(
+        "a red cube on a table", "red", {"seed": 42, "config": config}
+    )[0]
+
+    assert calls == 1
+    assert second.text == first.text
+    assert second.metadata["token_ids"] == first.metadata["token_ids"]
+    assert first.metadata["candidate_cache"]["hit"] is False
+    assert second.metadata["candidate_cache"]["hit"] is True
+    assert second_attack._encoder is None
+
+
 @pytest.mark.parametrize(
     "prompt, target",
     [

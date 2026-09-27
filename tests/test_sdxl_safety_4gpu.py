@@ -135,6 +135,11 @@ def test_worker_configs_route_each_process_to_its_local_servers(tmp_path: Path) 
     fourth = yaml.safe_load(paths_by_attack["default"][3].read_text(encoding="utf-8"))
     assert fourth["local_llm"]["port"] == 8086
     assert fourth["daca_llm"]["port"] == 8090
+    assert fourth["ring_a_bell_cache"]["enabled"] is True
+    assert Path(fourth["ring_a_bell_cache"]["directory"]).parts[-2:] == (
+        "cache",
+        "ring_a_bell",
+    )
     assert "attack" not in fourth
 
     fourth_pgj = yaml.safe_load(

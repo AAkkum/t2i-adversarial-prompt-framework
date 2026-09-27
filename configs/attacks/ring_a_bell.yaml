@@ -11,3 +11,9 @@ attack:
   encoder_revision: null
   batch_size: 32
   log_interval: 50
+
+# Exact deterministic outputs can be reused without changing the search. The
+# four-GPU matrix enables this with a cache directory scoped to that matrix run.
+ring_a_bell_cache:
+  enabled: false
+  directory: outputs/cache/ring_a_bell
