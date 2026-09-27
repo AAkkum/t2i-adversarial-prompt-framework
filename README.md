@@ -121,6 +121,22 @@ expensive 100-row run. The separate
 `data/datasets/representative/representative_prompt_batch_100.csv` remains the
 benign target-preservation benchmark and should use `target_presence`.
 
+Dedicated four-GPU Latent Guard comparison:
+
+```bash
+bash scripts/run_latent_guard_all_4gpu.sh \
+  --candidate-cache-source results/matrices/<completed-matrix>
+```
+
+This evaluates `latent_guard_lite` against Identity, PGJ, DACA, GROOT, and
+Ring-A-Bell across SD 1.4 and SD 3.5 Medium. The no-defense baselines come from
+the separate model evaluations. Use `--models sd14` or `--models sd35_medium`
+to run only one model. The cache source reuses the completed matrix's PGJ and
+Ring-A-Bell candidates; DACA uses its persistent exact-match cache. GROOT
+remains uncached because its search adapts to each defense response. The runner
+refuses to start when
+`data/latent_guard/model_parameters.pth` is missing.
+
 ## Results
 
 Each run writes:

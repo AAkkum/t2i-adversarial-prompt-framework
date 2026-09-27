@@ -68,6 +68,8 @@ def test_matrix_contains_sdxl_cases_and_matched_sd14_trasce_extension() -> None:
         1,
         1,
         1,
+        1,
+        1,
         10,
         10,
         3,

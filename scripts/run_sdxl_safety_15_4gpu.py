@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -32,10 +33,15 @@ class MatrixCase:
     max_candidates: int
     defense_config: str | None = None
     model_config: str = "configs/models/sdxl.yaml"
+    model_label: str | None = None
 
     @property
     def name(self) -> str:
-        return f"{self.number}_{self.attack}_{self.defense}"
+        parts = [self.number]
+        if self.model_label:
+            parts.append(self.model_label)
+        parts.extend((self.attack, self.defense))
+        return "_".join(parts)
 
 
 MATRIX_CASES = (
@@ -158,12 +164,20 @@ MATRIX_CASES = (
 MATRIX_TOTAL = len(MATRIX_CASES)
 
 
-def main() -> None:
+def main(
+    cases: tuple[MatrixCase, ...] = MATRIX_CASES,
+    *,
+    output_label: str = "safety",
+    description: str | None = None,
+    configure_parser: Callable[[argparse.ArgumentParser], None] | None = None,
+    case_builder: Callable[[argparse.Namespace], tuple[MatrixCase, ...]] | None = None,
+) -> None:
     parser = argparse.ArgumentParser(
-        description=(
+        description=description
+        or (
             "Run the SDXL prompt-defense matrix and the matched paper-near "
             "SD 1.4 none/TraSCE comparison, sharded across multiple GPUs."
-        )
+        ),
     )
     parser.add_argument("dataset", nargs="?", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--gpus", default="0,1,2,3")
@@ -177,7 +191,21 @@ def main() -> None:
         default=None,
         help="Resume an existing matrix directory, skipping complete workers.",
     )
+    parser.add_argument(
+        "--candidate-cache-source",
+        type=Path,
+        default=None,
+        help=(
+            "Optional previous matrix directory whose PGJ and Ring-A-Bell "
+            "candidate caches should be reused."
+        ),
+    )
+    if configure_parser is not None:
+        configure_parser(parser)
     args = parser.parse_args()
+    selected_cases = tuple(case_builder(args) if case_builder else cases)
+    if not selected_cases:
+        raise SystemExit("The matrix must contain at least one case.")
 
     if args.output is not None and args.resume is not None:
         raise SystemExit("Use either --output or --resume, not both.")
@@ -185,22 +213,50 @@ def main() -> None:
     if resume:
         output = _resolve(args.resume)
         manifest = _read_manifest(output)
+        stored_plan = manifest.get("case_plan")
+        if isinstance(stored_plan, list) and stored_plan:
+            selected_cases = tuple(MatrixCase(**item) for item in stored_plan)
         dataset = Path(str(manifest["dataset"]))
         gpu_ids = [str(item) for item in manifest["gpus"]]
         evaluator_ports = [int(item) for item in manifest["evaluator_ports"]]
         daca_ports = [int(item) for item in manifest["daca_ports"]]
+        cache_source_value = manifest.get("candidate_cache_source")
+        candidate_cache_source = (
+            Path(str(cache_source_value)) if cache_source_value else output
+        )
     else:
         dataset = _resolve(args.dataset)
         gpu_ids = [item.strip() for item in args.gpus.split(",") if item.strip()]
+        matrix_total = len(selected_cases)
         output = _resolve(
             args.output
             or Path("results/matrices")
-            / f"{time.strftime('%Y%m%d_%H%M%S')}_safety_{MATRIX_TOTAL}_4gpu"
+            / (
+                f"{time.strftime('%Y%m%d_%H%M%S')}_"
+                f"{output_label}_{matrix_total}_4gpu"
+            )
         )
         evaluator_ports = [
             args.evaluator_base_port + index for index in range(len(gpu_ids))
         ]
         daca_ports = [args.daca_base_port + index for index in range(len(gpu_ids))]
+        candidate_cache_source = (
+            _resolve(args.candidate_cache_source)
+            if args.candidate_cache_source is not None
+            else output
+        )
+
+    matrix_total = len(selected_cases)
+    candidate_cache_dir = candidate_cache_source / "cache"
+    if (
+        not resume
+        and args.candidate_cache_source is not None
+        and not candidate_cache_dir.is_dir()
+    ):
+        raise SystemExit(
+            "Candidate cache directory not found: "
+            f"{candidate_cache_dir}"
+        )
 
     if not dataset.is_file():
         raise SystemExit(f"Dataset not found: {dataset}")
@@ -240,7 +296,10 @@ def main() -> None:
         output,
         evaluator_ports,
         daca_ports,
+        candidate_cache_dir=candidate_cache_dir,
     )
+    print(f"PGJ/Ring-A-Bell candidate cache: {candidate_cache_dir}")
+    print("DACA candidate cache: outputs/cache/daca")
     if resume:
         manifest.setdefault("resumed_at", []).append(
             time.strftime("%Y-%m-%dT%H:%M:%S%z")
@@ -254,6 +313,9 @@ def main() -> None:
             "gpus": gpu_ids,
             "evaluator_ports": evaluator_ports,
             "daca_ports": daca_ports,
+            "suite": output_label,
+            "case_plan": [asdict(case) for case in selected_cases],
+            "candidate_cache_source": str(candidate_cache_source),
             "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
             "cases": [],
             "status": "running",
@@ -273,12 +335,12 @@ def main() -> None:
             startup_timeout=args.startup_timeout,
         )
 
-        for case_index, case in enumerate(MATRIX_CASES, start=1):
+        for case_index, case in enumerate(selected_cases, start=1):
             case_output = output / case.name
             case_output.mkdir(parents=True, exist_ok=True)
             if _case_is_complete(case, case_output, gpu_ids, shards):
                 print(
-                    f"[{case_index}/{MATRIX_TOTAL}] "
+                    f"[{case_index}/{matrix_total}] "
                     f"{case.name} already complete; skipping"
                 )
                 _record_case_manifest(
@@ -290,7 +352,10 @@ def main() -> None:
                     resumed_skip=True,
                 )
                 _write_manifest(output, manifest)
-                if _ends_attack_block(case_index, "daca") and daca_servers:
+                if (
+                    _ends_attack_block(case_index, "daca", selected_cases)
+                    and daca_servers
+                ):
                     _stop_processes(daca_servers)
                     daca_servers = []
                 continue
@@ -306,7 +371,7 @@ def main() -> None:
                 )
 
             print(
-                f"[{case_index}/{MATRIX_TOTAL}] "
+                f"[{case_index}/{matrix_total}] "
                 f"attack={case.attack} defense={case.defense} "
                 f"model_config={case.model_config} "
                 f"max_candidates={case.max_candidates} on {len(gpu_ids)} GPUs"
@@ -334,11 +399,11 @@ def main() -> None:
             )
             _write_manifest(output, manifest)
             print(
-                f"[{case_index}/{MATRIX_TOTAL}] "
+                f"[{case_index}/{matrix_total}] "
                 f"complete in {elapsed / 60:.1f} minutes"
             )
 
-            if _ends_attack_block(case_index, "daca"):
+            if _ends_attack_block(case_index, "daca", selected_cases):
                 _stop_processes(daca_servers)
                 daca_servers = []
     except Exception as exc:
@@ -353,7 +418,7 @@ def main() -> None:
     manifest["status"] = "complete"
     manifest["completed_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     _write_manifest(output, manifest)
-    print(f"Completed {MATRIX_TOTAL} four-GPU runs in {output}")
+    print(f"Completed {matrix_total} four-GPU runs in {output}")
 
 
 @dataclass
@@ -503,10 +568,14 @@ def _run_case_workers(
     return worker_logs
 
 
-def _ends_attack_block(case_index: int, attack_name: str) -> bool:
-    current = MATRIX_CASES[case_index - 1]
+def _ends_attack_block(
+    case_index: int,
+    attack_name: str,
+    cases: tuple[MatrixCase, ...] = MATRIX_CASES,
+) -> bool:
+    current = cases[case_index - 1]
     next_attack = (
-        MATRIX_CASES[case_index].attack if case_index < MATRIX_TOTAL else None
+        cases[case_index].attack if case_index < len(cases) else None
     )
     return current.attack == attack_name and next_attack != attack_name
 
@@ -644,8 +713,10 @@ def _write_worker_configs(
     output: Path,
     evaluator_ports: list[int],
     daca_ports: list[int],
+    candidate_cache_dir: Path | None = None,
 ) -> dict[str, list[Path]]:
     config_dir.mkdir(parents=True, exist_ok=True)
+    candidate_cache_dir = candidate_cache_dir or output / "cache"
     paths: dict[str, list[Path]] = {"default": [], "pgj": []}
     for index, (evaluator_port, daca_port) in enumerate(
         zip(evaluator_ports, daca_ports), start=1
@@ -656,7 +727,7 @@ def _write_worker_configs(
             "daca_llm": {"port": daca_port},
             "ring_a_bell_cache": {
                 "enabled": True,
-                "directory": str(output / "cache" / "ring_a_bell"),
+                "directory": str(candidate_cache_dir / "ring_a_bell"),
             },
         }
         path.write_text(yaml.safe_dump(data, sort_keys=True), encoding="utf-8")
@@ -669,7 +740,9 @@ def _write_worker_configs(
                 # CUDA_VISIBLE_DEVICES exposes one physical GPU as local cuda:0.
                 "llm_device": "cuda:0",
                 # PGJ's JSON cache writer is not process-safe, so isolate workers.
-                "cache_path": str(output / "cache" / f"pgj_worker_{index:02d}.json"),
+                "cache_path": str(
+                    candidate_cache_dir / f"pgj_worker_{index:02d}.json"
+                ),
             },
         }
         pgj_path.write_text(

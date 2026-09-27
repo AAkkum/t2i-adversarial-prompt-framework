@@ -50,6 +50,23 @@ class _LLMBackend:
 
     def __init__(self, model_id: str, device: str = "cuda:1",
                  cache_path: str = "outputs/cache/llm_cache.json"):
+        self.model_id = model_id
+        self.device = device
+        self._torch: Any | None = None
+        self.tokenizer: Any | None = None
+        self.model: Any | None = None
+
+        self._cache_path = Path(cache_path)
+        self._cache_path.parent.mkdir(parents=True, exist_ok=True)
+        self._cache: dict = {}
+        if self._cache_path.exists():
+            raw = self._cache_path.read_text(encoding="utf-8").strip()
+            if raw:
+                self._cache = json.loads(raw)
+
+    def _load_model(self) -> None:
+        if self.model is not None:
+            return
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -60,23 +77,17 @@ class _LLMBackend:
             ) from exc
 
         self._torch = torch
-        print(f"[LLM] Loading {model_id} on {device}")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+        print(f"[LLM] Loading {self.model_id} on {self.device}")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_id, trust_remote_code=True
+        )
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_id,
+            self.model_id,
             torch_dtype=torch.float16,
-            device_map=device,
+            device_map=self.device,
             trust_remote_code=True,
         )
         self.model.eval()
-
-        self._cache_path = Path(cache_path)
-        self._cache_path.parent.mkdir(parents=True, exist_ok=True)
-        self._cache: dict = {}
-        if self._cache_path.exists():
-            raw = self._cache_path.read_text(encoding="utf-8").strip()
-            if raw:
-                self._cache = json.loads(raw)
 
     def _save_cache(self):
         self._cache_path.write_text(
@@ -88,6 +99,11 @@ class _LLMBackend:
         key = f"{system_prompt}|||{user_prompt}"
         if key in self._cache:
             return self._cache[key]
+
+        self._load_model()
+        assert self._torch is not None
+        assert self.tokenizer is not None
+        assert self.model is not None
 
         messages = [
             {"role": "system", "content": system_prompt},
