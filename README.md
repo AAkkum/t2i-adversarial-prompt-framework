@@ -149,6 +149,17 @@ The suite starts with an empty run-local cache: each updated attack generates
 fresh candidates once, then those exact candidates are reused across defenses
 and can be supplied to the Latent Guard suite afterward.
 
+PGJ-only comparison without Latent Guard or CharacterFilter:
+
+```bash
+bash scripts/run_pgj_defenses_4gpu.sh
+```
+
+This runs SDXL with no defense and SAFREE, followed by SD 1.4 with no defense
+and TraSCE. Every case generates fresh PGJ candidates; candidates are not shared
+between models or defenses. A resumed incomplete case may reuse only its own
+case-local cache.
+
 ## Results
 
 Each run writes:

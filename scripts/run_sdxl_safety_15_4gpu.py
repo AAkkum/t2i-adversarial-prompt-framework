@@ -34,6 +34,7 @@ class MatrixCase:
     defense_config: str | None = None
     model_config: str = "configs/models/sdxl.yaml"
     model_label: str | None = None
+    share_candidate_cache: bool = True
 
     @property
     def name(self) -> str:
@@ -377,13 +378,22 @@ def main(
                 f"max_candidates={case.max_candidates} on {len(gpu_ids)} GPUs"
             )
             started = time.monotonic()
+            case_overrides = overrides_by_attack
+            if not case.share_candidate_cache:
+                case_overrides = _write_worker_configs(
+                    config_dir / case.name,
+                    output,
+                    evaluator_ports,
+                    daca_ports,
+                    candidate_cache_dir=output / "cache" / case.name,
+                )
             worker_logs = _run_case_workers(
                 case=case,
                 case_output=case_output,
                 gpu_ids=gpu_ids,
                 shards=shards,
-                overrides=overrides_by_attack.get(
-                    case.attack, overrides_by_attack["default"]
+                overrides=case_overrides.get(
+                    case.attack, case_overrides["default"]
                 ),
                 log_dir=log_dir,
             )
