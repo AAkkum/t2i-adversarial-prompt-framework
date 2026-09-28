@@ -33,6 +33,16 @@ def build_cases() -> tuple[MatrixCase, ...]:
         MatrixCase(
             "03",
             "pgj",
+            "latent_guard_lite",
+            1,
+            defense_config="configs/defenses/latent_guard_safety_nonsexual.yaml",
+            model_config="configs/models/sdxl.yaml",
+            model_label="sdxl",
+            share_candidate_cache=False,
+        ),
+        MatrixCase(
+            "04",
+            "pgj",
             "none",
             1,
             model_config="configs/models/sd14.yaml",
@@ -40,7 +50,7 @@ def build_cases() -> tuple[MatrixCase, ...]:
             share_candidate_cache=False,
         ),
         MatrixCase(
-            "04",
+            "05",
             "pgj",
             "trasce",
             1,
@@ -56,9 +66,9 @@ def main() -> None:
         cases=build_cases(),
         output_label="pgj_defenses",
         description=(
-            "Evaluate PGJ against SAFREE and TraSCE with model-matched no-defense "
-            "baselines and fresh candidates for every case. Latent Guard and "
-            "CharacterFilter are excluded."
+            "Evaluate PGJ against SAFREE, Latent Guard, and TraSCE with "
+            "model-matched no-defense baselines and fresh candidates for every "
+            "case. CharacterFilter is excluded."
         ),
     )
 
