@@ -2,21 +2,16 @@
 
 import csv
 import json
-from pathlib import Path
-
-import pytest
 
 from t2i_framework.attacks.base import Attack
 from t2i_framework.core.types import AttackCandidate, DefenseDecision
 from t2i_framework.defenses.base import Defense
-from t2i_framework.defenses.character_filter import CharacterFilterDefense
-from t2i_framework.defenses.semantic_concepts import SemanticMatch
 from t2i_framework.evaluation.runner import ExperimentRunner
 from t2i_framework.models.mock_model import MockImageModel
 
 
 class Candidates(Attack):
-    name = "search_attack"
+    name = "test_candidates"
 
     def generate(self, prompt, target_concept=None, context=None):
         return [AttackCandidate(f"neutral scene {index}") for index in range(5)]
@@ -54,13 +49,6 @@ def read_rows(output):
     ]
 
 
-def read_details(output):
-    return [
-        json.loads(line)
-        for line in (output / "details.jsonl").read_text(encoding="utf-8").splitlines()
-    ]
-
-
 def test_quarantine_progress_errors_and_standard_exports(tmp_path):
     output = tmp_path / "results"
     defense = InspectDefense(output, failure=True)
@@ -77,43 +65,27 @@ def test_quarantine_progress_errors_and_standard_exports(tmp_path):
     assert results[4].generated_image_path is None
     rows = read_rows(output)
     assert len(rows) == 5
-    details = read_details(output)
-    assert details[1]["scores"]["candidate_score"] is None
-    assert details[4]["scores"]["candidate_score"] is None
-    assert results[1].scores["candidate_score"] == float("-inf")
-    winner = next(result for result in results if result.metadata.get("selected_best"))
-    assert winner.success
-    assert Path(winner.metadata["final_image_path"]).read_bytes() == Path(
-        winner.generated_image_path
-    ).read_bytes()
-    assert sum(bool(row["selected_best"]) for row in rows) == 1
+    assert results[1].scores == {}
+    assert results[4].scores == {}
     with (output / "results.csv").open(encoding="utf-8", newline="") as handle:
         csv_rows = list(csv.DictReader(handle))
     assert json.loads(csv_rows[4]["scores"]) == {}
     assert "metadata" not in csv_rows[0]
 
 
-@pytest.mark.parametrize("stage", ["blip", "minilm_image"])
-def test_real_defense_interface_fails_closed(tmp_path, stage):
-    class Captioner:
-        def caption(self, path):
-            assert path.is_file()
-            if stage == "blip":
-                raise RuntimeError("BLIP test failure")
-            return "caption: neutral scene"
+def test_image_defense_failure_is_closed(tmp_path):
+    class BrokenImageDefense(Defense):
+        name = "broken_image_defense"
 
-    class Matcher:
-        def match(self, text, concepts):
-            if text.startswith("caption:"):
-                raise RuntimeError("MiniLM test failure")
-            return SemanticMatch("concept", "neutral", 0.1)
+        def check_image(self, image_path, target_concept=None, context=None):
+            assert image_path.is_file()
+            raise RuntimeError("image defense test failure")
 
     output = tmp_path / "results"
-    defense = CharacterFilterDefense(captioner=Captioner(), semantic_matcher=Matcher())
     results = ExperimentRunner(
-        MockImageModel(), Candidates(), defense, output
+        MockImageModel(), Candidates(), BrokenImageDefense(), output
     ).run([("neutral scene", None)], 42)
-    assert results[0].metadata["error_stage"] == stage
+    assert results[0].metadata["error_stage"] == "image_defense"
     assert results[0].metadata["status"] == "ERROR"
     assert not results[0].success
     assert results[0].generated_image_path is None

@@ -14,7 +14,6 @@ from t2i_framework.core.logging_utils import console
 from t2i_framework.core.types import EvaluationResult, PromptCase
 from t2i_framework.defenses.base import Defense
 from t2i_framework.evaluation.llm_image_judge import LLMImageJudge
-from t2i_framework.evaluation.metrics import text_similarity
 from t2i_framework.evaluation.prompt_cases import read_prompt_file as read_prompt_file
 from t2i_framework.evaluation.result_writer import ResultWriter
 from t2i_framework.models.base import ImageModel
@@ -112,6 +111,13 @@ class ExperimentRunner:
                 target_concept=target_concept,
                 context=attack_context,
             )[: self.max_candidates]
+        except Exception:
+            if adaptive_attack:
+                try:
+                    self.attack.cleanup(attack_context)
+                except Exception as exc:
+                    console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
+            raise
         finally:
             if not adaptive_attack:
                 try:
@@ -119,6 +125,11 @@ class ExperimentRunner:
                 except Exception as exc:
                     console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
         if not candidates:
+            if adaptive_attack:
+                try:
+                    self.attack.cleanup(attack_context)
+                except Exception as exc:
+                    console.print(f"[yellow]Attack cleanup failed:[/yellow] {exc}")
             raise ValueError(f"Attack '{self.attack.name}' returned no candidates.")
 
         results: list[EvaluationResult] = []
@@ -150,7 +161,7 @@ class ExperimentRunner:
                 runtime_seconds=0.0,
                 case_id=prompt_case.case_id,
                 category=prompt_case.category,
-                scores={"candidate_score": float("-inf")},
+                scores={},
                 metadata={"candidate_index": candidate_index, "status": "STARTED"},
             )
             self.writer.append(pending)
@@ -239,10 +250,6 @@ class ExperimentRunner:
 
             image_path = str(retained_image_path) if retained_image_path else None
             image_blocked = not image_decision_allowed
-            similarity_reference = target_concept or prompt
-            lexical_similarity = text_similarity(similarity_reference, candidate.text)
-            filter_pass_score = 1.0 if not prompt_blocked and not image_blocked and image_path else 0.0
-            candidate_score = filter_pass_score + lexical_similarity if filter_pass_score else float("-inf")
 
             evaluation_error: str | None = None
             try:
@@ -269,13 +276,6 @@ class ExperimentRunner:
                     }
                 }
                 judged_success = False
-            scores.update(
-                {
-                    "filter_pass_score": filter_pass_score,
-                    "text_similarity": lexical_similarity,
-                    "candidate_score": candidate_score,
-                }
-            )
             defense_bypassed = bool(not prompt_blocked and not image_blocked and image_path)
             if evaluation_error:
                 success = False
@@ -325,7 +325,6 @@ class ExperimentRunner:
                     "error": error,
                     "evaluation_error": evaluation_error,
                     "blocked_by": blocked_by,
-                    "blip_caption": context.get("blip_caption"),
                     "prompt_defense": prompt_decision_record,
                     "image_defense": image_decision_record,
                     "image_defense_reason": image_decision_record.get("reason"),
@@ -336,9 +335,7 @@ class ExperimentRunner:
                         bool(error),
                     ),
                     "discarded_image_path": discarded_image_path,
-                    "similarity_reference": similarity_reference,
                     "defense_bypassed": defense_bypassed,
-                    "selection_eligible": bool(success),
                     "evaluation": evaluation_metadata,
                 },
             )
@@ -348,7 +345,6 @@ class ExperimentRunner:
                 attack_error = " ".join(str(exc).split())[:300] or type(exc).__name__
                 result.success = False
                 result.metadata["attack_processing_error"] = attack_error
-                result.metadata["selection_eligible"] = False
                 console.print(f"[yellow]Attack result processing failed:[/yellow] {attack_error}")
             self.writer.update(result)
             results.append(result)
@@ -368,18 +364,6 @@ class ExperimentRunner:
                     continue
                 if follow_up is not None:
                     candidates.append(follow_up)
-
-        eligible = [result for result in results if result.success]
-        if eligible and self.attack.name == "search_attack":
-            best = max(eligible, key=lambda item: item.scores["candidate_score"])
-            source = Path(best.generated_image_path or "")
-            final_path = _publish_image(
-                source,
-                self.output_dir / f"case_{index + 1:04d}_best_candidate_seed{seed}.png",
-            )
-            best.metadata["selected_best"] = True
-            best.metadata["final_image_path"] = str(final_path)
-            self.writer.update(best)
 
         if adaptive_attack:
             try:

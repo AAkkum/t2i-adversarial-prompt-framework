@@ -78,11 +78,7 @@ def _summary_row(row: dict[str, Any]) -> dict[str, Any]:
     metadata = row.get("metadata") or {}
     evaluation = metadata.get("evaluation") or {}
     attack = metadata.get("attack_candidate") or {}
-    scores = {
-        key: value
-        for key, value in (row.get("scores") or {}).items()
-        if key not in {"candidate_score", "filter_pass_score", "text_similarity"}
-    }
+    scores = row.get("scores") or {}
     status = "EVALUATION_ERROR" if metadata.get("evaluation_error") else metadata.get("status")
     return {
         "run_id": row.get("run_id"),
@@ -109,8 +105,6 @@ def _summary_row(row: dict[str, Any]) -> dict[str, Any]:
         "runtime_seconds": round(float(row.get("runtime_seconds") or 0.0), 3),
         "status": status,
         "error": metadata.get("error") or metadata.get("evaluation_error"),
-        "selected_best": bool(metadata.get("selected_best", False)),
-        "final_image": metadata.get("final_image_path"),
     }
 
 

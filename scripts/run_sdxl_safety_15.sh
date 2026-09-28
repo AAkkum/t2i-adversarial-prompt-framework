@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# SDXL safety matrix. CharacterFilter and TraSCE are intentionally excluded.
+# SDXL safety matrix for the final SDXL-compatible attacks and defenses.
 # For a prompt-sharded multi-GPU run, use run_sdxl_safety_15_4gpu.sh.
 
 DATASET="${1:-data/datasets/safety_nonsexual/safety_nonsexual_100.csv}"

@@ -3,8 +3,7 @@ from t2i_framework.attacks.daca import DACAAttack
 from t2i_framework.attacks.groot import GrootAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.pgj import PGJAttack
-from t2i_framework.attacks.search_attack import SearchAttack
-from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
+from t2i_framework.attacks.ring_a_bell import RingABellAttack
 
 __all__ = [
     "Attack",
@@ -12,6 +11,5 @@ __all__ = [
     "GrootAttack",
     "IdentityAttack",
     "PGJAttack",
-    "SearchAttack",
-    "TextFoolerStyleAttack",
+    "RingABellAttack",
 ]

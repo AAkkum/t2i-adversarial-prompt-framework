@@ -17,6 +17,6 @@ id,prompt,target_concept,category,habitat,template_id
 Example:
 
 ```bash
-python main.py --model mock --attack textfooler_style --defense character_filter \
+python main.py --model mock --attack identity --defense none \
   --prompt-file data/datasets/animals/animal_prompt_batch_300.csv
 ```

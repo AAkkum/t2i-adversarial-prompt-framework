@@ -2,13 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.latent_guard_lite import (
     LatentGuardLiteDefense,
     _LatentGuardLiteScorer,
 )
 from t2i_framework.defenses.none import NoneDefense
-from t2i_framework.defenses.semantic_concepts import SemanticMatch
 
 
 class FakeLatentGuardScorer:
@@ -18,25 +16,6 @@ class FakeLatentGuardScorer:
     def __call__(self, _prompt: str, terms: list[str]) -> list[float]:
         self.seen_terms = list(terms)
         return [9.5 if term == "mario" else 1.0 for term in terms]
-
-
-class FakeCharacterMatcher:
-    def __init__(self, score: float = 0.9) -> None:
-        self.score = score
-        self.seen_concepts: list[dict[str, str]] = []
-
-    def match(self, _text: str, concepts: dict[str, str]) -> SemanticMatch:
-        self.seen_concepts.append(dict(concepts))
-        term = next(iter(concepts))
-        return SemanticMatch(term, concepts[term], self.score)
-
-
-class FakeCaptioner:
-    def __init__(self, caption: str = "target-like generated caption") -> None:
-        self.caption_text = caption
-
-    def caption(self, _image_path: Path) -> str:
-        return self.caption_text
 
 
 def test_none_defense_allows() -> None:
@@ -205,65 +184,3 @@ def test_latent_guard_lite_caches_concept_embeddings(tmp_path: Path) -> None:
 
     assert embedded_batches == [["mario", "adidas"], ["butterfly"]]
     assert set(scorer._concept_embedding_cache) == {"mario", "adidas", "butterfly"}
-
-
-def test_character_filter_blocks_target_as_runtime_keyword(tmp_path: Path) -> None:
-    terms_path = tmp_path / "blocked_terms.txt"
-    concepts_path = tmp_path / "concept_targets.json"
-    terms_path.write_text("", encoding="utf-8")
-    concepts_path.write_text("{}", encoding="utf-8")
-    defense = CharacterFilterDefense(
-        terms_path=terms_path,
-        concepts_path=concepts_path,
-        enable_semantic_prompt=False,
-        enable_image_semantic=False,
-    )
-
-    decision = defense.check_prompt("mario jumping in the air", target_concept="mario")
-
-    assert not decision.allowed
-    assert decision.metadata["matched_keyword_block"] == "mario"
-    assert decision.metadata["closest_protected_concept"] == "mario"
-    assert decision.metadata["target_concept_used"] is True
-
-
-def test_character_filter_adds_target_to_semantic_prompt_concepts(tmp_path: Path) -> None:
-    terms_path = tmp_path / "blocked_terms.txt"
-    concepts_path = tmp_path / "concept_targets.json"
-    terms_path.write_text("", encoding="utf-8")
-    concepts_path.write_text("{}", encoding="utf-8")
-    matcher = FakeCharacterMatcher(score=0.9)
-    defense = CharacterFilterDefense(
-        terms_path=terms_path,
-        concepts_path=concepts_path,
-        semantic_matcher=matcher,
-        captioner=FakeCaptioner(),
-        enable_image_semantic=False,
-    )
-
-    decision = defense.check_prompt("red capped hero in a platform game", target_concept="mario")
-
-    assert not decision.allowed
-    assert matcher.seen_concepts[0]["mario"] == "mario"
-    assert decision.metadata["target_concept_used"] is True
-
-def test_character_filter_adds_target_to_image_semantic_concepts(tmp_path: Path) -> None:
-    terms_path = tmp_path / "blocked_terms.txt"
-    concepts_path = tmp_path / "concept_targets.json"
-    image_path = tmp_path / "image.png"
-    terms_path.write_text("", encoding="utf-8")
-    concepts_path.write_text("{}", encoding="utf-8")
-    image_path.write_bytes(b"placeholder")
-    matcher = FakeCharacterMatcher(score=0.9)
-    defense = CharacterFilterDefense(
-        terms_path=terms_path,
-        concepts_path=concepts_path,
-        semantic_matcher=matcher,
-        captioner=FakeCaptioner("red capped hero in a platform game"),
-    )
-
-    decision = defense.check_image(image_path, target_concept="mario")
-
-    assert not decision.allowed
-    assert matcher.seen_concepts[0]["mario"] == "mario"
-    assert decision.metadata["target_concept_used"] is True

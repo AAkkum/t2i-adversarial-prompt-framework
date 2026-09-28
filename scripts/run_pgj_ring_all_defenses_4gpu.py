@@ -7,7 +7,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.run_sdxl_safety_15_4gpu import MatrixCase, main as run_matrix
+from scripts.run_sdxl_safety_15_4gpu import MatrixCase, main as run_matrix  # noqa: E402
 
 
 ATTACKS = ("pgj", "ring_a_bell")
@@ -18,7 +18,6 @@ def build_cases() -> tuple[MatrixCase, ...]:
     for attack in ATTACKS:
         for model_label, model_config, defense in (
             ("sdxl", "configs/models/sdxl.yaml", "none"),
-            ("sdxl", "configs/models/sdxl.yaml", "character_filter"),
             ("sdxl", "configs/models/sdxl.yaml", "safree"),
             ("sd14", "configs/models/sd14.yaml", "none"),
             ("sd14", "configs/models/sd14.yaml", "trasce"),
@@ -41,8 +40,8 @@ def main() -> None:
         cases=build_cases(),
         output_label="pgj_ring_defenses",
         description=(
-            "Evaluate PGJ and Ring-A-Bell against none, CharacterFilter, SAFREE, "
-            "and TraSCE across their compatible models. Candidates are generated "
+            "Evaluate PGJ and Ring-A-Bell against none, SAFREE, and TraSCE "
+            "across their compatible models. Candidates are generated "
             "fresh for this matrix and reused across its defense cases."
         ),
     )

@@ -1,7 +1,7 @@
 from scripts.run_pgj_defenses_4gpu import build_cases
 
 
-def test_pgj_matrix_includes_latent_guard_and_excludes_character_filter() -> None:
+def test_pgj_matrix_covers_final_compatible_defenses() -> None:
     cases = build_cases()
 
     assert [
@@ -19,4 +19,3 @@ def test_pgj_matrix_includes_latent_guard_and_excludes_character_filter() -> Non
     assert cases[2].defense_config == (
         "configs/defenses/latent_guard_safety_nonsexual.yaml"
     )
-    assert all(case.defense != "character_filter" for case in cases)

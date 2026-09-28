@@ -22,5 +22,5 @@ def test_merge_configs_deep_merges_later_values() -> None:
 
 
 def test_default_component_config_path_finds_matching_yaml() -> None:
-    path = default_component_config_path("attacks", "textfooler_style", Path("configs"))
-    assert path == Path("configs") / "attacks" / "textfooler_style.yaml"
+    path = default_component_config_path("attacks", "groot", Path("configs"))
+    assert path == Path("configs") / "attacks" / "groot.yaml"

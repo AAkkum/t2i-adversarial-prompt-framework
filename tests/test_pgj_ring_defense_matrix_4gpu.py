@@ -5,18 +5,17 @@ def test_pgj_ring_matrix_covers_compatible_defenses_without_latent_guard() -> No
     cases = build_cases()
 
     assert ATTACKS == ("pgj", "ring_a_bell")
-    assert len(cases) == 10
-    assert len({case.name for case in cases}) == 10
+    assert len(cases) == 8
+    assert len({case.name for case in cases}) == 8
 
     expected_per_attack = [
         ("sdxl", "configs/models/sdxl.yaml", "none"),
-        ("sdxl", "configs/models/sdxl.yaml", "character_filter"),
         ("sdxl", "configs/models/sdxl.yaml", "safree"),
         ("sd14", "configs/models/sd14.yaml", "none"),
         ("sd14", "configs/models/sd14.yaml", "trasce"),
     ]
     for attack_index, attack in enumerate(ATTACKS):
-        block = cases[attack_index * 5 : (attack_index + 1) * 5]
+        block = cases[attack_index * 4 : (attack_index + 1) * 4]
         assert all(case.attack == attack for case in block)
         assert [
             (case.model_label, case.model_config, case.defense) for case in block

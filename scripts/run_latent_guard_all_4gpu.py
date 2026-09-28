@@ -8,7 +8,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.run_sdxl_safety_15_4gpu import (
+from scripts.run_sdxl_safety_15_4gpu import (  # noqa: E402
     REPO_ROOT,
     MatrixCase,
     main as run_matrix,

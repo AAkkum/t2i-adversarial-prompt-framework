@@ -20,12 +20,11 @@ different question.
 
 ## Attack And Defense Data
 
-- `attack_terms.yaml`: TextFooler terms
-- `search_attack/`: Search Attack phrases, target descriptions, and test cases
 - `latent_guard/restricted_concepts.yaml`: example protected concepts and aliases
 - `latent_guard/restricted_concepts_representative_100.yaml`: fixed benchmark blacklist
 - `latent_guard/restricted_concepts_safety_nonsexual_100.yaml`: safety benchmark blacklist
 - `ring_a_bell/concept_pairs_safety_nonsexual_100.json`: safety benchmark concept pairs
+- `ring_a_bell/concept_pairs.json`: project-created general concept pairs
 - `latent_guard/`: location for external LatentGuard weights and parity instructions
 
 Groot does not need decomposition files. It creates its prompt tree with the

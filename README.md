@@ -1,34 +1,27 @@
 # T2I Adversarial Prompt Framework
 
-University project for testing prompt attacks and defenses against local
+University project for evaluating prompt attacks and defenses on local
 text-to-image models.
 
-## Components
+## Final Components
 
-Main attacks:
+Attacks:
 
 - `daca`
 - `groot`
 - `pgj`
 - `ring_a_bell`
-- `search_attack`
-- `textfooler_style`
+- `identity` (unchanged-prompt control)
 
-Main defenses:
+Defenses:
 
-- `character_filter`
-- `latent_guard_lite`
-- `safree` (Stable Diffusion XL)
-- `trasce` (Stable Diffusion 1.4)
+- `latent_guard_lite` (prompt-stage)
+- `safree` (generation-stage, SDXL)
+- `trasce` (generation-stage, Stable Diffusion 1.4)
+- `none` (no-defense control)
 
-`identity` and `none` are controls. One shared local multimodal LLM evaluates
-the generated images. CLIP is not used as the experiment evaluator.
-
-Ring-A-Bell and TraSCE use `configs/models/sd14.yaml` for the published-method
-experiment. See [Ring-A-Bell](docs/ring_a_bell.md) and [TraSCE](docs/trasce.md) for
-commands, defaults, project-created concept pairs and documented deviations.
-SAFREE uses the normal `configs/models/sdxl.yaml` preset; its complete source
-and deviation map is in [SAFREE](docs/SAFREE.md).
+Every real-model run uses the same local multimodal LLM evaluator after image
+generation. The evaluator is separate from the defenses.
 
 ## Installation
 
@@ -38,7 +31,7 @@ source .venv/bin/activate
 pip install -e ".[full]"
 ```
 
-The Diffusers models may require Hugging Face login and accepted model terms:
+Some Diffusers models require a Hugging Face account and accepted model terms:
 
 ```bash
 huggingface-cli login
@@ -46,23 +39,21 @@ huggingface-cli login
 
 ## Local LLM
 
-Groot, DACA, and TextFooler use a local LLM to rewrite prompts. The same server
-evaluates generated images for every real-model run.
+Groot and DACA use a local LLM while constructing attack prompts. The same
+server evaluates generated images for every real-model run.
 
 ```bash
 scripts/start-local-llm.sh
 ```
 
-The model and server settings are in `configs/local_llm.yaml`. If its `model`
-value is a Hugging Face llama.cpp model spec, the start command downloads and
-caches it automatically when needed. The default server is
-the host and port configured in `configs/local_llm.yaml`, with API alias
-`local-llm`.
+Model and server settings are in `configs/local_llm.yaml`. A Hugging Face
+llama.cpp model specification is downloaded and cached automatically when first
+started. PGJ uses its own local Hugging Face backend configured in
+`configs/attacks/pgj.yaml`.
 
-## Quick Checks
+## Running
 
-The mock model checks the pipeline without loading learned models. It does not
-run the image evaluator because its output is only a placeholder image.
+Fast pipeline check without learned models:
 
 ```bash
 python main.py \
@@ -73,20 +64,7 @@ python main.py \
   --target "blue rabbit mascot"
 ```
 
-Real SDXL run:
-
-```bash
-python main.py \
-  --model diffusers \
-  --model-config configs/models/sdxl.yaml \
-  --attack groot \
-  --defense none \
-  --prompt "a blue rabbit mascot standing in a garden" \
-  --target "blue rabbit mascot" \
-  --max-candidates 5
-```
-
-Groot against the three-stage SDXL SAFREE defense:
+Groot against SAFREE on SDXL:
 
 ```bash
 python main.py \
@@ -99,11 +77,6 @@ python main.py \
   --max-candidates 3
 ```
 
-Real Diffusers runs automatically load `configs/evaluation/llm_judge.yaml`.
-Its `policy_violation` rule asks whether unsafe content remains visible and the
-original scene is preserved. Change it to `target_presence` only for benign
-target-preservation experiments.
-
 Batch run:
 
 ```bash
@@ -111,54 +84,37 @@ python main.py \
   --model diffusers \
   --model-config configs/models/sdxl.yaml \
   --attack groot \
-  --defense character_filter \
-  --prompt-file data/datasets/safety_nonsexual/safety_nonsexual_100.csv \
+  --defense safree \
+  --prompt-file data/datasets/safety_nonsexual/safety_nonsexual_10.csv \
   --max-candidates 3
 ```
 
-Start with `data/datasets/safety_nonsexual/safety_nonsexual_10.csv` before an
-expensive 100-row run. The separate
-`data/datasets/representative/representative_prompt_batch_100.csv` remains the
-benign target-preservation benchmark and should use `target_presence`.
+Real Diffusers runs automatically load `configs/evaluation/llm_judge.yaml`.
+Use `policy_violation` for the non-sexual safety dataset. Use
+`target_presence` only for benign target-preservation experiments.
 
-Dedicated four-GPU Latent Guard comparison:
+## Benchmark Matrices
 
-```bash
-bash scripts/run_latent_guard_all_4gpu.sh \
-  --candidate-cache-source results/matrices/<pgj-ring-matrix>
-```
-
-This evaluates `latent_guard_lite` against Identity, PGJ, DACA, GROOT, and
-Ring-A-Bell across SD 1.4 and SD 3.5 Medium. The no-defense baselines come from
-the separate model evaluations. Use `--models sd14` or `--models sd35_medium`
-to run only one model. PGJ and Ring-A-Bell reuse the candidates generated by the
-dedicated defense matrix; DACA keeps its persistent exact-match cache. GROOT
-remains uncached because its search adapts to each defense response. The runner
-refuses to start when
-`data/latent_guard/model_parameters.pth` is missing.
-
-Dedicated PGJ and Ring-A-Bell defense comparison:
+The final SDXL matrix contains five attack rows (`identity` plus four attacks)
+and three defense columns (`none`, `safree`, and `latent_guard_lite`):
 
 ```bash
-bash scripts/run_pgj_ring_all_defenses_4gpu.sh
+bash scripts/run_sdxl_safety_15.sh
 ```
 
-For each attack, this runs SDXL with no defense, CharacterFilter, and SAFREE,
-then SD 1.4 with no defense and TraSCE. Latent Guard is intentionally excluded.
-The suite starts with an empty run-local cache: each updated attack generates
-fresh candidates once, then those exact candidates are reused across defenses
-and can be supplied to the Latent Guard suite afterward.
-
-PGJ-only comparison without CharacterFilter:
+On a four-GPU server:
 
 ```bash
-bash scripts/run_pgj_defenses_4gpu.sh
+bash scripts/run_sdxl_safety_15_4gpu.sh
 ```
 
-This runs SDXL with no defense, SAFREE, and Latent Guard, followed by SD 1.4
-with no defense and TraSCE. Every case generates fresh PGJ candidates;
-candidates are not shared between models or defenses. A resumed incomplete case
-may reuse only its own case-local cache.
+TraSCE is evaluated separately with Stable Diffusion 1.4 because it is tied to
+that pipeline. PGJ and Ring-A-Bell comparison scripts are also available under
+`scripts/`.
+
+Start with `safety_nonsexual_10.csv` before running the full 100-row dataset.
+The benign `representative_prompt_batch_100.csv` answers a different question
+and its results must not be mixed with the safety benchmark.
 
 ## Results
 
@@ -168,18 +124,16 @@ Each run writes:
 - `results.csv`: the same compact data for spreadsheets
 - `details.jsonl`: full technical trace for debugging
 - `config.yaml`: merged run configuration
-- `images/`: allowed generated images
+- `images/`: images released by the defense pipeline
 
-`success` is decided by the shared LLM evaluator. Defense decisions are shown
-separately as `prompt_blocked`, `image_blocked`, and `defense_bypassed`.
+`success` is decided by the shared LLM evaluator. Defense behavior is recorded
+separately through `prompt_blocked`, `image_blocked`, and `defense_bypassed`.
 
 ## Documentation
 
-- `docs/COMPONENTS.md`: current attacks, defenses, and evaluator
-- `docs/ARCHITECTURE.md`: short pipeline description
-- `docs/GROOT.md`: Groot behavior and local server setup
-- `docs/SAFREE.md`: SDXL SAFREE stages, source map, deviations, and command
-- `docs/search_attack.md`: Search Attack behavior
-- `docs/PAPER_IMPLEMENTATION_MAP.md`: owners, papers, and deviations
-- `docs/HOW_TO_ADD_DEFENSE.md`: minimal defense implementation steps
-- `docs/SAFETY_SCOPE.md`: project safety boundary
+- [Components](docs/COMPONENTS.md): final attacks, defenses, and evaluator
+- [Architecture](docs/ARCHITECTURE.md): pipeline and file responsibilities
+- [Paper map](docs/PAPER_IMPLEMENTATION_MAP.md): ownership, sources, deviations
+- [Groot](docs/GROOT.md), [DACA](docs/DACA.md), [Ring-A-Bell](docs/ring_a_bell.md)
+- [SAFREE](docs/SAFREE.md), [TraSCE](docs/trasce.md)
+- [Safety scope](docs/SAFETY_SCOPE.md)

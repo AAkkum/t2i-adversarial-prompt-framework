@@ -7,7 +7,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.run_sdxl_safety_15_4gpu import MatrixCase, main as run_matrix
+from scripts.run_sdxl_safety_15_4gpu import MatrixCase, main as run_matrix  # noqa: E402
 
 
 def build_cases() -> tuple[MatrixCase, ...]:
@@ -68,7 +68,7 @@ def main() -> None:
         description=(
             "Evaluate PGJ against SAFREE, Latent Guard, and TraSCE with "
             "model-matched no-defense baselines and fresh candidates for every "
-            "case. CharacterFilter is excluded."
+            "case."
         ),
     )
 

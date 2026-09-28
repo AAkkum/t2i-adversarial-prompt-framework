@@ -50,12 +50,11 @@ CSV columns:
 
 ## Component Support
 
-- Groot, PGJ, DACA and TextFooler receive `prompt` and `target_concept` directly.
-- Search Attack descriptions are in `data/search_attack/concept_targets.json`.
+- Groot, PGJ, and DACA receive `prompt` and `target_concept` directly.
 - Ring-A-Bell pairs are in
   `data/ring_a_bell/concept_pairs_safety_nonsexual_100.json`; use
   `configs/attacks/ring_a_bell.yaml`.
-- CharacterFilter, SAFREE and TraSCE use the row's `target_concept` directly.
+- SAFREE and TraSCE use the row's `target_concept` directly.
 - LatentGuard uses `configs/defenses/latent_guard_safety_nonsexual.yaml`.
 
 The shared evaluator in `configs/evaluation/llm_judge.yaml` uses

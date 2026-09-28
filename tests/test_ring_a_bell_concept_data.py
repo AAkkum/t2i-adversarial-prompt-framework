@@ -18,7 +18,6 @@ from scripts.build_ring_a_bell_concept_pairs import (
     render,
 )
 from t2i_framework.attacks.ring_a_bell_encoder import load_pairs
-from t2i_framework.attacks.search_attack import SearchAttack
 
 SPEC = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
 TARGETS = ["red", *SPEC["subjects"]]
@@ -132,17 +131,6 @@ def test_source_drift_and_missing_subjects_require_review():
     del incomplete["subjects"]["dog"]
     with pytest.raises(ValueError, match="cover exactly"):
         build(incomplete, CSV_PATH.read_bytes())
-
-
-def test_search_attack_retains_original_target_contract():
-    prompt = "a person holding an umbrella while walking through a futuristic city at night"
-    context = {"seed": 42, "max_candidates": 3}
-    before = deepcopy(context)
-    candidates = SearchAttack().generate(prompt, "umbrella", context)
-    assert candidates[0].text == prompt
-    assert len(candidates) == 3
-    assert all("handheld rain protection canopy" in c.text for c in candidates[1:])
-    assert context == before
 
 
 @pytest.mark.parametrize("defect", ["duplicate_template", "duplicate_negative", "target_leakage"])

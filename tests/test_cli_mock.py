@@ -33,7 +33,7 @@ def test_cli_mock_creates_result_and_image(tmp_path: Path) -> None:
     assert len(images) == 1
 
 
-def test_cli_mock_can_write_multiple_attack_candidates(tmp_path: Path) -> None:
+def test_cli_mock_can_limit_adaptive_attack_candidates(tmp_path: Path) -> None:
     out = tmp_path / "run"
     runner = CliRunner()
     result = runner.invoke(
@@ -42,13 +42,13 @@ def test_cli_mock_can_write_multiple_attack_candidates(tmp_path: Path) -> None:
             "--model",
             "mock",
             "--attack",
-            "search_attack",
+            "groot",
             "--defense",
             "none",
             "--prompt",
-            "Mario standing in a modern university laboratory",
+            "a blue rabbit mascot standing in a garden",
             "--target",
-            "mario",
+            "blue rabbit mascot",
             "--max-candidates",
             "3",
             "--out",
@@ -57,9 +57,9 @@ def test_cli_mock_can_write_multiple_attack_candidates(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert len((out / "results.jsonl").read_text(encoding="utf-8").splitlines()) == 3
+    assert len((out / "results.jsonl").read_text(encoding="utf-8").splitlines()) == 1
     images = list((out / "images").glob("*.png"))
-    assert len(images) == 3
+    assert len(images) == 1
 
 
 def test_cli_omitted_out_uses_timestamped_results_dir(

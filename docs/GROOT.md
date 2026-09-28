@@ -47,7 +47,7 @@ python main.py \
   --model diffusers \
   --model-config configs/models/sdxl.yaml \
   --attack groot \
-  --defense character_filter \
+  --defense safree \
   --prompt "a blue rabbit mascot standing in a garden" \
   --target "blue rabbit mascot" \
   --max-candidates 5

@@ -32,8 +32,8 @@ from t2i_framework.attacks.ring_a_bell_search import (
 )
 from t2i_framework.core.config import load_yaml_config
 from t2i_framework.core.registry import available_components, build_attack, build_defense
-from t2i_framework.defenses.character_filter import CharacterFilterDefense
-from t2i_framework.defenses.semantic_concepts import SemanticMatch
+from t2i_framework.core.types import DefenseDecision
+from t2i_framework.defenses.base import Defense
 from t2i_framework.evaluation.runner import ExperimentRunner
 from t2i_framework.models.mock_model import MockImageModel
 
@@ -78,23 +78,26 @@ def fake_encoder(monkeypatch):
 
 @pytest.fixture
 def small_config():
-    return {"attack": {"population_size": 6, "generations": 4, "prompt_length": 3}}
+    return {
+        "attack": {
+            "population_size": 6,
+            "generations": 4,
+            "prompt_length": 3,
+            "concept_pairs_path": "data/ring_a_bell/concept_pairs.json",
+        }
+    }
 
 
 def test_registry_and_original_defaults():
-    assert {
-        "identity",
-        "daca",
-        "groot",
-        "textfooler_style",
-        "pgj",
-        "search_attack",
-        "ring_a_bell",
-    } <= set(available_components()["attacks"])
+    assert set(available_components()["attacks"]) == {
+        "identity", "daca", "groot", "pgj", "ring_a_bell"
+    }
     assert isinstance(build_attack("ring_a_bell"), RingABellAttack)
     config = load_yaml_config(Path("configs/attacks/ring_a_bell.yaml"))["attack"]
     config.pop("name")
-    assert RingABellSettings(**config) == RingABellSettings()
+    assert RingABellSettings(**config) == replace(
+        RingABellSettings(), concept_pairs_path=config["concept_pairs_path"]
+    )
     settings = RingABellSettings()
     assert (settings.population_size, settings.generations, settings.prompt_length) == (
         200,
@@ -437,24 +440,22 @@ def test_supported_targets_start_search_with_original_prompt(fake_encoder, promp
     assert fake_encoder.closed
 
 
-class Matcher:
-    def __init__(self, prompt_score=0.1, image_score=0.1):
-        self.prompt_score, self.image_score = prompt_score, image_score
+class StageDefense(Defense):
+    name = "stage_defense"
 
-    def match(self, text, concepts):
-        assert "red" in concepts
-        return SemanticMatch(
-            "red", "red", self.image_score if text == "caption" else self.prompt_score
-        )
+    def __init__(self, stage: str = "allowed") -> None:
+        self.stage = stage
+        self.image_calls = 0
 
+    def check_prompt(self, prompt, target_concept=None, context=None):
+        return DefenseDecision(allowed=self.stage != "prompt", reason="test decision")
 
-class Captioner:
-    calls = 0
-
-    def caption(self, image_path):
+    def check_image(self, image_path, target_concept=None, context=None):
         assert image_path.is_file() and ".image_quarantine" in image_path.parts
-        self.calls += 1
-        return "caption"
+        self.image_calls += 1
+        if self.stage == "image_error":
+            raise RuntimeError("controlled failure")
+        return DefenseDecision(allowed=self.stage != "image", reason="test decision")
 
 
 class CountingModel(MockImageModel):
@@ -465,17 +466,10 @@ class CountingModel(MockImageModel):
         return super().generate(*args, **kwargs)
 
 
-@pytest.mark.parametrize("stage", ["keyword", "semantic_prompt", "image", "allowed"])
-def test_real_defense_pipeline_quarantine_and_release(tmp_path, fake_encoder, small_config, stage):
-    fake_encoder.decoded = "a red cube" if stage == "keyword" else FakeEncoder.decoded
+@pytest.mark.parametrize("stage", ["prompt", "image", "allowed"])
+def test_defense_pipeline_quarantine_and_release(tmp_path, fake_encoder, small_config, stage):
     model = CountingModel()
-    captioner = Captioner()
-    defense = CharacterFilterDefense(
-        semantic_matcher=Matcher(
-            0.8 if stage == "semantic_prompt" else 0.1, 0.8 if stage == "image" else 0.1
-        ),
-        captioner=captioner,
-    )
+    defense = StageDefense(stage)
     original_check = defense.check_prompt
 
     def inspect(prompt, **kwargs):
@@ -488,9 +482,9 @@ def test_real_defense_pipeline_quarantine_and_release(tmp_path, fake_encoder, sm
     result = ExperimentRunner(model, RingABellAttack(), defense, output).run(
         [("a red cube on a table", "red")], 42, small_config
     )[0]
-    generated = stage in ("image", "allowed")
+    generated = stage != "prompt"
     assert model.calls == int(generated)
-    assert captioner.calls == int(generated)
+    assert defense.image_calls == int(generated)
     assert result.metadata["image_disposition"] == (
         "saved"
         if stage == "allowed"
@@ -514,8 +508,7 @@ def test_real_defense_pipeline_quarantine_and_release(tmp_path, fake_encoder, sm
         "concept_extraction",
         "prompt_discovery",
         "generation",
-        "blip",
-        "minilm_image",
+        "image_defense",
     ],
 )
 def test_errors_fail_closed_and_preserve_error_stage(tmp_path, fake_encoder, small_config, stage):
@@ -523,8 +516,7 @@ def test_errors_fail_closed_and_preserve_error_stage(tmp_path, fake_encoder, sma
         raise RuntimeError("controlled failure")
 
     model = CountingModel()
-    captioner = Captioner()
-    matcher = Matcher()
+    defense = StageDefense("image_error" if stage == "image_defense" else "allowed")
     if stage == "encoder_load":
         fake_encoder.load = fail
     elif stage == "concept_extraction":
@@ -533,13 +525,6 @@ def test_errors_fail_closed_and_preserve_error_stage(tmp_path, fake_encoder, sma
         fake_encoder.losses = fail
     elif stage == "generation":
         model.generate = fail
-    elif stage == "blip":
-        captioner.caption = fail
-    elif stage == "minilm_image":
-        original = matcher.match
-        matcher.match = lambda text, concepts: (
-            fail() if text == "caption" else original(text, concepts)
-        )
     output = tmp_path / "out"
 
     class RecordingAttack(RingABellAttack):
@@ -548,12 +533,7 @@ def test_errors_fail_closed_and_preserve_error_stage(tmp_path, fake_encoder, sma
             super().cleanup(context)
 
     attack = RecordingAttack()
-    runner = ExperimentRunner(
-        model,
-        attack,
-        CharacterFilterDefense(semantic_matcher=matcher, captioner=captioner),
-        output,
-    )
+    runner = ExperimentRunner(model, attack, defense, output)
     if stage in {"encoder_load", "concept_extraction", "prompt_discovery"}:
         # The existing Attack contract propagates errors after cleanup. Do not
         # change every attack's runner semantics just to manufacture ERROR rows.
@@ -561,7 +541,7 @@ def test_errors_fail_closed_and_preserve_error_stage(tmp_path, fake_encoder, sma
             runner.run([("a red cube on a table", "red")], 42, small_config)
         assert attack.final_context["attack_error_stage"] == stage
         assert fake_encoder.closed
-        assert model.calls == captioner.calls == 0
+        assert model.calls == defense.image_calls == 0
         assert not (output / "details.jsonl").exists()
         assert not list(output.rglob("*.png"))
         assert not list((tmp_path / ".image_quarantine").rglob("*.png"))
@@ -619,7 +599,7 @@ def test_cli_with_small_explicit_config(tmp_path, fake_encoder, small_config):
 
 @pytest.mark.parametrize(
     "attack_name",
-    ["identity", "search_attack", "daca", "textfooler_style", "pgj"],
+    ["identity", "daca", "groot", "pgj"],
 )
 @pytest.mark.parametrize("failure", ["raises", "empty"])
 def test_existing_attack_error_contract_unchanged(tmp_path, monkeypatch, attack_name, failure):
@@ -727,7 +707,7 @@ def test_sd14_adapter_offload_and_release_with_fake_pipeline(
     result = ExperimentRunner(
         model,
         RingABellAttack(),
-        CharacterFilterDefense(semantic_matcher=Matcher(), captioner=Captioner()),
+        build_defense("none"),
         tmp_path / "output",
     ).run([("a red cube on a table", "red")], 42, config)[0]
     assert result.success

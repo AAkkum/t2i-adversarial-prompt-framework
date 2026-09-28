@@ -787,8 +787,9 @@ def test_cli_configuration_and_adversarial_text_reach_trasce(monkeypatch, tmp_pa
                     "width": 4,
                     "height": 4,
                 },
-                "defense": {"num_inference_steps": 2},
-            }
+                    "defense": {"num_inference_steps": 2},
+                    "evaluation": {"llm_judge": {"success_mode": "target_presence"}},
+                }
         )
     )
     result = CliRunner().invoke(

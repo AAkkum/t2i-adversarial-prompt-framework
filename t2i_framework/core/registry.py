@@ -9,10 +9,7 @@ from t2i_framework.attacks.groot import GrootAttack
 from t2i_framework.attacks.identity import IdentityAttack
 from t2i_framework.attacks.pgj import PGJAttack
 from t2i_framework.attacks.ring_a_bell import RingABellAttack
-from t2i_framework.attacks.search_attack import SearchAttack
-from t2i_framework.attacks.textfooler_style import TextFoolerStyleAttack
 from t2i_framework.defenses.base import Defense
-from t2i_framework.defenses.character_filter import CharacterFilterDefense
 from t2i_framework.defenses.latent_guard_lite import LatentGuardLiteDefense
 from t2i_framework.defenses.none import NoneDefense
 from t2i_framework.defenses.safree import SAFREEDefense
@@ -30,10 +27,8 @@ MODEL_REGISTRY: dict[str, Callable[..., ImageModel]] = {
 
 ATTACK_REGISTRY: dict[str, Callable[[], Attack]] = {
     "daca": DACAAttack,
-    "identity": IdentityAttack,
-    "textfooler_style": TextFoolerStyleAttack,
     "groot": GrootAttack,
-    "search_attack": SearchAttack,
+    "identity": IdentityAttack,
     "pgj": PGJAttack,
     "ring_a_bell": RingABellAttack,
 }
@@ -42,7 +37,6 @@ DEFENSE_REGISTRY: dict[str, Callable[[], Defense]] = {
     "none": NoneDefense,
     "safree": SAFREEDefense,
     "trasce": TraSCEDefense,
-    "character_filter": CharacterFilterDefense,
     "latent_guard_lite": LatentGuardLiteDefense,
 }
 

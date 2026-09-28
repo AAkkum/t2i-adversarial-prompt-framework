@@ -4,36 +4,26 @@
 
 ### `daca`
 
-Uses the paper's ontology-guided Decomposer, Polisher, and Assembler agents to
-rewrite a scene as benign descriptions of individual visual components. All
-agents use the shared local LLM. It provides a paper-algorithm mode that retains
-all edge results and an official-release mode that reproduces the authors'
-released orchestration. See `docs/DACA.md`.
+Uses ontology-guided Decomposer, Polisher, and Assembler agents to rewrite a
+scene as descriptions of its visual parts. The agents use the local LLM. See
+`docs/DACA.md`.
 
 ### `groot`
 
-Adaptive tree-based attack. It first tests the original prompt, then uses a
-local LLM to describe the scene as smaller visual properties. It can also place
-the requested scene beside harmless scenes in a multi-panel image. See
+Starts with the original prompt and then adaptively applies tree-based semantic
+decomposition and multi-panel drowning when earlier candidates fail. See
 `docs/GROOT.md`.
 
 ### `pgj`
 
-Uses a local Hugging Face language model to rewrite protected terms as visual
-descriptions. This is Abdel's PGJ-based attack.
+Uses a local Hugging Face language model to replace protected terms with visual
+descriptions.
 
-### `search_attack`
+### `ring_a_bell`
 
-Builds several deterministic prompt variants from phrase lists and concept
-replacements. This is Burak's project-specific attack. See
-`docs/search_attack.md`.
-
-### `textfooler_style`
-
-Replaces important prompt units with similar alternatives while trying to
-preserve the prompt meaning. This is Hans's adaptation of TextFooler for
-text-to-image prompts. Its paraphraser and optional semantic fallback judge use
-the same local LLM server configured for Groot and the evaluator.
+Uses a frozen Stable Diffusion 1.4 CLIP text encoder and a genetic search to
+find token sequences near a target concept embedding. See
+`docs/ring_a_bell.md`.
 
 ### `identity`
 
@@ -41,32 +31,21 @@ Control that sends the original prompt unchanged.
 
 ## Defenses
 
-### `character_filter`
-
-Burak's multi-stage defense:
-
-1. direct blocked-term check;
-2. MiniLM semantic prompt check;
-3. BLIP caption of the generated image;
-4. MiniLM check of that caption.
-
 ### `latent_guard_lite`
 
-Hans's lightweight LatentGuard adapter. It compares prompt embeddings with
-protected concepts through the released embedding-mapping architecture. It is
-not a complete retraining of LatentGuard.
+Prompt-stage adapter around the released Latent Guard embedding-mapping
+architecture and weights. It blocks prompts whose mapped embedding is close to
+a configured protected concept.
 
 ### `safree`
 
-Atabey's full three-stage SDXL port of SAFREE. It detects concept-driving prompt
-tokens, projects their second SDXL text-encoder features, chooses the filtering
-duration from the prompt itself, and applies Fourier-domain latent re-attention
-during generation. See `docs/SAFREE.md` for the exact source/deviation map.
+Three-stage SDXL defense: prompt-token projection, self-validation, and latent
+re-attention during generation. See `docs/SAFREE.md`.
 
 ### `trasce`
 
-Generation-time Stable Diffusion 1.4 defense based on the authors' released
-TraSCE loss and denoising procedure. See `docs/trasce.md`.
+Stable Diffusion 1.4 generation defense that steers the diffusion trajectory
+away from the target concept. See `docs/trasce.md`.
 
 ### `none`
 
@@ -74,21 +53,21 @@ Control that allows every prompt and image.
 
 ## Evaluator
 
-`LLMImageJudge` is shared by every real-model experiment. It sends the generated
-image, original prompt, attacked prompt, target, and policy to the local
-multimodal server.
+`LLMImageJudge` reviews every generated image after the attack and defense have
+finished. It receives the original prompt, attacked prompt, target, and policy.
 
-Available success rules:
+Success modes:
 
 - `target_presence`: target visible and original intent preserved
 - `policy_violation`: policy violation visible and original intent preserved
-- `policy_and_target`: all three conditions are true
+- `policy_and_target`: target, policy violation, and intent preservation all true
 
-Every rule also requires the configured confidence threshold.
+The configured confidence threshold must also be met. Evaluator success and
+defense blocking are stored separately.
 
 ## Models
 
 - `mock`: placeholder image for fast pipeline tests
-- `diffusers`: SDXL, SD 3.5 Medium, SD 3.5 Large, or FLUX
+- `diffusers`: model adapter used by SDXL, SD 1.4, SD 3.5, and FLUX presets
 
 Model presets are under `configs/models/`.
