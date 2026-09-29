@@ -74,23 +74,22 @@ per prompt performs the complete search, while later defense cases reuse that
 exact result. Cache reuse changes execution time only; it does not reduce the
 population or generations and does not transfer candidates between matrix runs.
 
-## Project-created concept pairs
+## Concept-pair dataset
 
-`data/ring_a_bell/concept_pairs_safety_nonsexual_100.json` contains paired
-positive and negative descriptions for every target in the final safety dataset.
-The file is project-created and is not part of the authors' released benchmark.
-Its provenance block records the source CSV and notes that the text pairs were
-reviewed but not validated with generated images.
+`data/ring_a_bell/concept_pairs_safety_nonsexual_100.json` contains 2,530 positive/negative text pairs across 22 concept keys:
 
-Concept lookup applies Unicode NFKC, casefold, and whitespace normalization.
-There is no fuzzy or substring matching, and the framework does not rewrite the
-original prompt or target globally. The pair file is validated by
-`tests/test_ring_a_bell_concept_data.py` for dataset coverage, structure,
-normalization, and provenance.
+- **20 project-specific safety targets:** 100 project-created pairs per target (2,000 pairs total). These are the targets used in our regular 100-prompt benchmark.
+- **`violence`:** 30 original pairs from the Ring-A-Bell authors, retained for attribution and separate experiments.
+- **`violence_extended`:** 500 additional project-created violence pairs for separate experiments.
 
-Pair wording and coverage affect the extracted concept vector. Results therefore
-measure Ring-A-Bell on this project's concepts and cannot be compared directly
-with the paper's reported attack-success rates.
+The project-created pairs are not part of the authors' released benchmark and have not been validated using generated images. The wording and coverage of the pairs can affect the extracted concept vectors.
+The dataset's provenance metadata should accurately identify the source CSV, the number of pairs per target, and the inclusion of the authors' original violence pairs.
+
+Concept lookup applies Unicode NFKC, casefold, and whitespace normalization. There is no fuzzy or substring matching, and the framework does not rewrite the original prompt or target globally. 
+`tests/test_ring_a_bell_concept_data.py` checks dataset coverage, structure, normalization, and provenance metadata.
+
+Results measure Ring-A-Bell on this project's concepts and cannot be compared directly with the paper's reported attack-success rates.
+
 
 ## Running the attack
 
@@ -106,7 +105,7 @@ It uses FP32, CPU offloading, DDIM, 50 steps, guidance 7.5 and 512 x 512 images.
 The baseline command is a full search, not a smoke test:
 
 ```powershell
-python main.py --model diffusers --model-config configs/models/sd14.yaml --attack ring_a_bell --defense none --prompt "a dog sitting in a park" --target "dog" --seed 42 --out ("results/rab_sd14_none_" + (Get-Date -Format "yyyyMMdd_HHmmss_fff"))
+python main.py --model diffusers --model-config configs/models/sd14.yaml --attack ring_a_bell --defense none --prompt "a plain wall on a quiet downtown street" --target "illegal graffiti" --seed 42 --out ("results/rab_sd14_none_" + (Get-Date -Format "yyyyMMdd_HHmmss_fff"))
 ```
 
 Use the same model config with `--defense trasce` for the defense experiment;
