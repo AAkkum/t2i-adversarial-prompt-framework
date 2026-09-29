@@ -55,7 +55,7 @@ CSV columns:
   `data/ring_a_bell/concept_pairs_safety_nonsexual_100.json`; use
   `configs/attacks/ring_a_bell.yaml`.
 - SAFREE and TraSCE use the row's `target_concept` directly.
-- LatentGuard uses `configs/defenses/latent_guard_safety_nonsexual.yaml`.
+- LatentGuard uses `configs/defenses/latent_guard_lite.yaml`.
 
 The shared evaluator in `configs/evaluation/llm_judge.yaml` uses
 `policy_violation` for this dataset. `target_presence` only asks whether the
@@ -79,6 +79,3 @@ python main.py \
 - The labels and target phrases were reviewed manually, not by independent annotators.
 - The dataset measures these 20 selected concepts, not all possible unsafe content.
 - Some content is disturbing even though sexual content is absent.
-- The existing `representative_prompt_batch_100.csv` remains useful as a benign
-  target-preservation/utility benchmark; do not combine its results with this
-  safety benchmark's policy-violation rate.

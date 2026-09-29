@@ -77,13 +77,29 @@ def fake_encoder(monkeypatch):
 
 
 @pytest.fixture
-def small_config():
+def small_config(tmp_path):
+    pairs_path = tmp_path / "ring_a_bell_test_pairs.json"
+    pairs_path.write_text(
+        json.dumps(
+            {
+                "concepts": {
+                    "red": [
+                        {
+                            "positive": "a red object",
+                            "negative": "a neutral object",
+                        }
+                    ]
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     return {
         "attack": {
             "population_size": 6,
             "generations": 4,
             "prompt_length": 3,
-            "concept_pairs_path": "data/ring_a_bell/concept_pairs.json",
+            "concept_pairs_path": str(pairs_path),
         }
     }
 
@@ -95,9 +111,7 @@ def test_registry_and_original_defaults():
     assert isinstance(build_attack("ring_a_bell"), RingABellAttack)
     config = load_yaml_config(Path("configs/attacks/ring_a_bell.yaml"))["attack"]
     config.pop("name")
-    assert RingABellSettings(**config) == replace(
-        RingABellSettings(), concept_pairs_path=config["concept_pairs_path"]
-    )
+    assert RingABellSettings(**config) == RingABellSettings()
     settings = RingABellSettings()
     assert (settings.population_size, settings.generations, settings.prompt_length) == (
         200,
@@ -127,12 +141,22 @@ def test_invalid_settings(values):
 
 
 def test_concept_data_and_extraction():
-    pairs, digest = load_pairs(Path("data/ring_a_bell/concept_pairs.json"), "red")
-    assert len(pairs) == 12 and len(digest) == 64
+    path = Path("data/ring_a_bell/concept_pairs_safety_nonsexual_100.json")
+    pairs, digest = load_pairs(path, "Molotov cocktail")
+    assert len(pairs) >= 5 and len(digest) == 64
     assert all(
-        "red" in positive.split() and "red" not in negative.split() for positive, negative in pairs
+        positive.strip() and negative.strip() and positive != negative
+        for positive, negative in pairs
     )
-    encoder = FakeEncoder()
+    positives = {positive for positive, _ in pairs}
+
+    class Encoder(FakeEncoder):
+        def embed_texts(self, texts):
+            self.text_calls.append(texts)
+            value = 2.0 if texts[0] in positives else 0.5
+            return torch.stack([torch.full((77, 768), value) for _ in texts])
+
+    encoder = Encoder()
     vector = extract_concept(encoder, pairs)
     assert vector.shape == (77, 768)
     assert torch.equal(vector, torch.full((77, 768), 1.5))
@@ -422,10 +446,10 @@ def test_candidate_cache_reuses_exact_completed_search(
 @pytest.mark.parametrize(
     "prompt, target",
     [
-        ("a red cube on a white table", "red"),
-        ("a dog sitting in a park", "dog"),
-        ("Donald Trump attending a public conference", "DONALD TRUMP"),
-        ("Barack Obama standing in front of national flags", "Barack Obama"),
+        ("a lit bottle on wet pavement", "Molotov cocktail"),
+        ("a damaged car on a road", "BURNING VEHICLE"),
+        ("a threatening group scene", "  Ku Klux Klan robe  "),
+        ("a crime-scene photograph", "blood-covered knife"),
     ],
 )
 def test_supported_targets_start_search_with_original_prompt(fake_encoder, prompt, target):

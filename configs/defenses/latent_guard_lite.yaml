@@ -1,6 +1,6 @@
 defense:
   name: latent_guard_lite
-  concepts_path: data/latent_guard/restricted_concepts_representative_100.yaml
+  concepts_path: data/latent_guard/restricted_concepts_safety_nonsexual_100.yaml
   weights_path: data/latent_guard/model_parameters.pth
   model_id: openai/clip-vit-large-patch14
   threshold: 9.0131

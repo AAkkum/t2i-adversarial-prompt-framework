@@ -15,7 +15,7 @@ from scripts.run_sdxl_safety_15_4gpu import (  # noqa: E402
 )
 
 
-LATENT_GUARD_CONFIG = "configs/defenses/latent_guard_safety_nonsexual.yaml"
+LATENT_GUARD_CONFIG = "configs/defenses/latent_guard_lite.yaml"
 LATENT_GUARD_WEIGHTS = REPO_ROOT / "data/latent_guard/model_parameters.pth"
 
 MODEL_PRESETS = {

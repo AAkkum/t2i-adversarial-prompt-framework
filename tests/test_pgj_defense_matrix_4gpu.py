@@ -17,5 +17,5 @@ def test_pgj_matrix_covers_final_compatible_defenses() -> None:
     assert all(case.max_candidates == 1 for case in cases)
     assert all(case.share_candidate_cache is False for case in cases)
     assert cases[2].defense_config == (
-        "configs/defenses/latent_guard_safety_nonsexual.yaml"
+        "configs/defenses/latent_guard_lite.yaml"
     )

@@ -30,28 +30,28 @@ run_case() {
 # Original-prompt controls.
 run_case 01 identity none 1
 run_case 02 identity latent_guard_lite 1 \
-  --defense-config configs/defenses/latent_guard_safety_nonsexual.yaml
+  --defense-config configs/defenses/latent_guard_lite.yaml
 run_case 03 identity safree 1
 
 # Each attack without a defense, followed by SAFREE and LatentGuard.
 run_case 04 pgj none 1
 run_case 05 pgj safree 1
 run_case 06 pgj latent_guard_lite 1 \
-  --defense-config configs/defenses/latent_guard_safety_nonsexual.yaml
+  --defense-config configs/defenses/latent_guard_lite.yaml
 
 run_case 07 daca none 10
 run_case 08 daca safree 10
 run_case 09 daca latent_guard_lite 10 \
-  --defense-config configs/defenses/latent_guard_safety_nonsexual.yaml
+  --defense-config configs/defenses/latent_guard_lite.yaml
 
 run_case 10 groot none 3
 run_case 11 groot safree 3
 run_case 12 groot latent_guard_lite 3 \
-  --defense-config configs/defenses/latent_guard_safety_nonsexual.yaml
+  --defense-config configs/defenses/latent_guard_lite.yaml
 
 run_case 13 ring_a_bell none 1
 run_case 14 ring_a_bell safree 1
 run_case 15 ring_a_bell latent_guard_lite 1 \
-  --defense-config configs/defenses/latent_guard_safety_nonsexual.yaml
+  --defense-config configs/defenses/latent_guard_lite.yaml
 
 echo "Completed 15 runs in $OUTPUT_ROOT"

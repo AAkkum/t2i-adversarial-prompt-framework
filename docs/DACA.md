@@ -149,10 +149,11 @@ implementation_mode: official_release
 
 ## Comparability
 
-Using SD 3.5, local defenses, or the project's representative dataset measures
-transfer of DACA's method. It does not reproduce the paper's reported DALL-E 3
-or Midjourney bypass rates. Reports must state the attack LLM, target image
-model, defense, dataset, candidate count, and implementation mode.
+Using local Diffusers models, local defenses, and the project's non-sexual
+safety dataset measures transfer of DACA's method. It does not reproduce the
+paper's reported DALL-E 3 or Midjourney bypass rates. Reports must state the
+attack LLM, target image model, defense, dataset, candidate count, and
+implementation mode.
 
 Reference paper: https://arxiv.org/abs/2312.07130
 

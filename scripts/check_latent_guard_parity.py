@@ -155,7 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--concepts-path",
         type=Path,
-        default=Path("data/latent_guard/restricted_concepts_representative_100.yaml"),
+        default=Path("data/latent_guard/restricted_concepts_safety_nonsexual_100.yaml"),
     )
     parser.add_argument(
         "--weights-path",

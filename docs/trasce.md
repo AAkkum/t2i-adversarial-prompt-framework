@@ -151,12 +151,9 @@ trace is absent. The paper also notes classifier bias and the possibility of
 steering toward a secondary class. It does not prescribe a blurred result or a
 particular replacement object.
 
-The user observed a clear dog without the defense and a strongly changed,
-deformed central structure with target dog that was no longer clearly recognizable
-as a dog to an uninformed viewer. This is a qualitative observation of one sanity
-test. Deformation or ambiguity can occur in a generated result, but neither is
-the definition of TraSCE nor sufficient evidence of successful erasure. Image
-quality and concept recognition need separate assessment by the evaluation team.
+Deformation or ambiguity can occur in a generated result, but neither is the
+definition of TraSCE nor sufficient evidence of successful erasure. Image quality
+and concept recognition require separate assessment.
 This defense implements no additional content evaluator. The existing shared LLM
 judge evaluates the generated image and controls experiment success, unchanged.
 Defense bypass flags describe passage through the pipeline, not proof that the
@@ -180,8 +177,9 @@ This is a paper-near implementation on SD1.4 with the differences listed above.
 
 ## Integration and limits
 
-The defense stores its request in the existing shared context. A small model-
-adapter hook runs it during generation; evaluation/runner.py is untouched.
+The defense stores its request in the shared context. The Diffusers model adapter
+calls its generation hook during denoising; the normal runner and evaluator then
+process the result.
 The CLI rejects incompatible models before expensive attack search. TraSCE
 supports SD1.4/DDIM/FP32 only; no fallback is used. SD3.5 remains generally available
 in the framework. An earlier technically executable SD3.5 Flow/MMDiT experiment

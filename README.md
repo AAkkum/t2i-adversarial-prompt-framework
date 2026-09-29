@@ -39,8 +39,8 @@ huggingface-cli login
 
 ## Local LLM
 
-Groot and DACA use a local LLM while constructing attack prompts. The same
-server evaluates generated images for every real-model run.
+The shared multimodal server evaluates generated images and also builds Groot
+prompt trees.
 
 ```bash
 scripts/start-local-llm.sh
@@ -48,8 +48,9 @@ scripts/start-local-llm.sh
 
 Model and server settings are in `configs/local_llm.yaml`. A Hugging Face
 llama.cpp model specification is downloaded and cached automatically when first
-started. PGJ uses its own local Hugging Face backend configured in
-`configs/attacks/pgj.yaml`.
+started. DACA uses a separate text-only server started with
+`scripts/start-daca-llm.sh`. PGJ uses its own local Hugging Face backend
+configured in `configs/attacks/pgj.yaml`.
 
 ## Running
 
@@ -113,8 +114,6 @@ that pipeline. PGJ and Ring-A-Bell comparison scripts are also available under
 `scripts/`.
 
 Start with `safety_nonsexual_10.csv` before running the full 100-row dataset.
-The benign `representative_prompt_batch_100.csv` answers a different question
-and its results must not be mixed with the safety benchmark.
 
 ## Results
 
@@ -137,3 +136,4 @@ separately through `prompt_blocked`, `image_blocked`, and `defense_bypassed`.
 - [Groot](docs/GROOT.md), [DACA](docs/DACA.md), [Ring-A-Bell](docs/ring_a_bell.md)
 - [SAFREE](docs/SAFREE.md), [TraSCE](docs/trasce.md)
 - [Safety scope](docs/SAFETY_SCOPE.md)
+- [Add an attack](docs/HOW_TO_ADD_ATTACK.md), [add a defense](docs/HOW_TO_ADD_DEFENSE.md)

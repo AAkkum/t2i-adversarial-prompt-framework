@@ -54,8 +54,8 @@ python main.py \
 ```
 
 The shared evaluator is configured in `configs/evaluation/llm_judge.yaml`.
-`target_presence` is appropriate for the harmless representative dataset.
-`policy_violation` is appropriate only for a policy-labelled dataset.
+The final safety benchmark uses `policy_violation`. Use `target_presence` only
+for a separate benign target-preservation experiment.
 
 ## Differences From The Paper
 

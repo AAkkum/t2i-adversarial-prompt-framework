@@ -35,7 +35,7 @@ def build_cases() -> tuple[MatrixCase, ...]:
             "pgj",
             "latent_guard_lite",
             1,
-            defense_config="configs/defenses/latent_guard_safety_nonsexual.yaml",
+            defense_config="configs/defenses/latent_guard_lite.yaml",
             model_config="configs/models/sdxl.yaml",
             model_label="sdxl",
             share_candidate_cache=False,

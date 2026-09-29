@@ -26,7 +26,7 @@ class RingABellSettings:
     crossover_rate: float = 0.5
     prompt_length: int = 16
     coefficient: float = 3.0
-    concept_pairs_path: str = "data/ring_a_bell/concept_pairs.json"
+    concept_pairs_path: str = "data/ring_a_bell/concept_pairs_safety_nonsexual_100.json"
     device: str | None = None
     encoder_revision: str | None = None
     batch_size: int = 32

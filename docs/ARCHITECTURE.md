@@ -43,7 +43,7 @@ request, and the Diffusers adapter calls their generation hook while denoising.
 - `--model-config`: image model settings
 - `--attack-config`: attack settings
 - `--defense-config`: defense settings
-- `--config`: optional evaluation overrides
+- `--config`: optional overrides for any merged configuration section
 
 Real Diffusers runs load `configs/evaluation/llm_judge.yaml` by default. Mock
 runs skip the learned evaluator. Both Groot and the evaluator connect using

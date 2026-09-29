@@ -76,39 +76,21 @@ population or generations and does not transfer candidates between matrix runs.
 
 ## Project-created concept pairs
 
-`data/ring_a_bell/concept_pairs.json` contains **PROJECT-CREATED CONCEPT PAIRS**:
-101 concepts, 12 pairs each, 1,212 pairs total. These cover the 100 distinct targets
-in the representative CSV plus red. None of these pairs, including red, is claimed
-to be an original author dataset.
+`data/ring_a_bell/concept_pairs_safety_nonsexual_100.json` contains paired
+positive and negative descriptions for every target in the final safety dataset.
+The file is project-created and is not part of the authors' released benchmark.
+Its provenance block records the source CSV and notes that the text pairs were
+reviewed but not validated with generated images.
 
-The source is `concept_pair_spec.json`: 12 context templates, a positive subject
-and three reviewed negative subjects for each CSV concept. Each negative is used
-in four contexts. The existing red pairs are stored explicitly in the spec.
-The script builds both the pair file and `representative_target_audit.csv`.
-It pins the source CSV hash and never rewrites the dataset.
+Concept lookup applies Unicode NFKC, casefold, and whitespace normalization.
+There is no fuzzy or substring matching, and the framework does not rewrite the
+original prompt or target globally. The pair file is validated by
+`tests/test_ring_a_bell_concept_data.py` for dataset coverage, structure,
+normalization, and provenance.
 
-Verify the checked-in data without rewriting it:
-
-```powershell
-python scripts/build_ring_a_bell_concept_pairs.py --check
-```
-
-To rebuild after a reviewed spec change, run the same script without `--check`.
-Generated outputs should be reviewed before using them in an experiment.
-
-Concept lookup applies Unicode NFKC, casefold and whitespace normalization only.
-There is no fuzzy or substring matching. Donald Trump and Barack Obama remain
-separate concepts. The original prompt and framework target are not normalized
-or relabeled globally.
-
-Controlled subject substitutions reduce context changes, but cannot guarantee
-perfect semantic isolation. Person identity, brands, characters and compound
-concepts are particularly difficult. The pairs were not validated by image
-classifiers. Template repetition and negative-subject choice can bias a vector.
-The representative audit records 93 explicit targets and seven unbranding cases
-requiring semantic review (six ambiguous, one conflicting cue). In particular,
-the Audi case describes a twin-kidney grille, a conflicting brand cue. These cases
-are documented in the audit CSV and source spec; the source dataset is unchanged.
+Pair wording and coverage affect the extracted concept vector. Results therefore
+measure Ring-A-Bell on this project's concepts and cannot be compared directly
+with the paper's reported attack-success rates.
 
 ## Running the attack
 
@@ -136,13 +118,13 @@ outputs include the resolved config, compact result CSV/JSONL, `details.jsonl`
 and generated images. Attack metadata in `details.jsonl` records parameters,
 token IDs, fitness and concept-data hashes.
 Fitness measures text-embedding distance; neither it nor a generated image proves
-attack success. Content evaluation is handled by other team members.
+attack success. The shared multimodal LLM evaluates the generated image afterward.
 
 ## Deviations from the original implementation
 
 | Status | Original | Ours | Reason | Likely impact |
 |---|---|---|---|---|
-| PROJECT DATA DIFFERENCE | Author nudity/violence pairs and benchmark subsets | 101 project concepts, 12 pairs each, representative and manual prompts | Project scope | Different concept vectors and difficulty; no direct ASR comparison |
+| PROJECT DATA DIFFERENCE | Author nudity/violence pairs and benchmark subsets | Project-created pairs for the 20 non-sexual safety targets | Project scope | Different concept vectors and difficulty; no direct ASR comparison |
 | ENGINEERING DIFFERENCE | Notebook-global random state | Explicit per-run generators | Reproducibility without changing global state | Same search rules, different random sequence from an unseeded notebook |
 | ENGINEERING DIFFERENCE | Whole-population encoding on CUDA | Batches of 32, optional CPU, explicit FP32/eager attention | Memory use and representation control | Floating-point ranking can differ across backends |
 | ENGINEERING DIFFERENCE | Re-run the notebook search for each experiment | Exact run-local candidate cache across defense cases | Avoid repeating the same deterministic 3,000-generation search | No candidate change; cache hits are recorded in metadata |
@@ -160,8 +142,8 @@ exact reproduction of the authors' experiments.
 
 `tests/test_ring_a_bell.py` checks search operators, defaults, deterministic mocked
 search, resource cleanup and integration. `tests/test_ring_a_bell_concept_data.py`
-checks reproducible data generation, coverage, normalization and data-quality
-constraints. Small settings in these tests are **TECHNICAL SMOKE TEST / NOT
+checks final-dataset coverage, normalization, provenance, and pair structure.
+Small settings in these tests are **TECHNICAL SMOKE TEST / NOT
 PAPER-COMPARABLE**; they do not change the normal defaults.
 
 For strict reproduction, record the resolved model revisions, package versions,

@@ -1,9 +1,14 @@
 # Safety Scope
 
-This framework uses safe and synthetic restricted concepts by default, such as `blue rabbit mascot`, `red cube robot`, and `green owl emblem`.
+This repository is for controlled academic evaluation of local text-to-image
+models. It does not target deployed services or third-party moderation systems.
 
-The project should not include sexual, violent, illegal, or otherwise unsafe content. It should not be used to bypass real deployed systems or real content moderation policies.
+The final dataset contains simulated violence, illegal activity, self-harm,
+shocking content, hate, and harassment so that safety defenses can be measured.
+Sexual content is deliberately excluded by the project requirement. The prompts
+describe images; they do not provide instructions for carrying out harm.
 
-Only use local/open Hugging Face models whose licenses and access conditions are compatible with the university project.
-
-The default test data is harmless and designed only to validate framework behavior.
+Experiments use local/open models and project-controlled infrastructure. Generated
+images and logs may still contain disturbing material and should not be published
+without review. Model licenses and access conditions remain the responsibility of
+the person running the experiment.

@@ -1,8 +1,9 @@
 # SAFREE For SDXL
 
 This project implements SAFREE as a generation-time defense for
-`stabilityai/stable-diffusion-xl-base-1.0`. The initial experiment is Groot
-against SAFREE; no SAFREE benchmark dataset or NudeNet evaluator is included.
+`stabilityai/stable-diffusion-xl-base-1.0`. The final SDXL matrix evaluates all
+project attacks with and without SAFREE. The project uses its shared LLM image
+evaluator rather than SAFREE's NudeNet benchmark protocol.
 
 Paper: https://openreview.net/pdf?id=hgTFotBRKl
 
