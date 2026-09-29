@@ -80,6 +80,38 @@ The released latent helper can also scale U-Net backbone channels, but its
 published command uses factors `1.0` and `1.0`; those identity operations are
 not reproduced here.
 
+## Experimental Deviations And Consequences
+
+| Dimension | Paper | Project experiment | Consequence |
+|---|---|---|---|
+| Main backbone | SD 1.4 is the primary benchmark; the paper also demonstrates SDXL, SD3, and video models | This implementation supports `stabilityai/stable-diffusion-xl-base-1.0` only | The project tests the requested modern SDXL setting, but does not reproduce the paper's main SD 1.4 result table or its cross-architecture claims. |
+| Concepts | Fixed unsafe concepts such as nudity, plus artist-removal tasks | Each dataset row's `target_concept` defines the suppression space by default | SAFREE is adapted to heterogeneous per-row safety targets; its behavior may differ from a benchmark using one fixed concept space. |
+| Attack data | I2P, P4D, Ring-A-Bell, MMA-Diffusion, UnlearnDiff, and separate artist/video datasets | The final matrix uses the project's 100-prompt non-sexual safety dataset and project attack implementations | The results measure the project's selected non-sexual policy categories and cannot be compared directly with the paper's attack-specific ASR values. |
+| Safety evaluation | Nudity ASR for T2I, with NudeNet-based measurements described in the appendix; other tasks use their own protocols | The shared local multimodal judge checks policy violation, preserved intent, and confidence | The project obtains one common metric across all attacks and defenses, but changes the label source and the definition of success. |
+| Generation quality | FID, CLIP, and TIFA on COCO samples; LPIPS and GPT-4o for artist removal | The final matrix reports attack success and does not reproduce those quality/utility benchmarks | A lower project ASR does not by itself prove the same image-quality preservation claimed in the paper. |
+| Comparison protocol | Paper-specific defense baselines and evaluation protocol | Project defenses and shared benchmark scripts | The matrix supports internal comparison, not rank or parity claims against the paper's baseline table. |
+
+The project results are therefore evidence about SAFREE within this framework:
+the same SDXL model, dataset, attacks, and evaluator are used for defended and
+undefended runs. They should not be described as a reproduction of the paper's
+reported ASR or generation-quality numbers.
+
+## Verification Scope
+
+The automated tests cover selective projection, the self-validation mapping,
+branch-local Fourier updates, temporary U-Net hooks, concept selection,
+configuration validation, release only after all stages finish, and a fake full
+sampler that exercises all three branches. Run them with:
+
+```bash
+pytest tests/test_safree.py
+```
+
+These tests validate the implementation's mathematics and control flow without
+downloading SDXL. They do not prove tensor-by-tensor parity with the authors'
+old pipelines or reproduce the paper benchmark. The final SDXL batch provides
+end-to-end project evidence instead.
+
 ## Not Copied
 
 - the authors' fork of the complete old Diffusers SDXL pipeline;
