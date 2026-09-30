@@ -10,6 +10,10 @@ local_llm:
   # llama.cpp divides this across four parallel slots (8192 tokens per slot).
   context_size: 32768
   gpu_layers: auto
+  # The launcher exposes one physical GPU as local CUDA0. Keep the model on
+  # that GPU instead of splitting it across every server GPU.
+  split_mode: none
+  main_gpu: 0
   parallel_slots: 4
   mmproj: ""
   timeout_seconds: 600

@@ -9,4 +9,7 @@ if [ ! -x "$PYTHON" ]; then
 fi
 
 cd "$REPO_ROOT"
+# Keep one physical GPU visible by default. Users can choose another one, for
+# example: CUDA_VISIBLE_DEVICES=2 scripts/start-local-llm.sh
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 exec "$PYTHON" -m t2i_framework.core.local_llm_server "$@"
