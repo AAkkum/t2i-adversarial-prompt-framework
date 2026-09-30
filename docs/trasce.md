@@ -90,9 +90,15 @@ Category settings come from the published README commands:
 | nudity | 1.5 | 1 | 2 |
 | violence | 1.5 | 1 | 1 |
 
-Categories are explicit, not inferred from target text. Null scalars in
-`configs/defenses/trasce.yaml` select the category values. Raw parser fallbacks
-15/5/1 are not the published experiment-command settings.
+Categories are explicit, not inferred from target text. The current
+experiment uses the `object` preset by default, including for targets from
+other safety categories. Unless explicitly overridden, TraSCE uses the exact
+framework target as the concept to suppress and as the negative prompt.
+
+Null scalars in `configs/defenses/trasce.yaml` select the category values.
+Raw parser fallbacks 15/5/1 are not the published experiment-command settings.
+Therefore, our regular benchmark does not reproduce the paper's general
+violence-erasure experiment.
 
 ## Paper versus executable code
 
@@ -116,7 +122,7 @@ Use the existing CUDA environment with `pip install -e ".[models]"` if needed.
 The full defense command is:
 
 ```powershell
-python main.py --model diffusers --model-config configs/models/sd14.yaml --attack ring_a_bell --defense trasce --prompt "a dog sitting in a park" --target "dog" --seed 42 --out ("results/rab_sd14_trasce_" + (Get-Date -Format "yyyyMMdd_HHmmss_fff"))
+python main.py --model diffusers --model-config configs/models/sd14.yaml --attack ring_a_bell --defense trasce --prompt "a plain wall on a quiet downtown street" --target "illegal graffiti" --seed 42 --out ("results/rab_sd14_trasce_" + (Get-Date -Format "yyyyMMdd_HHmmss_fff"))
 ```
 
 For the baseline, use `--defense none` and a different output folder, keeping
@@ -171,9 +177,15 @@ target survived TraSCE.
 | ENGINEERING DIFFERENCE | Truncation when converting pixels to uint8 | Native Diffusers rounding | Shared image output path | At most a quantization-level difference for identical continuous pixels |
 | PROJECT DATA DIFFERENCE | Published benchmarks and object classes | Project Ring-A-Bell pairs/prompts and dog sanity test | University experiment | No direct comparison with published erasure scores |
 
-Model, conditioning roles, guidance, executable loss, gradient sign, update order,
-DDIM parameters and normal defaults are MATCH. No METHOD MISMATCH was found.
-This is a paper-near implementation on SD1.4 with the differences listed above.
+Our implementation follows the pinned official executable code for the
+conditioning roles, guidance, loss function, gradient sign, update order
+and DDIM sampling. However, the executable loss differs mathematically
+from the equation presented in the paper.
+
+Our memory optimizations, framework integration and project-specific
+experiment introduce additional differences. Therefore, this is a
+paper-near implementation on SD1.4, not an exact reproduction of the
+paper's experiments.
 
 ## Integration and limits
 
