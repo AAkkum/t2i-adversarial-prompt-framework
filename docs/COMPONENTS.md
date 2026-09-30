@@ -17,7 +17,7 @@ decomposition and multi-panel drowning when earlier candidates fail. See
 ### `pgj`
 
 Uses a local Hugging Face language model to replace protected terms with visual
-descriptions.
+descriptions. See `docs/PGJ.md`.
 
 ### `ring_a_bell`
 
